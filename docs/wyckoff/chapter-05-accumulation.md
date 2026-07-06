@@ -747,21 +747,6 @@ why do prices so often move sideways during that process?
 
 The answer forms the foundation of the next section.
 
-```
-
----
-
-# End of Part 1
-
-**Next Part (Section A: 5.6 → 5.10)** sẽ tiếp tục với:
-
-- **5.6 Why Time Becomes a Strategic Weapon**
-- **5.7 Why Sideways Markets Exist**
-- **5.8 Why Retail Misunderstands Trading Ranges**
-- **5.9 The Invisible Transfer of Ownership**
-- **5.10 Liquidity Transfer**
-
-Đây là phần mình đánh giá là quan trọng nhất trước khi bước vào **Phase A**. Sau khi đọc xong Section A, độc giả sẽ hiểu *vì sao* Accumulation phải tồn tại, còn từ Section B trở đi chúng ta mới phân tích *Accumulation diễn ra như thế nào* qua các Phase A–E. Theo mình, đây là cách xây dựng từ first principles thay vì bắt đầu bằng các ký hiệu PS, SC, AR, ST như hầu hết các tài liệu Wyckoff hiện nay.
 
 ---
 
