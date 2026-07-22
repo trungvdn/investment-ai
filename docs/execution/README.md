@@ -1,42 +1,218 @@
 # Execution Layer
 
-**Status:** Draft
-
-**Version:** 1.0
+**Version:** 3.0
 
 ---
 
 # Overview
 
-Execution Layer chịu trách nhiệm điều phối việc thực thi các Business Capability nhằm hoàn thành một yêu cầu của người dùng hoặc một quy trình nghiệp vụ.
+Execution Layer là Runtime Engine chịu trách nhiệm thực thi các Business Process đã được định nghĩa trong hệ thống.
 
-Execution Layer không chứa Business Logic.
+Execution Layer không chứa Business Logic và không định nghĩa Business Process.
 
-Thay vào đó, Execution Layer quản lý toàn bộ vòng đời của việc thực thi, bao gồm:
+Thay vào đó, Execution Layer chuyển các Definition Models thành Runtime Instances và điều phối toàn bộ vòng đời thực thi.
 
-- Workflow
-- Stage
-- Task
-- Execution Context
-- Execution State
-- Capability Invocation
-- Result Aggregation
-
-Execution Layer đóng vai trò là cầu nối giữa Presentation Layer và Business Capability Layer.
+Execution Layer đóng vai trò là cầu nối giữa Business Definition và Infrastructure.
 
 ---
 
-# Objectives
+# Goals
 
-Execution Layer hướng đến các mục tiêu sau:
+Execution Layer được xây dựng với các mục tiêu sau.
 
-- Điều phối nhiều Business Capability.
-- Chuẩn hóa quy trình thực thi.
-- Quản lý trạng thái của quá trình thực thi.
-- Quản lý Context xuyên suốt Workflow.
-- Cho phép Workflow có thể tái sử dụng.
-- Tách biệt Business Logic và Execution Logic.
-- Hỗ trợ mở rộng và thay đổi Workflow mà không ảnh hưởng đến Business Capability.
+- Thực thi Business Process.
+- Điều phối Runtime Execution.
+- Quản lý Context.
+- Quản lý State.
+- Điều phối Activity.
+- Thu thập kết quả.
+- Hỗ trợ mở rộng.
+- Hỗ trợ Versioning.
+- Hỗ trợ Observability.
+
+---
+
+# Architecture
+
+Execution Layer được chia thành ba phần chính.
+
+```
+Business Process Definitions
+
+↓
+
+Execution Runtime
+
+↓
+
+Infrastructure
+```
+
+Trong đó:
+
+- Business Process Definitions mô tả hệ thống cần làm gì.
+- Execution Runtime thực thi các định nghĩa đó.
+- Infrastructure cung cấp các dịch vụ kỹ thuật.
+
+---
+
+# Definition Models
+
+Definition Models mô tả Business Process.
+
+```
+Workflow Definition
+
+↓
+
+Stage Definition
+
+↓
+
+Task Definition
+
+↓
+
+Activity Definition
+```
+
+## Workflow Definition
+
+Định nghĩa một Business Process.
+
+Workflow xác định mục tiêu nghiệp vụ và các Stage cần trải qua.
+
+---
+
+## Stage Definition
+
+Định nghĩa một Business Milestone.
+
+Stage chia Workflow thành các giai đoạn nghiệp vụ.
+
+---
+
+## Task Definition
+
+Định nghĩa một Business Work Unit.
+
+Task mô tả một công việc nghiệp vụ cần hoàn thành để đạt Business Milestone.
+
+---
+
+## Activity Definition
+
+Định nghĩa một Technical Action.
+
+Activity mô tả cách thực hiện một Task.
+
+---
+
+# Runtime Models
+
+Execution Layer chuyển Definition Models thành Runtime Models.
+
+```
+Execution
+
+↓
+
+Workflow Instance
+
+↓
+
+Stage Instance
+
+↓
+
+Task Instance
+
+↓
+
+Activity Instance
+```
+
+## Execution
+
+Runtime Root của toàn bộ quá trình thực thi.
+
+---
+
+## Workflow Instance
+
+Runtime của Workflow Definition.
+
+---
+
+## Stage Instance
+
+Runtime của Stage Definition.
+
+---
+
+## Task Instance
+
+Runtime của Task Definition.
+
+---
+
+## Activity Instance
+
+Runtime của Activity Definition.
+
+---
+
+# Execution Flow
+
+Execution Layer thực hiện theo trình tự sau.
+
+```
+Receive Request
+
+↓
+
+Create Execution
+
+↓
+
+Create Workflow Instance
+
+↓
+
+Create Stage Instance
+
+↓
+
+Create Task Instance
+
+↓
+
+Create Activity Instance
+
+↓
+
+Execute Activities
+
+↓
+
+Collect Results
+
+↓
+
+Complete Task
+
+↓
+
+Complete Stage
+
+↓
+
+Complete Workflow
+
+↓
+
+Complete Execution
+```
 
 ---
 
@@ -44,291 +220,20 @@ Execution Layer hướng đến các mục tiêu sau:
 
 Execution Layer chịu trách nhiệm:
 
-- Receive Request
-- Create Execution
-- Build Workflow
-- Execute Workflow
-- Coordinate Stages
-- Coordinate Tasks
-- Invoke Business Capabilities
-- Manage Execution Context
-- Track Execution State
-- Aggregate Results
-- Return Final Response
+- Instantiate Runtime Models.
+- Quản lý Context.
+- Quản lý Runtime State.
+- Điều phối Activity.
+- Thu thập kết quả.
+- Quản lý vòng đời thực thi.
+- Theo dõi Execution.
 
 Execution Layer không chịu trách nhiệm:
 
-- Acquire Data
-- Analyze Market
-- Analyze Company
-- Calculate Valuation
-- Manage Portfolio
-- Generate Investment Recommendation
-
-Các nghiệp vụ trên thuộc Business Capability Layer.
-
----
-
-# Architecture
-
-```
-                    User Request
-                          │
-                          ▼
-                 Presentation Layer
-                          │
-                          ▼
-                  Execution Layer
-                          │
-          ┌───────────────┼───────────────┐
-          │               │               │
-          ▼               ▼               ▼
-     Workflow       Context Manager   State Manager
-          │
-          ▼
-        Stage
-          │
-          ▼
-         Task
-          │
-          ▼
- Business Capability Layer
-          │
-          ▼
-   Capability Results
-          │
-          ▼
-  Result Aggregation
-          │
-          ▼
-      Final Response
-```
-
----
-
-# Execution Flow
-
-Mỗi User Request được xử lý theo quy trình sau.
-
-```
-Receive Request
-        │
-        ▼
-Create Execution
-        │
-        ▼
-Build Workflow
-        │
-        ▼
-Execute Stages
-        │
-        ▼
-Execute Tasks
-        │
-        ▼
-Invoke Business Capabilities
-        │
-        ▼
-Aggregate Results
-        │
-        ▼
-Return Final Response
-```
-
----
-
-# Core Concepts
-
-Execution Layer được xây dựng dựa trên các khái niệm sau.
-
----
-
-## Execution
-
-Execution đại diện cho toàn bộ vòng đời xử lý của một yêu cầu.
-
-Một Execution bắt đầu khi hệ thống nhận Request và kết thúc khi trả về Final Response.
-
-Một Execution bao gồm một hoặc nhiều Workflow.
-
----
-
-## Workflow
-
-Workflow mô tả quy trình nghiệp vụ nhằm đạt được một mục tiêu cụ thể.
-
-Ví dụ:
-
-- Analyze Stock
-- Screen Opportunities
-- Evaluate Portfolio
-
-Một Workflow bao gồm nhiều Stage.
-
----
-
-## Stage
-
-Stage là một giai đoạn trong Workflow.
-
-Mỗi Stage nhóm các Task có cùng mục tiêu nghiệp vụ.
-
-Ví dụ:
-
-```
-Analyze Stock
-
-├── Data Collection
-├── Market Analysis
-├── Fundamental Analysis
-├── Valuation
-└── Recommendation
-```
-
-Các Stage có thể được thực thi:
-
-- Sequentially
-- In Parallel
-- Conditionally
-
----
-
-## Task
-
-Task là đơn vị công việc nhỏ nhất trong Workflow.
-
-Một Task thường thực hiện một chức năng cụ thể như:
-
-- Gọi một Business Capability.
-- Chuẩn bị dữ liệu.
-- Tổng hợp kết quả.
-- Kiểm tra điều kiện.
-
-Task chỉ tập trung vào một mục tiêu duy nhất.
-
----
-
-## Capability
-
-Capability là đơn vị nghiệp vụ độc lập.
-
-Execution Layer điều phối Capability nhưng không chứa Business Logic của Capability.
-
-Một Capability có thể được tái sử dụng bởi nhiều Workflow khác nhau.
-
----
-
-## Context
-
-Context lưu trữ thông tin được chia sẻ trong suốt quá trình thực thi.
-
-Ví dụ:
-
-- User Context
-- Execution Context
-- Workflow Context
-- Intermediate Results
-
-Context giúp các Stage và Task trao đổi dữ liệu mà không phụ thuộc trực tiếp vào nhau.
-
----
-
-## State
-
-State phản ánh trạng thái hiện tại của Execution.
-
-Ví dụ:
-
-- Created
-- Running
-- Waiting
-- Completed
-- Failed
-- Cancelled
-
-Execution Layer sử dụng State để theo dõi toàn bộ vòng đời của Execution.
-
----
-
-## Result
-
-Result là đầu ra của:
-
-- Task
-- Stage
-- Workflow
-- Execution
-
-Execution Layer chịu trách nhiệm tổng hợp các Result để tạo Final Response.
-
----
-
-# Execution Components
-
-Execution Layer bao gồm các thành phần chính.
-
----
-
-## Workflow Engine
-
-Quản lý việc thực thi Workflow.
-
----
-
-## Orchestrator
-
-Điều phối Stage và Task.
-
----
-
-## Context Manager
-
-Quản lý Context xuyên suốt Execution.
-
----
-
-## State Manager
-
-Theo dõi trạng thái của Execution.
-
----
-
-## Result Aggregator
-
-Tổng hợp kết quả từ nhiều Capability.
-
----
-
-# Relationship with Business Capabilities
-
-Execution Layer điều phối Business Capability.
-
-Business Capability không biết mình đang nằm trong Workflow nào.
-
-Ví dụ:
-
-```
-Analyze Stock Workflow
-
-│
-├── Stage 1 : Data Collection
-│      ├── Market Data
-│      ├── Financial Data
-│      └── News Data
-│
-├── Stage 2 : Analysis
-│      ├── Market Intelligence
-│      ├── Fundamental Analysis
-│      └── Company Research
-│
-├── Stage 3 : Valuation
-│      └── Valuation
-│
-└── Stage 4 : Recommendation
-       └── Investment Recommendation
-```
-
-Nhờ vậy Business Capability có thể được tái sử dụng trong nhiều Workflow khác nhau.
+- Business Logic.
+- Business Rules.
+- Business Capability Implementation.
+- Business Process Design.
 
 ---
 
@@ -336,63 +241,130 @@ Nhờ vậy Business Capability có thể được tái sử dụng trong nhiề
 
 Execution Layer được xây dựng dựa trên các nguyên tắc sau.
 
-## Separation of Concerns
+## Separation of Definition and Runtime
 
-Execution Logic và Business Logic phải tách biệt.
-
----
-
-## Capability Independence
-
-Business Capability không phụ thuộc Workflow.
+Definition Models và Runtime Models được tách biệt hoàn toàn.
 
 ---
 
-## Context Driven
+## Business Process Independence
 
-Mọi Stage và Task đều sử dụng Execution Context.
-
----
-
-## State Driven
-
-Execution được quản lý thông qua State.
+Execution Engine không chứa Business Logic.
 
 ---
 
-## Workflow Reusability
+## Single Responsibility
 
-Workflow có thể tái sử dụng cho nhiều Use Case.
-
----
-
-## Observability
-
-Toàn bộ Execution phải có khả năng theo dõi và truy vết.
+Mỗi Model chỉ có một trách nhiệm.
 
 ---
 
-## Scalability
+## Layered Architecture
 
-Execution phải hỗ trợ mở rộng số lượng Workflow, Stage và Task mà không làm thay đổi Business Capability.
-
----
-
-# Related Documents
-
-## Foundation
-
-- specification.md
-- business-rules.md
+Business Layer và Runtime Layer được tách biệt rõ ràng.
 
 ---
 
-## Models
+## Composability
 
-- execution-model.md
-- workflow-model.md
-- stage-model.md
-- task-model.md
-- context-model.md
-- orchestration-model.md
-- state-machine.md
+Workflow được tạo từ Stage.
+
+Stage được tạo từ Task.
+
+Task được tạo từ Activity.
+
+---
+
+## Extensibility
+
+Có thể mở rộng Workflow, Stage, Task hoặc Activity mà không thay đổi Runtime Engine.
+
+---
+
+# Directory Structure
+
+```
+execution/
+
+README.md
+
+specification.md
+
+execution-model.md
+
+workflow-model.md
+
+stage-model.md
+
+task-model.md
+
+activity-model.md
+
+context-model.md
+
+orchestration-model.md
+
+state-machine.md
+
+business-rules.md
+```
+
+---
+
+# Document Overview
+
+| Document | Purpose |
+|-----------|---------|
+| README.md | Tổng quan về Execution Layer |
+| specification.md | Phạm vi, mục tiêu và trách nhiệm của Execution Layer |
+| execution-model.md | Runtime Execution Model |
+| workflow-model.md | Business Process Definition |
+| stage-model.md | Business Milestone Definition |
+| task-model.md | Business Work Unit Definition |
+| activity-model.md | Technical Action Definition |
+| context-model.md | Context Management |
+| orchestration-model.md | Runtime Orchestration |
+| state-machine.md | Runtime State Machine |
+| business-rules.md | Runtime Policies và Business Rules áp dụng trong quá trình thực thi |
+
+---
+
+# Related Layers
+
+Execution Layer làm việc cùng các tầng khác trong hệ thống.
+
+```
+Presentation Layer
+
+↓
+
+Application Layer
+
+↓
+
+Execution Layer
+
+↓
+
+Business Capabilities
+
+↓
+
+Infrastructure Layer
+```
+
+Execution Layer đóng vai trò điều phối, kết nối Business Process với các Business Capability và hạ tầng kỹ thuật.
+
+---
+
+# Summary
+
+Execution Layer là Runtime Engine của hệ thống Investment AI.
+
+Nó chịu trách nhiệm thực thi các Business Process thông qua các Runtime Models, đồng thời đảm bảo sự tách biệt rõ ràng giữa:
+
+- Business Definition
+- Runtime Execution
+- Technical Infrastructure
+
+Kiến trúc này giúp hệ thống dễ mở rộng, dễ bảo trì, hỗ trợ versioning và tái sử dụng Business Process trên nhiều loại Execution Engine khác nhau.
