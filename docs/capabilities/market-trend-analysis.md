@@ -1,4 +1,4 @@
-# RFC-005 — Liquidity Analysis Module
+# RFC-006 — Market Trend Analysis Module
 
 **Status:** Draft  
 **Version:** 1.0  
@@ -11,33 +11,33 @@
 
 ## Objective
 
-Liquidity Analysis đánh giá mức độ thanh khoản của thị trường.
+Market Trend Analysis đánh giá xu hướng hiện tại của thị trường.
 
 Module trả lời các câu hỏi:
 
-- Thanh khoản hiện tại mạnh hay yếu?
-- Thanh khoản đang cải thiện hay suy giảm?
-- Thanh khoản có xác nhận xu hướng hiện tại không?
-- Dòng tiền có đang mở rộng hay thu hẹp?
+- Thị trường đang trong xu hướng tăng, giảm hay đi ngang?
+- Xu hướng hiện tại mạnh hay yếu?
+- Xu hướng có đang thay đổi không?
+- Xu hướng có được xác nhận hay không?
 
 Module không đánh giá:
 
-- Giá trị doanh nghiệp
-- Xu hướng giá
-- Chu kỳ kinh tế
-- Khuyến nghị mua bán
+- Thanh khoản
+- Dòng tiền
+- Môi trường vĩ mô
+- Khuyến nghị đầu tư
 
 ---
 
 # 2. Business Questions
 
-Module phải trả lời được các câu hỏi sau.
+Module phải trả lời các câu hỏi sau:
 
-- Thanh khoản đang tăng hay giảm?
-- Thanh khoản có bền vững không?
-- Khối lượng có xác nhận xu hướng giá không?
-- Thanh khoản có bất thường không?
-- Dòng tiền đang mở rộng hay co hẹp?
+- Xu hướng hiện tại là gì?
+- Xu hướng đang mạnh lên hay yếu đi?
+- Có dấu hiệu đảo chiều không?
+- Xu hướng có được xác nhận không?
+- Mức độ tin cậy của xu hướng là bao nhiêu?
 
 ---
 
@@ -45,21 +45,20 @@ Module phải trả lời được các câu hỏi sau.
 
 ## In Scope
 
-- Trading Volume
-- Trading Value
-- Turnover
-- Relative Volume
-- Volume Distribution
-- Liquidity Trend
-- Liquidity Quality
+- Primary Trend
+- Secondary Trend
+- Minor Trend
+- Trend Strength
+- Trend Confirmation
+- Trend Reversal
 
 ## Out of Scope
 
-- Foreign Flow
-- ETF Flow
-- Sector Rotation
-- Market Breadth
-- Macro Indicators
+- Liquidity
+- Breadth
+- Capital Flow
+- Macro
+- Company Fundamentals
 
 ---
 
@@ -69,18 +68,21 @@ Module sử dụng các Indicator sau.
 
 ## Core Indicators
 
-- Trading Volume
-- Trading Value
-- Turnover Ratio
-- Average Volume
-- Relative Volume
+- Price
+- High
+- Low
+- Close
 
 ## Supporting Indicators
 
-- Number of Transactions
-- Average Trade Size
-- Bid/Ask Depth
-- Order Imbalance
+- Moving Average
+- Trendline
+- Swing High
+- Swing Low
+- Higher High
+- Higher Low
+- Lower High
+- Lower Low
 
 ---
 
@@ -90,68 +92,65 @@ Module sử dụng các Indicator sau.
 Indicators
       │
       ▼
-Liquidity Evidence
+Trend Evidence
       │
       ▼
-Liquidity Signals
+Trend Signals
       │
       ▼
-Liquidity Analysis Result
+Trend Analysis Result
 ```
 
 ---
 
 # 6. Analysis Rules
 
-Liquidity Analysis sử dụng các nhóm Rule sau.
+Market Trend Analysis sử dụng các nhóm Rule sau.
 
-## Volume Analysis
+## Trend Identification
 
-Đánh giá:
+Xác định:
 
-- Volume Expansion
-- Volume Contraction
-- Volume Stability
-
----
-
-## Trading Value Analysis
-
-Đánh giá:
-
-- Value Increasing
-- Value Decreasing
-- Value Stability
+- Uptrend
+- Downtrend
+- Sideway
 
 ---
 
-## Relative Volume Analysis
-
-So sánh với:
-
-- Historical Average
-- Recent Sessions
-- Market Average
-
----
-
-## Liquidity Quality Analysis
+## Trend Strength Analysis
 
 Đánh giá:
 
-- Healthy Liquidity
-- Weak Liquidity
-- Abnormal Liquidity
+- Strong Trend
+- Normal Trend
+- Weak Trend
 
 ---
 
-## Liquidity Trend Analysis
+## Trend Confirmation
 
 Đánh giá:
 
-- Improving
-- Stable
-- Deteriorating
+- Confirmed Trend
+- Unconfirmed Trend
+
+---
+
+## Trend Reversal Detection
+
+Phát hiện:
+
+- Bullish Reversal
+- Bearish Reversal
+
+---
+
+## Trend Continuation
+
+Đánh giá khả năng:
+
+- Trend Continuation
+- Trend Exhaustion
 
 ---
 
@@ -159,33 +158,41 @@ So sánh với:
 
 Ví dụ Evidence.
 
-## Liquidity Improving
+## Uptrend Evidence
 
 Điều kiện:
 
-- Volume mở rộng.
-- Trading Value mở rộng.
-- Relative Volume cải thiện.
+- Higher High
+- Higher Low
+- Giá duy trì trên vùng hỗ trợ chính
 
 ---
 
-## Liquidity Weakening
+## Downtrend Evidence
 
 Điều kiện:
 
-- Volume giảm.
-- Trading Value giảm.
-- Relative Volume thấp.
+- Lower High
+- Lower Low
+- Giá duy trì dưới vùng kháng cự chính
 
 ---
 
-## Abnormal Liquidity
+## Sideway Evidence
 
 Điều kiện:
 
-- Volume tăng đột biến.
-- Trading Value bất thường.
-- Không phù hợp với hành vi lịch sử.
+- Giá dao động trong vùng giao dịch
+- Không hình thành xu hướng rõ ràng
+
+---
+
+## Trend Weakening
+
+Điều kiện:
+
+- Động lượng xu hướng suy giảm
+- Xuất hiện dấu hiệu mất cân bằng
 
 ---
 
@@ -193,37 +200,50 @@ Ví dụ Evidence.
 
 Ví dụ Signal.
 
-## Bullish Liquidity
+## Bullish Trend
 
 Evidence:
 
-- Liquidity Improving
-- Healthy Liquidity
+- Uptrend Evidence
+- Confirmed Trend
 
 ---
 
-## Bearish Liquidity
+## Bearish Trend
 
 Evidence:
 
-- Liquidity Weakening
-- Poor Liquidity
+- Downtrend Evidence
+- Confirmed Trend
 
 ---
 
-## Neutral Liquidity
+## Neutral Trend
 
-Evidence trái chiều.
+Evidence:
+
+- Sideway Evidence
+- Unconfirmed Trend
+
+---
+
+## Trend Reversal Watch
+
+Evidence:
+
+- Trend Weakening
+- Reversal Evidence
 
 ---
 
 # 9. Analysis Result
 
-Liquidity Analysis Result bao gồm:
+Trend Analysis Result bao gồm:
 
 - Summary
-- Liquidity Score
-- Confidence
+- Current Trend
+- Trend Strength
+- Trend Confidence
 - Supporting Evidence
 - Supporting Signals
 - Warnings
@@ -237,7 +257,7 @@ Module phải đảm bảo:
 - Explainability
 - Traceability
 - Consistency
-- Reproducibility
+- Deterministic Result
 
 ---
 
@@ -245,11 +265,12 @@ Module phải đảm bảo:
 
 Ví dụ:
 
-- Phiên nghỉ lễ.
-- Thanh khoản cực thấp.
-- Dữ liệu thiếu.
-- Thị trường mới mở cửa.
-- Phiên ATC bất thường.
+- Sideway kéo dài
+- False Breakout
+- False Breakdown
+- Gap Up / Gap Down
+- Dữ liệu thiếu
+- Biến động bất thường do sự kiện
 
 Module phải trả về trạng thái phù hợp thay vì suy diễn.
 
