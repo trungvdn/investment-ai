@@ -2,7 +2,7 @@
 
 **Status:** Draft
 
-**Version:** 2.0
+**Version:** 3.0
 
 ---
 
@@ -10,9 +10,16 @@
 
 Execution Layer chịu trách nhiệm chuyển đổi Business Process Definitions thành Runtime Execution.
 
-Layer này cung cấp các cơ chế cần thiết để quản lý Runtime Objects, điều phối quá trình thực thi và thực hiện các Technical Actions theo đúng Business Process đã được định nghĩa.
+Layer này cung cấp một cơ chế chuẩn để:
 
-Execution Layer không chứa Business Logic.
+- Khởi tạo Runtime Hierarchy.
+- Điều phối quá trình thực thi.
+- Quản lý Runtime State.
+- Quản lý Runtime Context.
+- Thực thi Technical Actions.
+- Áp dụng Business Rules và Execution Policies.
+
+Execution Layer không định nghĩa Business Process và không chứa Business Logic.
 
 ---
 
@@ -20,12 +27,12 @@ Execution Layer không chứa Business Logic.
 
 Execution Layer được thiết kế nhằm đạt các mục tiêu sau.
 
-- Thực thi Business Process.
-- Chuẩn hóa Runtime Execution.
+- Chuẩn hóa quá trình thực thi Business Process.
 - Tách biệt Business Logic khỏi Technical Execution.
 - Chuẩn hóa Runtime Lifecycle.
 - Chuẩn hóa Runtime State.
-- Hỗ trợ mở rộng Execution Engine.
+- Hỗ trợ mở rộng Workflow Engine.
+- Đảm bảo khả năng quan sát (Observability).
 - Đảm bảo khả năng bảo trì và mở rộng.
 
 ---
@@ -34,21 +41,55 @@ Execution Layer được thiết kế nhằm đạt các mục tiêu sau.
 
 Execution Layer chịu trách nhiệm:
 
-- Quản lý Runtime Models.
+- Chuyển Definition Models thành Runtime Models.
+- Khởi tạo Runtime Hierarchy.
 - Điều phối Runtime Execution.
+- Đánh giá Runtime Hierarchy.
+- Sinh Execution Commands.
 - Quản lý Runtime State.
 - Quản lý Runtime Context.
 - Thực thi Activity.
 - Áp dụng Execution Policies.
-- Thực thi Business Rules.
+- Đánh giá Business Rules.
+- Tổng hợp Execution Result.
 
 Execution Layer không chịu trách nhiệm:
 
-- Định nghĩa Business Process.
-- Thực hiện Business Logic.
+- Thiết kế Business Process.
+- Cài đặt Business Logic.
 - Triển khai Capability.
 - Quản lý Infrastructure.
 - Lưu trữ dữ liệu nghiệp vụ.
+- Giao tiếp với người dùng.
+
+---
+
+# Execution Model
+
+Execution Layer hoạt động theo mô hình Event Loop.
+
+```
+Execution Started
+        │
+        ▼
+Evaluate Runtime Hierarchy
+        │
+        ▼
+Generate Execution Command
+        │
+        ▼
+Execute Command
+        │
+        ▼
+Runtime Updated
+        │
+        └──────────────┐
+                       │
+                       ▼
+Evaluate Runtime Hierarchy
+```
+
+Execution kết thúc khi không còn Runtime nào có thể thực thi.
 
 ---
 
@@ -58,59 +99,73 @@ Execution Layer bao gồm các nhóm trách nhiệm sau.
 
 ## Runtime Management
 
-Quản lý Runtime Objects và Runtime Hierarchy.
+- Tạo Runtime Objects.
+- Quản lý Runtime Hierarchy.
+- Quản lý Runtime Lifecycle.
+- Theo dõi Runtime Progress.
 
 ---
 
-## Execution Orchestration
+## Runtime Orchestration
 
-Điều phối quá trình thực thi Runtime.
-
----
-
-## State Management
-
-Quản lý Runtime State.
+- Đánh giá Runtime Hierarchy.
+- Xác định Runtime tiếp theo.
+- Sinh Execution Commands.
 
 ---
 
-## Context Management
+## Runtime State Management
 
-Quản lý Runtime Context.
+- Quản lý Runtime State.
+- Kiểm soát State Transition.
+
+---
+
+## Runtime Context Management
+
+- Quản lý Runtime Context.
+- Truyền Context theo Runtime Hierarchy.
+- Tổng hợp Context sau khi Runtime hoàn thành.
 
 ---
 
 ## Activity Execution
 
-Thực thi Technical Actions.
+- Thực thi Activity Runtime.
+- Thu thập Execution Result.
 
 ---
 
-## Policy Enforcement
+## Execution Policy Enforcement
 
-Áp dụng các chính sách thực thi.
+- Áp dụng Execution Strategy.
+- Retry.
+- Timeout.
+- Concurrency.
+- Cancellation.
 
 ---
 
 ## Business Validation
 
-Đánh giá các Business Rules trong quá trình thực thi.
+- Đánh giá Business Rules.
+- Xác định Runtime có được phép tiếp tục hay không.
 
 ---
 
 # Design Principles
 
-Execution Layer tuân theo các nguyên tắc thiết kế sau.
+Execution Layer tuân theo các nguyên tắc sau.
 
 ## Separation of Concerns
 
-Business Logic được tách biệt hoàn toàn khỏi Technical Execution.
+Business Logic và Technical Execution được tách biệt hoàn toàn.
 
 ---
 
 ## Single Responsibility
 
-Mỗi thành phần chỉ chịu trách nhiệm cho một chức năng duy nhất.
+Mỗi thành phần chỉ chịu trách nhiệm cho một chức năng.
 
 ---
 
@@ -128,33 +183,41 @@ Execution Engine chỉ làm việc với Runtime Objects.
 
 ---
 
-## Stateless Orchestration
+## Decision Before Execution
 
-Orchestrator không lưu Runtime Data.
+Mọi Runtime Action đều bắt đầu từ quyết định của Orchestrator.
+
+---
+
+## Command Driven Execution
+
+Orchestrator không trực tiếp thay đổi Runtime.
+
+Mọi hành động được biểu diễn thông qua Execution Commands.
 
 ---
 
 ## Centralized State Management
 
-Runtime State chỉ được quản lý bởi State Machine.
+State chỉ được thay đổi bởi State Machine.
 
 ---
 
 ## Hierarchical Context
 
-Runtime Context được tổ chức theo cấu trúc phân cấp.
+Context được tổ chức theo Runtime Hierarchy.
 
 ---
 
-## Policy Driven Execution
+## Continuous Evaluation
 
-Các hành vi kỹ thuật được điều khiển bởi Execution Policy.
+Sau mỗi Runtime Update, Runtime Hierarchy được đánh giá lại để xác định bước tiếp theo.
 
 ---
 
 ## Extensibility
 
-Execution Layer phải hỗ trợ bổ sung các loại Activity, Policy và Execution Strategy mới mà không ảnh hưởng đến kiến trúc cốt lõi.
+Execution Layer phải cho phép bổ sung Runtime Types, Execution Commands và Execution Policies mới mà không làm thay đổi kiến trúc cốt lõi.
 
 ---
 
@@ -164,16 +227,26 @@ Execution Layer phải hỗ trợ các khả năng sau.
 
 ## Runtime
 
-- Tạo Runtime Instance.
-- Quản lý Runtime Hierarchy.
+- Tạo Execution Runtime.
+- Tạo Runtime Hierarchy.
 - Quản lý Runtime Lifecycle.
+- Theo dõi Runtime Progress.
 
 ---
 
 ## Orchestration
 
-- Điều phối Runtime Execution.
-- Xác định Runtime tiếp theo cần thực thi.
+- Đánh giá Runtime Hierarchy.
+- Sinh Execution Commands.
+- Điều phối Execution thông qua Event Loop.
+
+---
+
+## Commands
+
+- Biểu diễn Runtime Actions.
+- Hỗ trợ nhiều loại Command.
+- Đảm bảo Command bất biến (Immutable).
 
 ---
 
@@ -181,19 +254,21 @@ Execution Layer phải hỗ trợ các khả năng sau.
 
 - Quản lý Runtime State.
 - Kiểm tra State Transition.
+- Đảm bảo tính nhất quán của Runtime.
 
 ---
 
 ## Context
 
-- Truyền Runtime Context.
-- Quản lý Runtime Data.
+- Khởi tạo Runtime Context.
+- Truyền Context.
+- Hợp nhất Context.
 
 ---
 
 ## Activity
 
-- Thực thi Activity.
+- Thực thi Activity Runtime.
 - Thu thập Execution Result.
 
 ---
@@ -212,7 +287,7 @@ Execution Layer phải hỗ trợ các khả năng sau.
 
 # Non-Functional Requirements
 
-Execution Layer phải đáp ứng các yêu cầu phi chức năng sau.
+Execution Layer phải đáp ứng các yêu cầu sau.
 
 ## Modularity
 
@@ -234,19 +309,25 @@ Mỗi thành phần phải có thể kiểm thử độc lập.
 
 ## Scalability
 
-Execution Engine phải hỗ trợ mở rộng trong tương lai.
+Execution Engine phải hỗ trợ mở rộng theo chiều ngang và chiều dọc.
 
 ---
 
 ## Observability
 
-Execution Layer phải hỗ trợ theo dõi Runtime Execution.
+Toàn bộ Runtime Lifecycle phải có thể theo dõi và kiểm tra.
 
 ---
 
 ## Reliability
 
-Execution phải luôn duy trì trạng thái nhất quán.
+Runtime phải luôn duy trì trạng thái nhất quán, ngay cả khi xảy ra lỗi.
+
+---
+
+## Determinism
+
+Với cùng Definition, cùng Input và cùng Execution Policy, Execution Layer phải tạo ra cùng một chuỗi quyết định và cùng một kết quả, trừ khi có yếu tố bất định được khai báo rõ (ví dụ: LLM hoặc dữ liệu thời gian thực).
 
 ---
 
@@ -256,21 +337,41 @@ Các nội dung sau không thuộc phạm vi của Execution Layer.
 
 - Business Process Design.
 - Capability Implementation.
-- Infrastructure Configuration.
-- Agent Communication.
+- Agent Collaboration.
+- Infrastructure Management.
 - Memory Management.
 - External Service Implementation.
+- User Interface.
+
+---
+
+# Success Criteria
+
+Execution Layer được xem là đáp ứng Specification khi:
+
+- Có thể thực thi một Workflow từ đầu đến cuối.
+- Runtime Hierarchy luôn nhất quán.
+- Mọi Runtime Transition đều thông qua State Machine.
+- Mọi Runtime Action đều bắt nguồn từ Execution Command.
+- Orchestrator không trực tiếp thay đổi Runtime.
+- Business Logic không nằm trong Execution Layer.
+- Các thành phần có thể được kiểm thử độc lập.
 
 ---
 
 # Related Documents
 
+## Overview
+
+- README.md
+
 ## Architecture
 
 - architecture.md
-- README.md
 
----
+## Walkthrough
+
+- walkthrough.md
 
 ## Definition Models
 
@@ -279,23 +380,18 @@ Các nội dung sau không thuộc phạm vi của Execution Layer.
 - task-model.md
 - activity-model.md
 
----
-
-## Runtime
+## Runtime Models
 
 - execution-model.md
 - context-model.md
 - state-machine.md
 
----
-
 ## Execution Engine
 
 - orchestration-model.md
+- execution-command.md
 - activity-executor.md
 - execution-policy.md
-
----
 
 ## Business
 
