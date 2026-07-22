@@ -10,13 +10,11 @@
 
 Task Model định nghĩa cấu trúc và hành vi của một Task Definition.
 
-Task Definition là đơn vị công việc nhỏ nhất trong Stage Definition.
+Task Definition đại diện cho một đơn vị công việc nghiệp vụ (Business Work Unit) trong một Stage.
 
-Task mô tả **một mục tiêu công việc** cần đạt được.
+Task xác định mục tiêu cần đạt được, dữ liệu đầu vào, dữ liệu đầu ra và các Activity cần thiết để hoàn thành công việc.
 
-Task không mô tả chi tiết cách thực hiện.
-
-Việc thực hiện được định nghĩa bởi các Activity.
+Task Definition là một phần của Stage Definition.
 
 Task Definition không đại diện cho quá trình thực thi.
 
@@ -27,10 +25,10 @@ Task Definition không đại diện cho quá trình thực thi.
 Task Model hướng đến các mục tiêu sau.
 
 - Chia nhỏ Stage thành các đơn vị công việc.
-- Định nghĩa mục tiêu của từng công việc.
-- Tách biệt mục tiêu và cách thực hiện.
+- Mỗi Task chỉ phục vụ một mục tiêu nghiệp vụ.
+- Tách biệt mục tiêu nghiệp vụ và cách thực hiện.
 - Hỗ trợ tái sử dụng Task.
-- Hỗ trợ mở rộng Execution Engine.
+- Cho phép mở rộng cách thực hiện mà không thay đổi Task.
 
 ---
 
@@ -38,11 +36,12 @@ Task Model hướng đến các mục tiêu sau.
 
 Task Definition mô tả:
 
-- Objective
-- Input
-- Output
-- Activities
+- Business Objective
+- Input Definition
+- Output Definition
+- Activity Definitions
 - Completion Criteria
+- Constraints
 
 Task Definition không lưu:
 
@@ -58,7 +57,7 @@ Task Definition không lưu:
 Task Definition
 
 ├── Metadata
-├── Objective
+├── Business Objective
 ├── Input Definition
 ├── Output Definition
 ├── Activity Definitions
@@ -72,6 +71,10 @@ Task Definition
 
 ## Metadata
 
+Thông tin mô tả Task.
+
+Ví dụ:
+
 - Task ID
 - Name
 - Description
@@ -79,27 +82,42 @@ Task Definition
 
 ---
 
-## Objective
+## Business Objective
 
-Mục tiêu của Task.
+Mục tiêu nghiệp vụ của Task.
 
 Ví dụ:
 
 - Acquire Market Data
-- Analyze Trend
-- Calculate Valuation
+- Analyze Market Trend
+- Evaluate Financial Health
+- Estimate Intrinsic Value
+
+Business Objective mô tả **điều cần đạt được**, không mô tả cách thực hiện.
 
 ---
 
 ## Input Definition
 
-Dữ liệu đầu vào.
+Định nghĩa dữ liệu đầu vào cần thiết.
+
+Ví dụ:
+
+- Stock Symbol
+- Market Data
+- Financial Statements
 
 ---
 
 ## Output Definition
 
-Dữ liệu đầu ra.
+Định nghĩa dữ liệu đầu ra.
+
+Ví dụ:
+
+- Market Analysis
+- Financial Analysis
+- Valuation Result
 
 ---
 
@@ -109,17 +127,42 @@ Task bao gồm một hoặc nhiều Activity Definition.
 
 Activity mô tả cách thực hiện Task.
 
+Ví dụ:
+
+Task
+
+Acquire Market Data
+
+Activities
+
+- Read Cache
+- Call Market Data API
+- Normalize Data
+- Validate Data
+- Save Canonical Data
+
 ---
 
 ## Completion Criteria
 
-Điều kiện hoàn thành Task.
+Điều kiện để Task được xem là hoàn thành.
+
+Ví dụ:
+
+- Required Output Produced
+- All Activities Completed
 
 ---
 
 ## Constraints
 
 Các ràng buộc của Task.
+
+Ví dụ:
+
+- Required Inputs
+- Required Permissions
+- Business Rules
 
 ---
 
@@ -138,13 +181,27 @@ Task Definition
 Activity Definition
 ```
 
+Task là cầu nối giữa Business Process và Technical Execution.
+
 ---
 
 # Task Instance
 
 Task Definition không được thực thi trực tiếp.
 
-Execution Layer tạo Task Instance từ Task Definition.
+Khi Workflow được thực thi:
+
+```
+Task Definition
+
+↓
+
+Execution Layer
+
+↓
+
+Task Instance
+```
 
 Task Instance được quản lý trong Execution Model.
 
@@ -152,51 +209,128 @@ Task Instance được quản lý trong Execution Model.
 
 # Task Relationships
 
-Task Definition thuộc về một Stage Definition.
+## Stage Model
 
-Task sử dụng Activity để hoàn thành mục tiêu.
+Task thuộc về một Stage Definition.
+
+---
+
+## Activity Model
+
+Task được thực hiện thông qua một hoặc nhiều Activity Definition.
+
+---
+
+## Execution Model
+
+Execution Layer tạo và quản lý Task Instance.
+
+---
+
+# Task Boundaries
+
+Task chịu trách nhiệm:
+
+- Xác định một mục tiêu nghiệp vụ.
+- Định nghĩa Input và Output.
+- Liệt kê các Activity cần thực hiện.
+- Xác định điều kiện hoàn thành.
+
+Task không chịu trách nhiệm:
+
+- Runtime Scheduling.
+- Runtime State.
+- Runtime Context.
+- Retry.
+- Timeout.
+- Logging.
+- Monitoring.
+
+Các trách nhiệm này thuộc Execution Layer.
 
 ---
 
 # Design Principles
 
-## Single Responsibility
+## Business Oriented
 
-Một Task chỉ có một mục tiêu.
+Task phản ánh một đơn vị công việc nghiệp vụ.
 
 ---
 
-## Goal Oriented
+## Single Responsibility
 
-Task mô tả "làm gì".
+Một Task chỉ phục vụ một mục tiêu nghiệp vụ.
 
 ---
 
 ## Activity Driven
 
-Task được thực hiện thông qua Activity.
-
----
-
-## Reusable
-
-Task có thể tái sử dụng.
+Task được thực hiện thông qua các Activity.
 
 ---
 
 ## Independent
 
-Task không phụ thuộc Runtime.
+Task không phụ thuộc vào Runtime.
+
+---
+
+## Reusable
+
+Task có thể được sử dụng trong nhiều Workflow khác nhau.
+
+---
+
+## Extensible
+
+Có thể thay đổi hoặc bổ sung Activity mà không làm thay đổi mục tiêu của Task.
 
 ---
 
 # Example
 
-Analyze Trend Task
+```
+Workflow
 
-Activities
+Analyze Stock
 
-- Read Market Data
-- Call Market Intelligence Capability
-- Merge Analysis Result
-- Publish Output
+│
+└── Stage
+
+      Market Analysis
+
+      │
+
+      ├── Task
+      │      Analyze Trend
+      │
+      │      Activities
+      │      ├── Read Market Data
+      │      ├── Call Market Intelligence Capability
+      │      └── Generate Trend Result
+      │
+      ├── Task
+      │      Analyze Liquidity
+      │
+      └── Task
+             Analyze Volume
+```
+
+Trong ví dụ trên:
+
+- Workflow mô tả quy trình phân tích cổ phiếu.
+- Stage đại diện cho giai đoạn "Market Analysis".
+- Mỗi Task giải quyết một mục tiêu nghiệp vụ cụ thể.
+- Các Activity mô tả cách thực hiện từng Task.
+
+---
+
+# Related Documents
+
+- execution-model.md
+- workflow-model.md
+- stage-model.md
+- activity-model.md
+- orchestration-model.md
+- state-machine.md
