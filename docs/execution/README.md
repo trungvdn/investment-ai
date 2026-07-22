@@ -1,8 +1,6 @@
 # Execution Layer
 
-**Status:** Draft
-
-**Version:** 2.0
+> Transform Business Process Definitions into Runtime Execution.
 
 ---
 
@@ -10,157 +8,173 @@
 
 Execution Layer chịu trách nhiệm thực thi các Business Process được định nghĩa trong Definition Layer.
 
-Execution Layer chuyển các Definition Models thành các Runtime Instance, điều phối quá trình thực thi và đảm bảo Business Process được thực hiện một cách nhất quán.
+Layer này chuyển các Definition Models thành Runtime Instances và điều phối quá trình thực thi thông qua một tập hợp các thành phần độc lập.
 
 Execution Layer không chứa Business Logic.
 
-Business Logic được định nghĩa trong Definition Models và Business Rules.
+Business Logic được định nghĩa trong Business Rules và các Definition Models.
 
 ---
 
-# Goals
+# Design Goals
 
 Execution Layer được thiết kế với các mục tiêu sau.
 
 - Thực thi Business Process.
-- Quản lý Runtime.
+- Quản lý Runtime Objects.
 - Điều phối quá trình thực thi.
 - Chuẩn hóa Runtime Lifecycle.
-- Hỗ trợ mở rộng Execution Engine.
+- Chuẩn hóa Runtime State.
 - Tách biệt Business Logic khỏi Technical Execution.
+- Hỗ trợ mở rộng Execution Engine.
 
 ---
 
-# Architecture
+# High-Level Architecture
 
-Execution Layer bao gồm bốn nhóm thành phần chính.
+Execution Layer được chia thành bốn nhóm thành phần.
 
 ```
-Execution Layer
+                    Execution Layer
 
-├── Definitions
-│
-├── Runtime
-│
-├── Execution Engine
-│
-└── Business Rules
+        +--------------------------------------+
+        |          Definition Models           |
+        |--------------------------------------|
+        | Workflow → Stage → Task → Activity   |
+        +-------------------+------------------+
+                            |
+                            v
+        +--------------------------------------+
+        |          Runtime Models              |
+        |--------------------------------------|
+        | Execution → Workflow → Stage         |
+        |            → Task → Activity         |
+        +-------------------+------------------+
+                            |
+                            v
+        +--------------------------------------+
+        |          Execution Engine            |
+        |--------------------------------------|
+        | Orchestrator                         |
+        | State Machine                        |
+        | Activity Executor                    |
+        | Execution Policy                     |
+        +-------------------+------------------+
+                            |
+                            v
+        +--------------------------------------+
+        |        Supporting Components         |
+        |--------------------------------------|
+        | Context Model                        |
+        | Business Rules                       |
+        +--------------------------------------+
 ```
-
-Mỗi nhóm chịu trách nhiệm cho một khía cạnh riêng của quá trình thực thi.
 
 ---
 
-# Definitions
+# Core Components
 
-Definitions mô tả Business Process.
+## Definition Models
 
-Definitions không được thực thi trực tiếp.
+Definition Models mô tả Business Process.
+
+Chúng đóng vai trò là blueprint và không được thực thi trực tiếp.
 
 ```
 Workflow
-
-↓
-
+    ↓
 Stage
-
-↓
-
+    ↓
 Task
-
-↓
-
+    ↓
 Activity
 ```
 
-Responsibilities
-
-- Định nghĩa Business Process.
-- Định nghĩa Business Milestones.
-- Định nghĩa Business Work.
-- Định nghĩa Technical Actions.
-
 ---
 
-# Runtime
+## Runtime Models
 
-Runtime đại diện cho một lần thực thi của Definition Models.
+Runtime Models đại diện cho một lần thực thi của Definition Models.
 
 ```
 Execution Runtime
-
-↓
-
+        ↓
 Workflow Instance
-
-↓
-
+        ↓
 Stage Instance
-
-↓
-
+        ↓
 Task Instance
-
-↓
-
+        ↓
 Activity Instance
 ```
 
-Responsibilities
-
-- Quản lý Runtime Objects.
-- Quản lý Runtime Hierarchy.
-- Liên kết State.
-- Liên kết Context.
-- Tổng hợp Runtime Results.
+Execution Runtime là Aggregate Root của toàn bộ Runtime Hierarchy.
 
 ---
 
-# Execution Engine
+## Execution Engine
 
 Execution Engine chịu trách nhiệm điều khiển quá trình thực thi Runtime.
 
+### Orchestrator
+
+Quyết định Runtime Instance nào sẽ được thực thi tiếp theo.
+
+Không quản lý State hoặc Context.
+
+---
+
+### State Machine
+
+Quản lý Runtime State và kiểm soát các State Transition hợp lệ.
+
+State Machine là thành phần duy nhất được phép thay đổi Runtime State.
+
+---
+
+### Activity Executor
+
+Thực thi Activity Instance bằng cách gọi Activity Handler phù hợp.
+
+Không chứa Business Logic.
+
+---
+
+### Execution Policy
+
+Định nghĩa các chính sách kỹ thuật của quá trình thực thi.
+
+Ví dụ:
+
+- Execution Strategy
+- Retry Strategy
+- Timeout
+- Error Handling
+- Concurrency
+
+---
+
+## Context Model
+
+Context Model quản lý dữ liệu Runtime.
+
+Context được tổ chức theo cấu trúc phân cấp.
+
 ```
-Execution Engine
-
-├── Orchestrator
-├── State Machine
-├── Activity Executor
-└── Execution Policy
+Execution Context
+        ↓
+Workflow Context
+        ↓
+Stage Context
+        ↓
+Task Context
+        ↓
+Activity Context
 ```
 
-Responsibilities
-
-## Orchestrator
-
-- Quyết định Runtime tiếp theo cần được thực thi.
-- Điều hướng luồng thực thi.
-
 ---
 
-## State Machine
-
-- Quản lý Runtime State.
-- Kiểm soát State Transition.
-
----
-
-## Activity Executor
-
-- Thực thi Activity.
-- Gọi Activity Handler.
-- Trả Execution Result.
-
----
-
-## Execution Policy
-
-- Cung cấp các chính sách thực thi.
-- Quy định cách Runtime được thực hiện.
-
----
-
-# Business Rules
+## Business Rules
 
 Business Rules định nghĩa các quy tắc nghiệp vụ.
 
@@ -172,83 +186,47 @@ Business Rules hoàn toàn độc lập với Execution Engine.
 
 ---
 
-# Context Model
-
-Context Model cung cấp dữ liệu Runtime cho toàn bộ Execution.
-
-```
-Execution Context
-
-↓
-
-Workflow Context
-
-↓
-
-Stage Context
-
-↓
-
-Task Context
-
-↓
-
-Activity Context
-```
-
-Context được truyền theo Runtime Hierarchy.
-
----
-
 # Execution Flow
 
-Quá trình thực thi tổng quát.
+Luồng thực thi tổng quát.
 
 ```
 Client Request
-
-↓
-
+        │
+        ▼
 Create Execution Runtime
-
-↓
-
+        │
+        ▼
+Load Workflow Definition
+        │
+        ▼
 Orchestrator
-
-↓
-
-Select Runtime
-
-↓
-
+        │
+        ▼
+Select Runtime Instance
+        │
+        ▼
 State Machine
-
-↓
-
-Transition State
-
-↓
-
+        │
+        ▼
+Transition Runtime State
+        │
+        ▼
 Activity Executor
-
-↓
-
+        │
+        ▼
 Activity Handler
-
-↓
-
+        │
+        ▼
 Execution Result
-
-↓
-
-Runtime Updated
-
-↓
-
+        │
+        ▼
+Update Runtime
+        │
+        ▼
 Next Runtime
-
-↓
-
+        │
+        ▼
 Execution Completed
 ```
 
@@ -258,17 +236,17 @@ Execution Completed
 
 | Component | Responsibility |
 |-----------|----------------|
-| Workflow | Business Process Definition |
-| Stage | Business Milestone Definition |
-| Task | Business Work Definition |
-| Activity | Technical Action Definition |
-| Execution Runtime | Runtime Object Management |
-| Orchestrator | Execution Flow Decision |
-| State Machine | Runtime State Management |
-| Activity Executor | Activity Execution |
-| Execution Policy | Technical Execution Strategy |
-| Context Model | Runtime Data Management |
-| Business Rules | Business Validation |
+| Workflow | Define Business Process |
+| Stage | Define Business Milestone |
+| Task | Define Business Work |
+| Activity | Define Technical Action |
+| Execution Runtime | Manage Runtime Objects |
+| Orchestrator | Decide Execution Flow |
+| State Machine | Manage Runtime State |
+| Activity Executor | Execute Activity |
+| Execution Policy | Define Execution Strategy |
+| Context Model | Manage Runtime Data |
+| Business Rules | Validate Business Constraints |
 
 ---
 
@@ -276,31 +254,31 @@ Execution Completed
 
 ## Separation of Concerns
 
-Business Logic và Technical Execution được tách biệt.
+Business Logic và Technical Execution được tách biệt hoàn toàn.
 
 ---
 
 ## Single Responsibility
 
-Mỗi thành phần chỉ có một trách nhiệm duy nhất.
+Mỗi thành phần chỉ có một trách nhiệm.
 
 ---
 
 ## Definition Driven
 
-Business Process được xác định bởi Definition Models.
+Business Process được định nghĩa bởi Definition Models.
 
 ---
 
 ## Runtime Oriented
 
-Execution Engine chỉ làm việc với Runtime Instance.
+Execution Engine chỉ làm việc với Runtime Instances.
 
 ---
 
 ## Stateless Orchestrator
 
-Orchestrator không lưu trữ Runtime Data.
+Orchestrator không lưu Runtime Data.
 
 ---
 
@@ -310,50 +288,46 @@ State chỉ được quản lý bởi State Machine.
 
 ---
 
-## Context Isolation
+## Hierarchical Context
 
-Mỗi Runtime có Context riêng.
+Runtime Context được kế thừa theo Runtime Hierarchy.
 
 ---
 
 ## Policy Driven Execution
 
-Hành vi thực thi được xác định bởi Execution Policy.
+Các hành vi kỹ thuật được điều khiển bởi Execution Policy.
 
 ---
 
-# Directory Structure
+# Documentation Structure
 
 ```
 execution/
 
-├── README.md
-├── specification.md
-│
-├── definitions/
-│   ├── workflow-model.md
-│   ├── stage-model.md
-│   ├── task-model.md
-│   └── activity-model.md
-│
-├── runtime/
-│   ├── execution-model.md
-│   ├── context-model.md
-│   └── state-machine.md
-│
-├── engine/
-│   ├── orchestration-model.md
-│   ├── activity-executor.md
-│   └── execution-policy.md
-│
-└── business-rules.md
+README.md
+
+specification.md
+
+workflow-model.md
+stage-model.md
+task-model.md
+activity-model.md
+
+execution-model.md
+context-model.md
+state-machine.md
+
+orchestration-model.md
+activity-executor.md
+execution-policy.md
+
+business-rules.md
 ```
 
 ---
 
-# Documentation Guide
-
-Khuyến nghị đọc tài liệu theo thứ tự sau.
+# Recommended Reading Order
 
 1. README.md
 2. specification.md
@@ -373,7 +347,7 @@ Khuyến nghị đọc tài liệu theo thứ tự sau.
 
 # Related Layers
 
-Execution Layer làm việc với các tầng sau.
+Execution Layer phối hợp với các tầng khác trong hệ thống.
 
 - Capability Layer
 - Agent Layer
