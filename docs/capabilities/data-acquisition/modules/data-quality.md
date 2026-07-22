@@ -1,7 +1,7 @@
 # Data Quality
 
 **Status:** Draft  
-**Version:** 2.0
+**Version:** 2.1
 
 ---
 
@@ -9,344 +9,197 @@
 
 ## Objective
 
-Data Quality chịu trách nhiệm đánh giá, quản lý và công bố chất lượng dữ liệu sau khi dữ liệu đã hoàn thành Validation và Normalization.
+Data Quality chịu trách nhiệm đánh giá chất lượng của dữ liệu đã được Validation và Normalization nhằm xác định dữ liệu có đủ điều kiện để công bố hay không.
 
-Module đảm bảo mọi Published Data đều đáp ứng các tiêu chuẩn chất lượng của hệ thống trước khi được sử dụng bởi các Business Capability.
+Module hoạt động như **Quality Assessment Engine**, thực hiện việc đo lường các khía cạnh chất lượng của dữ liệu, đánh giá dữ liệu theo các Quality Policy và tạo ra Quality Result cho các bước xử lý tiếp theo.
 
-Data Quality không sửa dữ liệu, không chuẩn hóa dữ liệu và không thực hiện phân tích nghiệp vụ.
+Module không thực hiện:
+
+- Data Validation
+- Data Normalization
+- Data Cleansing
+- Business Analysis
+- Data Publishing
 
 ---
 
-# 2. Business Questions
+# 2. Responsibilities
+
+Data Quality chịu trách nhiệm:
+
+- Assess Data Quality
+- Calculate Quality Metrics
+- Evaluate Quality Policies
+- Determine Quality Status
+- Generate Quality Result
+
+---
+
+# 3. Business Questions
 
 Module trả lời các câu hỏi sau:
 
-- Dữ liệu có đủ chất lượng để publish không?
-- Chất lượng dữ liệu hiện tại là bao nhiêu?
-- Dữ liệu vi phạm tiêu chuẩn chất lượng nào?
-- Dữ liệu có còn mới không?
-- Có thể tin cậy dữ liệu này không?
+- Dữ liệu có đạt tiêu chuẩn chất lượng không?
+- Dữ liệu có thể publish không?
+- Dữ liệu đang vi phạm tiêu chuẩn nào?
+- Chất lượng dữ liệu hiện tại như thế nào?
 
 ---
 
-# 3. Scope
+# 4. Scope
 
 ## In Scope
 
-- Data Quality Assessment
-- Quality Metrics
-- Quality Policy Evaluation
-- Quality Status Assignment
-- Quality Reporting
+- Quality Assessment
+- Quality Evaluation
+- Quality Classification
+- Quality Decision
 
 ---
 
 ## Out of Scope
 
-- Data Validation
-- Data Normalization
-- Data Cleansing
+- Validation Rules
+- Normalization Rules
+- Quality Policy Definition
+- Metric Definition
+- Report Formatting
 - Data Repair
-- Business Analysis
 
 ---
 
-# 4. Inputs
+# 5. Inputs
 
-Module nhận dữ liệu đã hoàn thành:
+Module nhận:
 
-- Validation
-- Normalization
-
-Áp dụng cho:
-
-- Market Data
-- Financial Data
-- Macro Data
-- News Data
-- Corporate Actions
+- Canonical Data
+- Validation Result
+- Quality Policies
+- Quality Metrics Definition
 
 ---
 
-# 5. Quality Dimensions
+# 6. Assessment Dimensions
 
-Data Quality đánh giá dữ liệu dựa trên các chiều chất lượng sau.
-
-## Completeness
-
-Đánh giá mức độ đầy đủ của dữ liệu.
+Assessment Engine đánh giá dữ liệu trên các chiều chất lượng được định nghĩa bởi hệ thống.
 
 Ví dụ:
 
-- Required Fields
-- Optional Fields
-- Missing Values
+- Completeness
+- Accuracy
+- Consistency
+- Freshness
+- Timeliness
+- Uniqueness
+- Traceability
+
+Chi tiết từng Dimension được định nghĩa trong:
+
+- quality-metrics.md
 
 ---
 
-## Accuracy
+# 7. Assessment Pipeline
 
-Đánh giá mức độ phản ánh đúng dữ liệu từ nguồn gốc.
-
-Ví dụ:
-
-- Source Consistency
-- Numeric Accuracy
-- Value Integrity
-
----
-
-## Consistency
-
-Đánh giá tính nhất quán của dữ liệu.
-
-Ví dụ:
-
-- Internal Consistency
-- Cross Dataset Consistency
-- Business Rule Consistency
-
----
-
-## Freshness
-
-Đánh giá độ mới của dữ liệu.
-
-Ví dụ:
-
-- Market Data Delay
-- News Delay
-- Financial Report Age
-
----
-
-## Timeliness
-
-Đánh giá dữ liệu có được xử lý đúng SLA hay không.
-
----
-
-## Uniqueness
-
-Đánh giá dữ liệu có bị trùng lặp không.
-
----
-
-## Traceability
-
-Đánh giá khả năng truy vết.
-
-Ví dụ:
-
-- Source
-- Provider
-- Version
-- Acquisition Time
-
----
-
-# 6. Quality Assessment Pipeline
-
+```text
+Canonical Data
+        │
+        ▼
+Load Quality Policies
+        │
+        ▼
+Measure Quality Metrics
+        │
+        ▼
+Evaluate Policies
+        │
+        ▼
+Determine Quality Status
+        │
+        ▼
+Generate Quality Result
 ```
-Normalized Data
-        │
-        ▼
-Measure Quality
-        │
-        ▼
-Calculate Metrics
-        │
-        ▼
-Evaluate Policy
-        │
-        ▼
-Assign Quality Status
-        │
-        ▼
-Generate Quality Report
-```
-
----
-
-# 7. Quality Policy
-
-Quality Policy định nghĩa tiêu chuẩn chất lượng tối thiểu mà Published Data phải đáp ứng.
-
-Policy được cấu hình độc lập với Business Logic.
-
-Ví dụ:
-
-- Minimum Completeness
-- Maximum Delay
-- Minimum Accuracy
-- Maximum Duplicate Rate
-- Required Traceability
-
-Mỗi loại dữ liệu có thể sử dụng Policy khác nhau.
-
-Ví dụ:
-
-- Market Data
-- Financial Data
-- Macro Data
-- News Data
 
 ---
 
 # 8. Quality Evaluation
 
-Module so sánh kết quả Assessment với Quality Policy.
+Assessment Engine sử dụng:
 
-Nếu đạt Policy
+- Quality Policies
+- Quality Metrics
 
-↓
+để đánh giá dữ liệu.
 
-Publish
+Engine không chứa bất kỳ threshold nào.
 
-Nếu không đạt
+Mọi threshold đều được định nghĩa trong:
 
-↓
-
-Reject hoặc Warning
-
----
-
-# 9. Quality Status
-
-Module phân loại dữ liệu thành:
-
-## Excellent
-
-Đáp ứng toàn bộ Quality Policy.
+quality-policies.md
 
 ---
 
-## Good
+# 9. Quality Decision
 
-Đáp ứng hầu hết Policy.
+Sau khi đánh giá, Engine đưa ra một trong các kết quả:
 
-Có thể publish.
+- Pass
+- Pass with Warning
+- Reject
 
----
+Decision chỉ phản ánh kết quả đánh giá.
 
-## Acceptable
-
-Đủ điều kiện publish nhưng cần theo dõi.
-
----
-
-## Warning
-
-Có vấn đề về chất lượng.
-
-Có thể publish nếu Policy cho phép.
+Engine không quyết định dữ liệu sẽ được publish như thế nào.
 
 ---
 
-## Rejected
+# 10. Quality Result
 
-Không đáp ứng Policy.
+Module tạo ra:
 
-Không được publish.
-
----
-
-# 10. Quality Report
-
-Module tạo báo cáo chất lượng bao gồm:
-
-- Quality Score
 - Quality Status
-- Failed Dimensions
-- Policy Violations
-- Assessment Timestamp
-- Data Source
-- Provider
+- Quality Score
+- Violated Policies
+- Assessment Metadata
+
+Quality Result được sử dụng bởi các module tiếp theo.
 
 ---
 
-# 11. Published Knowledge
+# 11. Error Handling
 
-Module publish:
+Nếu Assessment Engine gặp lỗi:
 
-- Published Data
-- Quality Report
-- Quality Metadata
+- Policy Loading Failure
+- Metric Calculation Failure
+- Unsupported Metric
+- Invalid Policy
+- Internal Processing Error
 
-Đây là đầu ra cuối cùng của Data Acquisition Capability.
-
----
-
-# 12. Consumers
-
-Published Data được sử dụng bởi:
-
-- Market Intelligence
-- Fundamental Analysis
-- Company Research
-- Valuation
-- Opportunity Discovery
-- Portfolio Management
-- Monitoring
+Module trả về Assessment Failure.
 
 ---
 
-# 13. Error Handling
-
-Nếu dữ liệu không đạt Policy:
-
-- Không publish nếu Policy yêu cầu Reject.
-- Sinh Quality Report.
-- Ghi nhận Policy Violation.
-- Chuyển dữ liệu sang trạng thái Failed hoặc Warning.
-
----
-
-# 14. Quality Metrics
-
-Theo dõi:
-
-- Overall Quality Score
-- Completeness Rate
-- Accuracy Rate
-- Consistency Rate
-- Freshness Rate
-- Timeliness Rate
-- Duplicate Rate
-- Policy Compliance Rate
-- Publish Success Rate
-
----
-
-# 15. Edge Cases
-
-Ví dụ:
-
-- Market Data hợp lệ nhưng chậm 10 phút.
-- Financial Report thiếu Notes.
-- Hai Provider có dữ liệu khác nhau.
-- News đến sau khi thị trường đóng cửa.
-- Corporate Action bị chỉnh sửa sau khi publish.
-- Dữ liệu không thể truy vết nguồn.
-
----
-
-# 16. Dependencies
+# 12. Dependencies
 
 ## Consumes
 
+- Validation Result
 - Canonical Data
+- Quality Policies
+- Quality Metrics
 
-## Publishes
+## Produces
 
-- Published Data
-- Quality Report
+- Quality Result
 
 ---
 
-# 17. Related Documents
+# 13. Related Documents
 
 - specification.md
 - information-model.md
-- knowledge-contracts.md
 - business-rules.md
+- quality-policies.md
+- quality-metrics.md
+- quality-report.md
