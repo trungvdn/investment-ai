@@ -2,21 +2,27 @@
 
 **Status:** Draft
 
-**Version:** 2.0
+**Version:** 3.0
 
 ---
 
 # Purpose
 
-Workflow Model định nghĩa cấu trúc và hành vi của một Workflow Definition.
+Workflow Model định nghĩa một Workflow Definition.
 
-Workflow Definition mô tả quy trình nghiệp vụ nhằm đạt được một mục tiêu cụ thể.
+Workflow Definition mô tả một Business Process nhằm đạt được một Business Goal.
+
+Workflow Definition xác định:
+
+- Mục tiêu nghiệp vụ.
+- Các giai đoạn nghiệp vụ (Stages).
+- Quan hệ giữa các Stage.
+- Điều kiện chuyển tiếp giữa các Stage.
+- Input và Output của quy trình.
 
 Workflow Definition là một bản thiết kế (Blueprint).
 
 Workflow Definition không đại diện cho quá trình thực thi.
-
-Khi Execution bắt đầu, Execution Layer sẽ tạo Workflow Instance từ Workflow Definition.
 
 ---
 
@@ -24,11 +30,12 @@ Khi Execution bắt đầu, Execution Layer sẽ tạo Workflow Instance từ Wo
 
 Workflow Model hướng đến các mục tiêu sau.
 
-- Chuẩn hóa quy trình nghiệp vụ.
-- Tách biệt Business Process khỏi Runtime.
-- Hỗ trợ tái sử dụng Workflow.
+- Chuẩn hóa Business Process.
+- Mô tả quy trình nghiệp vụ.
+- Tách biệt Business Process và Runtime Execution.
+- Cho phép tái sử dụng Workflow.
 - Hỗ trợ Versioning.
-- Cho phép mở rộng Workflow mà không ảnh hưởng Runtime.
+- Hỗ trợ mở rộng quy trình.
 
 ---
 
@@ -36,35 +43,36 @@ Workflow Model hướng đến các mục tiêu sau.
 
 Workflow Definition mô tả:
 
-- Mục tiêu nghiệp vụ.
-- Các Stage cần thực hiện.
-- Quan hệ giữa các Stage.
-- Điều kiện chuyển tiếp.
-- Input.
-- Output.
+- Business Goal
+- Business Scope
+- Input Definition
+- Output Definition
+- Stage Definitions
+- Transition Rules
+- Completion Criteria
 
 Workflow Definition không lưu:
 
-- Runtime State.
-- Runtime Context.
-- Runtime Result.
+- Runtime State
+- Runtime Context
+- Runtime Result
+- Runtime Scheduling
 
 ---
 
 # Workflow Structure
 
-Một Workflow Definition bao gồm:
-
 ```
 Workflow Definition
 
 ├── Metadata
+├── Business Goal
+├── Business Scope
 ├── Input Definition
 ├── Output Definition
 ├── Stage Definitions
 ├── Transition Rules
-├── Completion Rules
-└── Constraints
+└── Completion Criteria
 ```
 
 ---
@@ -79,9 +87,36 @@ Ví dụ:
 
 - Workflow ID
 - Name
-- Description
 - Version
+- Description
 - Owner
+
+---
+
+## Business Goal
+
+Mục tiêu cuối cùng mà Workflow hướng tới.
+
+Ví dụ:
+
+- Analyze Stock
+- Evaluate Portfolio
+- Discover Investment Opportunities
+- Generate Investment Recommendation
+
+Business Goal là lý do tồn tại của Workflow.
+
+---
+
+## Business Scope
+
+Phạm vi nghiệp vụ mà Workflow chịu trách nhiệm.
+
+Ví dụ:
+
+Workflow chỉ chịu trách nhiệm phân tích cổ phiếu.
+
+Workflow không chịu trách nhiệm quản lý danh mục.
 
 ---
 
@@ -92,8 +127,9 @@ Ví dụ:
 Ví dụ:
 
 - Stock Symbol
-- Portfolio
 - User Parameters
+- Portfolio
+- Watchlist
 
 ---
 
@@ -104,16 +140,18 @@ Ví dụ:
 Ví dụ:
 
 - Recommendation
-- Report
-- Analysis Result
+- Analysis Report
+- Investment Opportunity
 
 ---
 
 ## Stage Definitions
 
-Workflow bao gồm một hoặc nhiều Stage Definition.
+Workflow được chia thành nhiều Stage.
 
-Stage mô tả các bước xử lý ở mức nghiệp vụ.
+Mỗi Stage đại diện cho một Business Milestone.
+
+Workflow không quan tâm bên trong Stage có bao nhiêu Task.
 
 ---
 
@@ -125,31 +163,22 @@ Ví dụ:
 
 - Always
 - On Success
-- On Failure
-- Conditional
+- On Condition
+
+Workflow chỉ mô tả quy tắc nghiệp vụ.
+
+Execution Layer quyết định cách thực thi.
 
 ---
 
-## Completion Rules
+## Completion Criteria
 
 Điều kiện kết thúc Workflow.
 
 Ví dụ:
 
 - All Stages Completed
-- Target Achieved
-
----
-
-## Constraints
-
-Các ràng buộc của Workflow.
-
-Ví dụ:
-
-- Maximum Execution Time
-- Required Inputs
-- Required Capabilities
+- Business Goal Achieved
 
 ---
 
@@ -165,43 +194,20 @@ Stage Definition
         │
         ▼
 Task Definition
+        │
+        ▼
+Activity Definition
 ```
 
-Workflow Definition không chứa Runtime Instance.
+Workflow chỉ biết Stage.
 
----
-
-# Workflow Instance
-
-Workflow Definition không được thực thi trực tiếp.
-
-Khi Execution bắt đầu:
-
-```
-Workflow Definition
-
-↓
-
-Execution Layer
-
-↓
-
-Workflow Instance
-```
-
-Workflow Instance được quản lý bởi Execution Model.
+Các mức còn lại thuộc chi tiết triển khai của Stage.
 
 ---
 
 # Workflow Relationships
 
-Workflow Definition có quan hệ với các thành phần sau.
-
-## Execution Model
-
-Execution Layer tạo Workflow Instance từ Workflow Definition.
-
----
+Workflow Definition có quan hệ với:
 
 ## Stage Model
 
@@ -209,131 +215,62 @@ Workflow bao gồm nhiều Stage Definition.
 
 ---
 
-## Task Model
+## Execution Model
 
-Task thuộc về Stage Definition.
+Execution Layer tạo Workflow Instance từ Workflow Definition.
 
 ---
 
 ## Business Capability
 
-Task sẽ tham chiếu đến các Business Capability cần thực hiện.
+Workflow không gọi Business Capability trực tiếp.
 
----
-
-# Workflow Types
-
-Workflow Definition có thể được xây dựng theo nhiều kiểu.
-
----
-
-## Sequential Workflow
-
-```
-Stage A
-
-↓
-
-Stage B
-
-↓
-
-Stage C
-```
-
----
-
-## Parallel Workflow
-
-```
-        Workflow
-
-            │
-
-    ┌───────┼────────┐
-
-    ▼       ▼        ▼
-
-Stage A  Stage B  Stage C
-
-    └───────┼────────┘
-
-            ▼
-
-        Next Stage
-```
-
----
-
-## Conditional Workflow
-
-```
-Stage A
-
-↓
-
-Condition
-
-├── True → Stage B
-
-└── False → Stage C
-```
-
----
-
-## Hybrid Workflow
-
-Kết hợp Sequential, Parallel và Conditional.
+Business Capability được sử dụng trong Activity.
 
 ---
 
 # Workflow Boundaries
 
-Workflow Definition chịu trách nhiệm:
+Workflow chịu trách nhiệm:
 
-- Mô tả quy trình.
-- Mô tả Stage.
-- Mô tả Transition.
-- Mô tả Input và Output.
+- Mô tả Business Goal.
+- Mô tả Business Process.
+- Mô tả Business Milestones.
+- Định nghĩa Input.
+- Định nghĩa Output.
+- Định nghĩa luồng chuyển giữa các Stage.
 
-Workflow Definition không chịu trách nhiệm:
+Workflow không chịu trách nhiệm:
 
 - Runtime State.
 - Runtime Context.
-- Runtime Scheduling.
+- Scheduling.
 - Retry.
 - Timeout.
-- Monitoring.
+- Activity Execution.
+- Business Capability Invocation.
 
-Những nội dung này thuộc Execution Layer.
+Các trách nhiệm trên thuộc Execution Layer.
 
 ---
 
 # Design Principles
 
-Workflow Definition được xây dựng dựa trên các nguyên tắc sau.
-
-## Declarative
-
-Workflow mô tả "cần làm gì", không mô tả "làm như thế nào".
-
----
-
-## Business Oriented
+## Business Driven
 
 Workflow phản ánh quy trình nghiệp vụ.
 
 ---
 
-## Reusable
+## Goal Oriented
 
-Workflow có thể được sử dụng trong nhiều Execution khác nhau.
+Mỗi Workflow phục vụ một Business Goal.
 
 ---
 
-## Versionable
+## Stage Based
 
-Workflow có thể tồn tại nhiều phiên bản.
+Workflow được chia thành các Business Milestone.
 
 ---
 
@@ -343,9 +280,21 @@ Workflow không phụ thuộc Runtime.
 
 ---
 
+## Reusable
+
+Workflow có thể được sử dụng trong nhiều Execution.
+
+---
+
+## Versionable
+
+Workflow có thể tồn tại nhiều phiên bản.
+
+---
+
 ## Extensible
 
-Có thể bổ sung Stage mới mà không ảnh hưởng Execution Engine.
+Có thể bổ sung Stage mới mà không ảnh hưởng đến Execution Engine.
 
 ---
 
@@ -355,6 +304,10 @@ Có thể bổ sung Stage mới mà không ảnh hưởng Execution Engine.
 Workflow Definition
 
 Analyze Stock
+
+Business Goal
+
+Đánh giá một cổ phiếu và đưa ra khuyến nghị đầu tư.
 
 │
 ├── Stage
@@ -370,24 +323,12 @@ Analyze Stock
 │      Valuation
 │
 └── Stage
-       Recommendation
+       Investment Recommendation
 ```
 
-Khi người dùng yêu cầu phân tích cổ phiếu:
+Workflow chỉ mô tả các Business Milestone.
 
-```
-Workflow Definition
-
-↓
-
-Execution Layer
-
-↓
-
-Workflow Instance
-```
-
-Workflow Instance sẽ được Execution Layer quản lý trong suốt vòng đời thực thi.
+Execution Layer sẽ quyết định cách thực thi từng Stage.
 
 ---
 
@@ -396,5 +337,6 @@ Workflow Instance sẽ được Execution Layer quản lý trong suốt vòng đ
 - execution-model.md
 - stage-model.md
 - task-model.md
+- activity-model.md
 - orchestration-model.md
 - state-machine.md
