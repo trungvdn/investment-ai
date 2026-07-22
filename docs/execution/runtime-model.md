@@ -1,4 +1,4 @@
-# Runtime Model
+# Execution Runtime Model
 
 **Status:** Draft
 
@@ -8,57 +8,11 @@
 
 # Purpose
 
-Execution Model định nghĩa cấu trúc và vòng đời của các Runtime Models trong Execution Layer.
+Execution Runtime đại diện cho một lần thực thi của một Workflow Definition.
 
-Execution Runtime là Aggregate Root của toàn bộ Runtime, chịu trách nhiệm quản lý các Runtime Instance và duy trì tính nhất quán của quá trình thực thi.
+Mỗi Execution Runtime là một phiên thực thi (execution session) độc lập, chứa toàn bộ Runtime Objects, Runtime State và Runtime Context cần thiết để hoàn thành một Business Process.
 
-Execution Runtime không chứa Business Logic và không điều phối luồng thực thi.
-
----
-
-# Objectives
-
-Execution Model hướng đến các mục tiêu sau.
-
-- Quản lý Runtime Objects.
-- Quản lý vòng đời Runtime.
-- Tổ chức quan hệ giữa các Runtime Instance.
-- Cung cấp Runtime Container cho Execution Engine.
-- Hỗ trợ mở rộng Runtime.
-
----
-
-# Runtime Models
-
-Execution Layer bao gồm các Runtime Models sau.
-
-```
-Execution
-        │
-        ▼
-Workflow Instance
-        │
-        ▼
-Stage Instance
-        │
-        ▼
-Task Instance
-        │
-        ▼
-Activity Instance
-```
-
-Mỗi Runtime Instance đại diện cho một Definition Model tương ứng.
-
----
-
-# Execution Runtime
-
-Execution Runtime là Runtime Root của một lần thực thi.
-
-Execution Runtime được tạo khi hệ thống nhận một Execution Request.
-
-Execution Runtime kết thúc khi toàn bộ Workflow hoàn thành hoặc Execution bị hủy.
+Execution Runtime là **Aggregate Root** của toàn bộ Runtime Hierarchy.
 
 ---
 
@@ -66,187 +20,237 @@ Execution Runtime kết thúc khi toàn bộ Workflow hoàn thành hoặc Execut
 
 Execution Runtime chịu trách nhiệm:
 
-- Quản lý Workflow Instance.
 - Quản lý Runtime Hierarchy.
-- Lưu trữ Runtime Reference.
-- Liên kết Context.
-- Liên kết Runtime State.
+- Quản lý Runtime Lifecycle.
+- Liên kết Runtime với Definition.
+- Quản lý Runtime References.
 - Tổng hợp Execution Result.
+- Cung cấp Runtime Information cho Execution Engine.
 
 Execution Runtime không chịu trách nhiệm:
 
-- Business Logic.
-- Runtime Scheduling.
-- Runtime Orchestration.
-- Activity Execution.
-- State Transition.
-- Context Storage.
+- Điều phối Execution.
+- Thực thi Activity.
+- Chuyển Runtime State.
+- Đánh giá Business Rules.
+- Sinh Execution Commands.
 
 ---
 
 # Runtime Hierarchy
 
-Runtime được tổ chức theo mô hình cây.
+Execution Runtime quản lý toàn bộ Runtime Objects.
 
 ```
+Execution Runtime
+        │
+        ▼
+Workflow Runtime
+        │
+        ▼
+Stage Runtime
+        │
+        ▼
+Task Runtime
+        │
+        ▼
+Activity Runtime
+```
+
+Mỗi Runtime chỉ có một Parent.
+
+Runtime Hierarchy phản ánh trực tiếp cấu trúc của Definition Models.
+
+---
+
+# Runtime Composition
+
+Execution Runtime bao gồm các thành phần sau.
+
+```
+Execution Runtime
+
+├── Metadata
+├── Runtime Hierarchy
+├── Runtime References
+├── Execution Context
+├── Execution Result
+└── Lifecycle Information
+```
+
+Execution Runtime không chứa Business Logic.
+
+---
+
+# Metadata
+
+Metadata mô tả Execution Runtime.
+
+Ví dụ.
+
+```yaml
+id: exec-001
+
+definition: Analyze Company
+
+createdAt: ...
+
+startedAt: ...
+
+completedAt: ...
+
+status: Running
+```
+
+Metadata giúp định danh và theo dõi một Execution.
+
+---
+
+# Runtime Hierarchy
+
+Execution Runtime quản lý toàn bộ Runtime Objects.
+
+Ví dụ.
+
+```text
 Execution
 
-└── Workflow Instance
-      │
-      ├── Stage Instance
-      │      │
-      │      ├── Task Instance
-      │      │      │
-      │      │      ├── Activity Instance
-      │      │      └── Activity Instance
-      │      │
-      │      └── Task Instance
-      │
-      └── Stage Instance
+└── Workflow
+
+    ├── Stage
+
+    │     ├── Task
+
+    │     │     ├── Activity
+
+    │     │     └── Activity
+
+    │     │
+    │     └── Task
+
+    └── Stage
 ```
 
-Execution Runtime là Root của toàn bộ cây Runtime.
+Execution Runtime không quyết định Runtime nào sẽ được thực thi.
 
----
-
-# Runtime Components
-
-## Execution
-
-Runtime Root.
-
-Chứa:
-
-- Execution ID
-- Workflow Instance
-- Context Reference
-- State Reference
-- Result Reference
-
----
-
-## Workflow Instance
-
-Runtime của Workflow Definition.
-
-Chứa:
-
-- Workflow Definition Reference
-- Stage Instances
-- Context Reference
-- State Reference
-- Result Reference
-
----
-
-## Stage Instance
-
-Runtime của Stage Definition.
-
-Chứa:
-
-- Stage Definition Reference
-- Task Instances
-- Context Reference
-- State Reference
-- Result Reference
-
----
-
-## Task Instance
-
-Runtime của Task Definition.
-
-Chứa:
-
-- Task Definition Reference
-- Activity Instances
-- Context Reference
-- State Reference
-- Result Reference
-
----
-
-## Activity Instance
-
-Runtime của Activity Definition.
-
-Chứa:
-
-- Activity Definition Reference
-- Context Reference
-- State Reference
-- Result Reference
+Đó là trách nhiệm của Orchestrator.
 
 ---
 
 # Runtime References
 
-Runtime Instance không sở hữu trực tiếp:
+Execution Runtime không sao chép Definition.
 
-- State
-- Context
-- Definition
-
-Thay vào đó Runtime chỉ giữ Reference.
+Mỗi Runtime chỉ giữ Reference tới Definition tương ứng.
 
 ```
-Task Instance
+Execution Runtime
 
-├── Task Definition Ref
-├── Context Ref
-├── State Ref
-└── Result Ref
+↓
+
+Workflow Definition
 ```
 
-Việc quản lý các thành phần này thuộc các Model tương ứng.
+Tương tự.
+
+```
+Task Runtime
+
+↓
+
+Task Definition
+```
+
+Điều này cho phép nhiều Execution cùng chia sẻ một Definition.
 
 ---
 
-# Runtime Relationships
+# Context
 
-Execution Runtime làm việc với các thành phần sau.
+Execution Runtime giữ Execution Context.
 
-## Workflow Definition
+```
+Execution Context
+        │
+        ▼
+Workflow Context
+        │
+        ▼
+Stage Context
+        │
+        ▼
+Task Context
+        │
+        ▼
+Activity Context
+```
 
-Cung cấp Blueprint.
+Execution Runtime không xử lý Context Propagation.
 
----
-
-## Context Model
-
-Cung cấp Runtime Context.
-
----
-
-## State Machine
-
-Quản lý Runtime State.
-
----
-
-## Orchestrator
-
-Quyết định Runtime nào được thực thi tiếp theo.
+Đó là trách nhiệm của Context Model.
 
 ---
 
-## Activity Executor
+# Runtime State
 
-Thực hiện Activity.
+Mỗi Runtime có Runtime State riêng.
+
+Ví dụ.
+
+```
+Execution
+
+Running
+```
+
+```
+Workflow
+
+Running
+```
+
+```
+Task
+
+Completed
+```
+
+Execution Runtime lưu Runtime State nhưng không thay đổi Runtime State.
+
+Runtime State chỉ được thay đổi bởi State Machine.
+
+---
+
+# Execution Result
+
+Sau khi Runtime hoàn thành.
+
+Execution Runtime tổng hợp kết quả.
+
+Ví dụ.
+
+```yaml
+status: Success
+
+reportId: report-001
+
+duration: 18s
+```
+
+Execution Result đại diện cho kết quả cuối cùng của toàn bộ Execution.
 
 ---
 
 # Runtime Lifecycle
 
-Runtime Object có vòng đời chung.
+Execution Runtime trải qua các giai đoạn.
 
 ```
-Create
+Created
 
 ↓
 
-Initialize
+Initialized
 
 ↓
 
@@ -255,109 +259,64 @@ Running
 ↓
 
 Completed
-
-↓
-
-Archived
-
-↓
-
-Destroyed
 ```
 
-Chi tiết chuyển trạng thái được định nghĩa trong:
+Ngoài ra.
 
-- state-machine.md
+```
+Failed
+
+Cancelled
+```
+
+Lifecycle phản ánh vòng đời của toàn bộ Execution.
+
+Không phản ánh trạng thái của từng Runtime Object.
 
 ---
 
-# Runtime Ownership
+# Aggregate Root
 
-Runtime cha sở hữu Runtime con.
+Execution Runtime là Aggregate Root.
+
+Mọi Runtime Objects đều thuộc về Execution Runtime.
 
 ```
-Execution
-
-owns
-
-Workflow
-
-↓
-
-Workflow
-
-owns
-
-Stage
-
-↓
-
-Stage
-
-owns
-
-Task
-
-↓
-
-Task
-
-owns
-
-Activity
+Execution Runtime
+        │
+        ├── Workflow Runtime
+        ├── Stage Runtime
+        ├── Task Runtime
+        └── Activity Runtime
 ```
 
-Việc sở hữu chỉ áp dụng với Runtime Instance.
-
-Definition Models không có quan hệ sở hữu.
+Execution Engine luôn bắt đầu từ Execution Runtime khi đánh giá Runtime Hierarchy.
 
 ---
 
-# Runtime Result
+# Interaction
 
-Mỗi Runtime Instance tạo Result riêng.
+Execution Runtime được sử dụng bởi nhiều thành phần.
 
 ```
-Activity Result
+Execution Runtime
 
-↓
+        │
 
-Task Result
+        ├── Orchestrator
 
-↓
+        ├── State Machine
 
-Stage Result
+        ├── Activity Executor
 
-↓
+        ├── Context Model
 
-Workflow Result
-
-↓
-
-Execution Result
+        └── Business Rules
 ```
 
-Execution Runtime chịu trách nhiệm tổng hợp Execution Result.
+Execution Runtime chỉ cung cấp dữ liệu.
 
----
-
-# Runtime Boundaries
-
-Execution Runtime chịu trách nhiệm:
-
-- Quản lý Runtime Objects.
-- Quản lý Runtime Hierarchy.
-- Duy trì Runtime References.
-- Tổng hợp Runtime Results.
-
-Execution Runtime không chịu trách nhiệm:
-
-- Business Logic.
-- Runtime Scheduling.
-- Runtime Orchestration.
-- State Transition.
-- Context Storage.
-- Activity Execution.
+Không thực hiện xử lý nghiệp vụ.
 
 ---
 
@@ -365,102 +324,63 @@ Execution Runtime không chịu trách nhiệm:
 
 ## Aggregate Root
 
-Execution là Aggregate Root của Runtime.
+Execution Runtime là điểm truy cập duy nhất tới Runtime Hierarchy.
 
 ---
 
-## Reference Based
+## Definition Reference
 
-Runtime chỉ giữ Reference tới Definition, Context, State và Result.
+Runtime luôn tham chiếu Definition.
 
----
-
-## Hierarchical
-
-Runtime được tổ chức theo mô hình cây.
+Không sao chép Definition.
 
 ---
 
-## Lightweight
+## Runtime Only
 
-Runtime không chứa Business Logic.
+Execution Runtime chỉ lưu Runtime Information.
+
+Không lưu Business Logic.
+
+---
+
+## Immutable Structure
+
+Runtime Hierarchy được tạo trong giai đoạn Initialization.
+
+Cấu trúc Runtime không thay đổi trong quá trình thực thi.
+
+Chỉ Runtime State, Context và Result thay đổi.
 
 ---
 
 ## Single Responsibility
 
-Execution Runtime chỉ quản lý Runtime Objects.
+Execution Runtime chỉ quản lý Runtime Objects và dữ liệu Runtime.
 
 ---
 
-## Extensible
+# Related Components
 
-Có thể mở rộng Runtime Models mà không ảnh hưởng Definition Models.
-
----
-
-# Example
-
-```
-Execution
-
-Context Ref
-State Ref
-
-│
-
-└── Workflow Instance
-
-      Context Ref
-      State Ref
-
-      │
-
-      ├── Stage Instance
-
-      │      Context Ref
-      │      State Ref
-
-      │      │
-
-      │      ├── Task Instance
-
-      │      │      Context Ref
-      │      │      State Ref
-
-      │      │      │
-
-      │      │      ├── Activity Instance
-      │      │      └── Activity Instance
-
-      │      │
-
-      │      └── Task Instance
-
-      │
-
-      └── Stage Instance
-```
-
-Execution Runtime chỉ quản lý các Runtime Instance.
-
-Việc điều phối được thực hiện bởi Orchestrator.
-
-Việc chuyển trạng thái được thực hiện bởi State Machine.
-
-Việc thực thi Activity được thực hiện bởi Activity Executor.
+| Component | Relationship |
+|-----------|--------------|
+| Workflow Definition | Runtime Reference |
+| Orchestrator | Runtime Evaluation |
+| Execution Command | Runtime Action Target |
+| State Machine | Runtime State Management |
+| Activity Executor | Activity Execution |
+| Context Model | Context Propagation |
+| Business Rules | Runtime Validation |
 
 ---
 
-# Related Documents
+# Future Evolution
 
-- README.md
-- specification.md
-- workflow-model.md
-- stage-model.md
-- task-model.md
-- activity-model.md
-- context-model.md
-- orchestration-model.md
-- state-machine.md
-- business-rules.md
+Execution Runtime có thể được mở rộng để hỗ trợ:
+
+- Execution History
+- Execution Metrics
+- Checkpoint / Resume
+- Snapshot Persistence
+- Distributed Execution
+- Event Sourcing
