@@ -8,23 +8,11 @@
 
 # Purpose
 
-Orchestration Model định nghĩa cách Execution Layer điều phối quá trình thực thi của các Runtime Instance.
+Orchestrator chịu trách nhiệm điều phối quá trình thực thi của Execution Layer.
 
-Orchestrator chịu trách nhiệm xác định Runtime Instance nào sẽ được thực thi tiếp theo dựa trên Definition Models, Runtime State và Execution Context.
+Thay vì trực tiếp thay đổi Runtime hoặc thực thi Activity, Orchestrator liên tục đánh giá Runtime Hierarchy và sinh ra các Execution Command để điều khiển Execution Engine.
 
-Orchestrator không chứa Business Logic và không quản lý Runtime Data.
-
----
-
-# Objectives
-
-Orchestration Model hướng đến các mục tiêu sau.
-
-- Điều phối Runtime Execution.
-- Điều hướng luồng thực thi.
-- Kích hoạt Runtime Instance.
-- Điều phối Activity Execution.
-- Đảm bảo Business Process được thực thi đúng thứ tự.
+Orchestrator là trung tâm ra quyết định (Decision Engine) của Execution Layer.
 
 ---
 
@@ -32,228 +20,119 @@ Orchestration Model hướng đến các mục tiêu sau.
 
 Orchestrator chịu trách nhiệm:
 
-- Khởi động Execution.
-- Kích hoạt Workflow Instance.
-- Kích hoạt Stage Instance.
-- Kích hoạt Task Instance.
-- Kích hoạt Activity Instance.
-- Điều hướng luồng thực thi.
-- Quyết định Runtime tiếp theo cần được thực thi.
+- Đánh giá Runtime Hierarchy.
+- Xác định Runtime có thể thực thi tiếp theo.
+- Xác định hành động cần thực hiện.
+- Sinh Execution Command.
+- Lặp lại quá trình này cho đến khi Execution hoàn thành.
 
 Orchestrator không chịu trách nhiệm:
 
-- Business Logic.
-- Runtime State.
-- Runtime Context.
-- Runtime Result.
-- Activity Implementation.
-- State Transition.
-- Context Storage.
+- Thực thi Activity.
+- Thay đổi Runtime State.
+- Cập nhật Runtime Context.
+- Thực hiện Business Logic.
+- Thực thi Execution Command.
 
 ---
 
-# Orchestration Scope
-
-Orchestrator chỉ làm việc với Runtime Models.
+# Architecture
 
 ```
-Execution
-
-↓
-
-Workflow Instance
-
-↓
-
-Stage Instance
-
-↓
-
-Task Instance
-
-↓
-
-Activity Instance
+                Runtime Hierarchy
+                        │
+                        ▼
+                 Evaluate Runtime
+                        │
+                        ▼
+                 Decide Next Action
+                        │
+                        ▼
+              Generate Execution Command
+                        │
+                        ▼
+               Execution Engine Components
 ```
-
-Definition Models chỉ được sử dụng làm Blueprint.
 
 ---
 
-# Orchestration Flow
+# Runtime Evaluation
 
-Execution được điều phối theo trình tự sau.
+Trong mỗi vòng lặp, Orchestrator đánh giá toàn bộ Runtime Hierarchy.
 
-```
-Receive Request
+Thông tin được sử dụng bao gồm:
 
-↓
+- Runtime Structure
+- Runtime State
+- Runtime Context
+- Business Rules
+- Execution Policy
 
-Create Execution
-
-↓
-
-Activate Workflow
-
-↓
-
-Activate Stage
-
-↓
-
-Activate Task
-
-↓
-
-Activate Activity
-
-↓
-
-Activity Finished
-
-↓
-
-Activate Next Activity
-
-↓
-
-Task Completed
-
-↓
-
-Activate Next Task
-
-↓
-
-Stage Completed
-
-↓
-
-Activate Next Stage
-
-↓
-
-Workflow Completed
-
-↓
-
-Execution Completed
-```
-
-Orchestrator luôn điều phối từ Runtime cha xuống Runtime con.
+Mục tiêu là xác định Runtime tiếp theo có thể được xử lý.
 
 ---
 
-# Execution Strategy
+# Event Loop
 
-Phiên bản hiện tại sử dụng Sequential Execution.
+Execution được điều phối thông qua một Event Loop.
+
+```
+Execution Started
+        │
+        ▼
+Evaluate Runtime Hierarchy
+        │
+        ▼
+Executable Runtime ?
+      /       \
+    No         Yes
+    │           │
+    ▼           ▼
+Execution   Generate
+Complete    Execution Command
+                │
+                ▼
+        Execute Command
+                │
+                ▼
+        Runtime Updated
+                │
+                └──────────────┐
+                               │
+                               ▼
+                Evaluate Runtime Hierarchy
+```
+
+Execution chỉ kết thúc khi không còn Runtime nào có thể thực thi.
+
+---
+
+# Runtime Selection
+
+Orchestrator luôn chọn Runtime theo Runtime Hierarchy.
+
+```
+Execution Runtime
+        │
+        ▼
+Workflow Runtime
+        │
+        ▼
+Stage Runtime
+        │
+        ▼
+Task Runtime
+        │
+        ▼
+Activity Runtime
+```
+
+Runtime cha luôn được kích hoạt trước Runtime con.
+
+Ví dụ.
 
 ```
 Workflow
-
-↓
-
-Stage 1
-
-↓
-
-Stage 2
-
-↓
-
-Stage 3
-```
-
-Task trong Stage:
-
-```
-Task A
-
-↓
-
-Task B
-
-↓
-
-Task C
-```
-
-Activity trong Task:
-
-```
-Activity A
-
-↓
-
-Activity B
-
-↓
-
-Activity C
-```
-
-Các chiến lược khác sẽ được mở rộng trong các phiên bản tiếp theo.
-
----
-
-# Decision Sources
-
-Để điều phối Runtime, Orchestrator sử dụng ba nguồn thông tin.
-
-## Workflow Definition
-
-Xác định cấu trúc Business Process.
-
----
-
-## Runtime State
-
-Kiểm tra Runtime đã sẵn sàng để thực thi hay chưa.
-
-Runtime State được quản lý bởi State Machine.
-
----
-
-## Runtime Context
-
-Cung cấp dữ liệu cần thiết cho Runtime.
-
-Runtime Context được quản lý bởi Context Model.
-
----
-
-# Runtime Activation
-
-Orchestrator chỉ kích hoạt Runtime.
-
-Ví dụ:
-
-```
-Task Ready
-
-↓
-
-Activate Task
-
-↓
-
-Task Running
-```
-
-Việc thay đổi trạng thái được thực hiện bởi State Machine.
-
----
-
-# Runtime Completion
-
-Sau khi Runtime hoàn thành:
-
-```
-Activity
-
-↓
-
-Task
 
 ↓
 
@@ -261,210 +140,171 @@ Stage
 
 ↓
 
-Workflow
+Task
 
 ↓
 
-Execution
+Activity
 ```
 
-Orchestrator xác định Runtime tiếp theo cần được kích hoạt.
-
-Việc tổng hợp dữ liệu được thực hiện thông qua Context Model.
+Điều này đảm bảo Runtime Hierarchy luôn nhất quán.
 
 ---
 
-# Runtime Relationships
+# Execution Commands
 
-Orchestrator làm việc với các thành phần sau.
+Orchestrator không thao tác trực tiếp với Runtime.
 
-## Execution Model
+Thay vào đó, nó sinh ra Execution Command.
 
-Quản lý Runtime Instance.
+Ví dụ.
 
----
+```
+Evaluate Workflow
 
-## Workflow Model
+↓
 
-Cung cấp Workflow Definition.
+Transition Workflow → Ready
+```
 
----
+Hoặc.
 
-## Stage Model
+```
+Evaluate Activity
 
-Cung cấp Stage Definition.
+↓
 
----
+Execute Activity
+```
 
-## Task Model
-
-Cung cấp Task Definition.
-
----
-
-## Activity Model
-
-Cung cấp Activity Definition.
+Execution Command sẽ được chuyển cho thành phần phù hợp của Execution Engine để thực thi.
 
 ---
 
-## State Machine
+# Decision Flow
 
-Cung cấp Runtime State.
+Ví dụ.
+
+```
+Workflow Runtime
+
+Created
+```
+
+↓
+
+Orchestrator đánh giá Runtime.
+
+↓
+
+Sinh Command.
+
+```yaml
+type: TransitionState
+
+runtime: workflow-001
+
+from: Created
+
+to: Ready
+```
+
+↓
+
+State Machine xử lý.
+
+↓
+
+Workflow Runtime
+
+Ready
+
+↓
+
+Orchestrator tiếp tục vòng lặp.
 
 ---
 
-## Context Model
+# Decision Criteria
 
-Cung cấp Runtime Context.
+Để đưa ra quyết định, Orchestrator xem xét:
 
----
+- Runtime State.
+- Runtime Hierarchy.
+- Parent Runtime.
+- Child Runtime.
+- Business Rules.
+- Execution Policy.
 
-# Boundaries
-
-Orchestrator chịu trách nhiệm:
-
-- Điều hướng Runtime.
-- Kích hoạt Runtime.
-- Xác định Runtime tiếp theo.
-
-Orchestrator không chịu trách nhiệm:
-
-- Quản lý State.
-- Quản lý Context.
-- Thực hiện Activity.
-- Lưu trữ dữ liệu.
-- Business Logic.
+Orchestrator không quan tâm Activity sẽ được thực thi như thế nào.
 
 ---
 
 # Design Principles
 
-## Lightweight
-
-Orchestrator chỉ điều phối.
-
----
-
 ## Stateless
 
 Orchestrator không lưu Runtime Data.
 
----
-
-## Definition Driven
-
-Luồng điều phối được xác định bởi Definition Models.
+Mọi thông tin đều được lấy từ Runtime hiện tại.
 
 ---
 
-## State Aware
+## Decision Only
 
-Orchestrator sử dụng Runtime State để đưa ra quyết định.
+Orchestrator chỉ chịu trách nhiệm đưa ra quyết định.
 
----
-
-## Context Aware
-
-Orchestrator sử dụng Runtime Context để kích hoạt Runtime.
+Mọi thay đổi Runtime đều được thực hiện bởi các thành phần khác.
 
 ---
 
-## Extensible
+## Hierarchical Evaluation
 
-Có thể bổ sung các chiến lược điều phối mới mà không thay đổi Definition Models.
-
----
-
-# Example
-
-```
-Execution
-
-↓
-
-Workflow Instance
-
-↓
-
-Stage Instance
-
-↓
-
-Task Instance
-
-↓
-
-Activity Instance
-
-↓
-
-Activity Completed
-
-↓
-
-Next Activity
-
-↓
-
-Task Completed
-
-↓
-
-Next Task
-
-↓
-
-Stage Completed
-
-↓
-
-Next Stage
-
-↓
-
-Workflow Completed
-
-↓
-
-Execution Completed
-```
-
-Trong ví dụ trên:
-
-- Orchestrator chỉ quyết định Runtime nào sẽ được kích hoạt tiếp theo.
-- State Machine quản lý trạng thái của từng Runtime Instance.
-- Context Model cung cấp dữ liệu cho Runtime.
-- Activity thực hiện hành động kỹ thuật.
-- Definition Models xác định cấu trúc Business Process.
+Runtime luôn được đánh giá theo cấu trúc phân cấp.
 
 ---
 
-# Future Enhancements
+## Command Driven
 
-Các khả năng sau không thuộc phạm vi phiên bản hiện tại:
+Orchestration được thực hiện thông qua Execution Command.
 
-- Parallel Execution
-- Conditional Branching
-- Retry Strategy
-- Timeout Strategy
+---
+
+## Continuous Evaluation
+
+Orchestrator liên tục đánh giá Runtime sau mỗi thay đổi.
+
+Mỗi Runtime Update đều có thể dẫn đến một quyết định mới.
+
+---
+
+# Related Components
+
+Orchestrator phối hợp với các thành phần sau.
+
+| Component | Purpose |
+|----------|---------|
+| Execution Runtime | Cung cấp Runtime Hierarchy |
+| Context Model | Cung cấp Runtime Data |
+| Business Rules | Xác thực điều kiện nghiệp vụ |
+| Execution Policy | Xác định chiến lược thực thi |
+| Execution Command | Biểu diễn quyết định |
+| State Machine | Thực thi Transition Command |
+| Activity Executor | Thực thi Activity Command |
+
+---
+
+# Future Evolution
+
+Kiến trúc hiện tại cho phép mở rộng dễ dàng.
+
+Ví dụ:
+
+- Parallel Runtime Scheduling
+- Priority Scheduling
+- Retry Scheduling
+- Human Approval
 - Compensation
-- Distributed Orchestration
-- Event-driven Orchestration
+- Distributed Execution
 
-Những khả năng này có thể được bổ sung mà không thay đổi Definition Models.
-
----
-
-# Related Documents
-
-- README.md
-- specification.md
-- execution-model.md
-- workflow-model.md
-- stage-model.md
-- task-model.md
-- activity-model.md
-- context-model.md
-- state-machine.md
-- business-rules.md
+Những khả năng này có thể được bổ sung bằng cách mở rộng quá trình sinh Execution Command mà không cần thay đổi vai trò của Orchestrator.
