@@ -9,11 +9,11 @@
 
 ## Objective
 
-Data Quality chịu trách nhiệm đánh giá và quản lý chất lượng của dữ liệu sau khi đã được Validation và Normalization.
+Data Quality chịu trách nhiệm đánh giá, quản lý và công bố chất lượng dữ liệu sau khi dữ liệu đã hoàn thành Validation và Normalization.
 
-Module đảm bảo chỉ những dữ liệu đáp ứng tiêu chuẩn chất lượng của hệ thống mới được công bố cho các Business Capability.
+Module đảm bảo mọi Published Data đều đáp ứng các tiêu chuẩn chất lượng của hệ thống trước khi được sử dụng bởi các Business Capability.
 
-Module không thực hiện chỉnh sửa dữ liệu hoặc phân tích nghiệp vụ.
+Data Quality không sửa dữ liệu, không chuẩn hóa dữ liệu và không thực hiện phân tích nghiệp vụ.
 
 ---
 
@@ -21,11 +21,11 @@ Module không thực hiện chỉnh sửa dữ liệu hoặc phân tích nghiệ
 
 Module trả lời các câu hỏi sau:
 
-- Dữ liệu có đủ chất lượng để sử dụng không?
+- Dữ liệu có đủ chất lượng để publish không?
 - Chất lượng dữ liệu hiện tại là bao nhiêu?
+- Dữ liệu vi phạm tiêu chuẩn chất lượng nào?
 - Dữ liệu có còn mới không?
-- Có vấn đề gì ảnh hưởng đến độ tin cậy của dữ liệu không?
-- Dữ liệu có thể publish không?
+- Có thể tin cậy dữ liệu này không?
 
 ---
 
@@ -33,39 +33,32 @@ Module trả lời các câu hỏi sau:
 
 ## In Scope
 
-Đánh giá:
-
-- Completeness
-- Accuracy
-- Consistency
-- Freshness
-- Timeliness
-- Uniqueness
-- Traceability
-
-Quản lý:
-
-- Quality Score
-- Quality Status
-- Quality Metadata
+- Data Quality Assessment
+- Quality Metrics
+- Quality Policy Evaluation
+- Quality Status Assignment
+- Quality Reporting
 
 ---
 
 ## Out of Scope
 
-Không bao gồm:
-
 - Data Validation
 - Data Normalization
 - Data Cleansing
+- Data Repair
 - Business Analysis
-- Provider Selection
 
 ---
 
-# 4. Quality Inputs
+# 4. Inputs
 
-Module áp dụng cho:
+Module nhận dữ liệu đã hoàn thành:
+
+- Validation
+- Normalization
+
+Áp dụng cho:
 
 - Market Data
 - Financial Data
@@ -73,15 +66,17 @@ Module áp dụng cho:
 - News Data
 - Corporate Actions
 
-Chỉ dữ liệu đã hoàn thành Validation và Normalization mới được đánh giá.
-
 ---
 
 # 5. Quality Dimensions
 
+Data Quality đánh giá dữ liệu dựa trên các chiều chất lượng sau.
+
 ## Completeness
 
-Đánh giá:
+Đánh giá mức độ đầy đủ của dữ liệu.
+
+Ví dụ:
 
 - Required Fields
 - Optional Fields
@@ -91,52 +86,62 @@ Chỉ dữ liệu đã hoàn thành Validation và Normalization mới được 
 
 ## Accuracy
 
-Đánh giá:
+Đánh giá mức độ phản ánh đúng dữ liệu từ nguồn gốc.
 
-- Giá trị có phản ánh đúng dữ liệu từ nguồn gốc.
-- Không bị thay đổi ngoài ý muốn trong quá trình xử lý.
+Ví dụ:
+
+- Source Consistency
+- Numeric Accuracy
+- Value Integrity
 
 ---
 
 ## Consistency
 
-Đánh giá:
+Đánh giá tính nhất quán của dữ liệu.
 
-- Cùng một thực thể có dữ liệu nhất quán giữa các bản ghi.
-- Không có mâu thuẫn nội bộ trong cùng một Data Object.
+Ví dụ:
+
+- Internal Consistency
+- Cross Dataset Consistency
+- Business Rule Consistency
 
 ---
 
 ## Freshness
 
-Đánh giá:
+Đánh giá độ mới của dữ liệu.
 
-- Dữ liệu có còn mới không.
-- Thời gian từ lúc dữ liệu được công bố đến lúc hệ thống tiếp nhận.
+Ví dụ:
+
+- Market Data Delay
+- News Delay
+- Financial Report Age
 
 ---
 
 ## Timeliness
 
-Đánh giá:
-
-- Dữ liệu có được xử lý và publish đúng thời gian yêu cầu không.
+Đánh giá dữ liệu có được xử lý đúng SLA hay không.
 
 ---
 
 ## Uniqueness
 
-Đánh giá:
-
-- Không có bản ghi trùng lặp sau khi publish.
+Đánh giá dữ liệu có bị trùng lặp không.
 
 ---
 
 ## Traceability
 
-Đánh giá:
+Đánh giá khả năng truy vết.
 
-- Có thể truy vết dữ liệu về Provider và thời điểm thu thập.
+Ví dụ:
+
+- Source
+- Provider
+- Version
+- Acquisition Time
 
 ---
 
@@ -149,43 +154,76 @@ Normalized Data
 Measure Quality
         │
         ▼
-Calculate Quality Metrics
+Calculate Metrics
         │
         ▼
-Determine Quality Status
+Evaluate Policy
         │
         ▼
-Publish Quality Report
+Assign Quality Status
+        │
+        ▼
+Generate Quality Report
 ```
 
 ---
 
-# 7. Quality Result
+# 7. Quality Policy
 
-Module tạo ra:
+Quality Policy định nghĩa tiêu chuẩn chất lượng tối thiểu mà Published Data phải đáp ứng.
 
-- Quality Score
-- Quality Status
-- Quality Report
-- Quality Metadata
+Policy được cấu hình độc lập với Business Logic.
+
+Ví dụ:
+
+- Minimum Completeness
+- Maximum Delay
+- Minimum Accuracy
+- Maximum Duplicate Rate
+- Required Traceability
+
+Mỗi loại dữ liệu có thể sử dụng Policy khác nhau.
+
+Ví dụ:
+
+- Market Data
+- Financial Data
+- Macro Data
+- News Data
 
 ---
 
-# 8. Quality Status
+# 8. Quality Evaluation
 
-Dữ liệu được phân loại thành:
+Module so sánh kết quả Assessment với Quality Policy.
+
+Nếu đạt Policy
+
+↓
+
+Publish
+
+Nếu không đạt
+
+↓
+
+Reject hoặc Warning
+
+---
+
+# 9. Quality Status
+
+Module phân loại dữ liệu thành:
 
 ## Excellent
 
-Đạt chất lượng rất cao.
-
-Có thể sử dụng cho mọi Business Capability.
+Đáp ứng toàn bộ Quality Policy.
 
 ---
 
 ## Good
 
-Đạt chất lượng tốt.
+Đáp ứng hầu hết Policy.
 
 Có thể publish.
 
@@ -197,19 +235,37 @@ Có thể publish.
 
 ---
 
-## Poor
+## Warning
 
-Không nên sử dụng cho các Business Capability.
+Có vấn đề về chất lượng.
+
+Có thể publish nếu Policy cho phép.
 
 ---
 
 ## Rejected
 
+Không đáp ứng Policy.
+
 Không được publish.
 
 ---
 
-# 9. Published Knowledge
+# 10. Quality Report
+
+Module tạo báo cáo chất lượng bao gồm:
+
+- Quality Score
+- Quality Status
+- Failed Dimensions
+- Policy Violations
+- Assessment Timestamp
+- Data Source
+- Provider
+
+---
+
+# 11. Published Knowledge
 
 Module publish:
 
@@ -221,7 +277,7 @@ Module publish:
 
 ---
 
-# 10. Consumers
+# 12. Consumers
 
 Published Data được sử dụng bởi:
 
@@ -235,18 +291,18 @@ Published Data được sử dụng bởi:
 
 ---
 
-# 11. Error Handling
+# 13. Error Handling
 
-Nếu phát hiện dữ liệu không đạt chất lượng:
+Nếu dữ liệu không đạt Policy:
 
-- Gắn Quality Status phù hợp.
-- Không publish nếu dưới ngưỡng quy định.
-- Ghi nhận nguyên nhân.
-- Chuyển sang quy trình xử lý lỗi nếu cần.
+- Không publish nếu Policy yêu cầu Reject.
+- Sinh Quality Report.
+- Ghi nhận Policy Violation.
+- Chuyển dữ liệu sang trạng thái Failed hoặc Warning.
 
 ---
 
-# 12. Quality Metrics
+# 14. Quality Metrics
 
 Theo dõi:
 
@@ -257,23 +313,25 @@ Theo dõi:
 - Freshness Rate
 - Timeliness Rate
 - Duplicate Rate
+- Policy Compliance Rate
 - Publish Success Rate
 
 ---
 
-# 13. Edge Cases
+# 15. Edge Cases
 
 Ví dụ:
 
-- Dữ liệu hợp lệ nhưng đến quá muộn.
-- Thiếu một số trường không bắt buộc.
-- Hai Provider cung cấp giá trị khác nhau.
-- Dữ liệu đã cũ nhưng chưa có bản cập nhật.
-- Một phần dữ liệu không thể truy vết nguồn.
+- Market Data hợp lệ nhưng chậm 10 phút.
+- Financial Report thiếu Notes.
+- Hai Provider có dữ liệu khác nhau.
+- News đến sau khi thị trường đóng cửa.
+- Corporate Action bị chỉnh sửa sau khi publish.
+- Dữ liệu không thể truy vết nguồn.
 
 ---
 
-# 14. Dependencies
+# 16. Dependencies
 
 ## Consumes
 
@@ -286,7 +344,7 @@ Ví dụ:
 
 ---
 
-# 15. Related Documents
+# 17. Related Documents
 
 - specification.md
 - information-model.md
