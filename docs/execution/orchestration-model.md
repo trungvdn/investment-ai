@@ -2,17 +2,17 @@
 
 **Status:** Draft
 
-**Version:** 1.0
+**Version:** 2.0
 
 ---
 
 # Purpose
 
-Orchestration Model định nghĩa cách Execution Layer điều phối quá trình thực thi các Runtime Instance.
+Orchestration Model định nghĩa cách Execution Layer điều phối quá trình thực thi của các Runtime Instance.
 
-Orchestrator chịu trách nhiệm quản lý luồng thực thi từ Execution đến Activity, đảm bảo các Runtime Instance được khởi tạo, thực thi và hoàn thành theo đúng thứ tự được định nghĩa trong Business Process.
+Orchestrator chịu trách nhiệm xác định Runtime Instance nào sẽ được thực thi tiếp theo dựa trên Definition Models, Runtime State và Execution Context.
 
-Orchestrator không chứa Business Logic.
+Orchestrator không chứa Business Logic và không quản lý Runtime Data.
 
 ---
 
@@ -21,10 +21,10 @@ Orchestrator không chứa Business Logic.
 Orchestration Model hướng đến các mục tiêu sau.
 
 - Điều phối Runtime Execution.
-- Quản lý vòng đời Runtime Instance.
-- Thực thi Business Process theo đúng Definition.
-- Quản lý thứ tự thực thi.
-- Thu thập kết quả thực thi.
+- Điều hướng luồng thực thi.
+- Kích hoạt Runtime Instance.
+- Điều phối Activity Execution.
+- Đảm bảo Business Process được thực thi đúng thứ tự.
 
 ---
 
@@ -32,169 +32,29 @@ Orchestration Model hướng đến các mục tiêu sau.
 
 Orchestrator chịu trách nhiệm:
 
-- Khởi tạo Runtime Instance.
-- Điều phối Workflow.
-- Điều phối Stage.
-- Điều phối Task.
-- Điều phối Activity.
-- Thu thập kết quả.
-- Kết thúc Runtime.
+- Khởi động Execution.
+- Kích hoạt Workflow Instance.
+- Kích hoạt Stage Instance.
+- Kích hoạt Task Instance.
+- Kích hoạt Activity Instance.
+- Điều hướng luồng thực thi.
+- Quyết định Runtime tiếp theo cần được thực thi.
 
 Orchestrator không chịu trách nhiệm:
 
 - Business Logic.
-- Business Rules.
+- Runtime State.
+- Runtime Context.
+- Runtime Result.
 - Activity Implementation.
-- State Management.
-- Context Management.
+- State Transition.
+- Context Storage.
 
 ---
 
-# Orchestration Hierarchy
+# Orchestration Scope
 
-Orchestrator điều phối theo cấu trúc sau.
-
-```
-Execution
-
-↓
-
-Workflow
-
-↓
-
-Stage
-
-↓
-
-Task
-
-↓
-
-Activity
-```
-
-Runtime cha chịu trách nhiệm điều phối Runtime con.
-
----
-
-# Orchestration Flow
-
-Quá trình điều phối diễn ra theo các bước sau.
-
-```
-Receive Execution Request
-
-↓
-
-Create Execution Instance
-
-↓
-
-Create Workflow Instance
-
-↓
-
-Execute Workflow
-
-↓
-
-Create Stage Instance
-
-↓
-
-Execute Stage
-
-↓
-
-Create Task Instance
-
-↓
-
-Execute Task
-
-↓
-
-Create Activity Instance
-
-↓
-
-Execute Activity
-
-↓
-
-Collect Result
-
-↓
-
-Complete Task
-
-↓
-
-Complete Stage
-
-↓
-
-Complete Workflow
-
-↓
-
-Complete Execution
-```
-
----
-
-# Execution Strategy
-
-Phiên bản hiện tại sử dụng chiến lược thực thi tuần tự (Sequential Execution).
-
-```
-Stage 1
-
-↓
-
-Stage 2
-
-↓
-
-Stage 3
-```
-
-Trong mỗi Stage:
-
-```
-Task A
-
-↓
-
-Task B
-
-↓
-
-Task C
-```
-
-Trong mỗi Task:
-
-```
-Activity A
-
-↓
-
-Activity B
-
-↓
-
-Activity C
-```
-
-Các chiến lược song song sẽ được bổ sung trong các phiên bản sau.
-
----
-
-# Runtime Creation
-
-Execution Layer tạo Runtime Instance theo thứ tự:
+Orchestrator chỉ làm việc với Runtime Models.
 
 ```
 Execution
@@ -216,16 +76,180 @@ Task Instance
 Activity Instance
 ```
 
-Runtime cha chịu trách nhiệm tạo Runtime con.
+Definition Models chỉ được sử dụng làm Blueprint.
 
 ---
 
-# Result Propagation
+# Orchestration Flow
 
-Sau khi Activity hoàn thành:
+Execution được điều phối theo trình tự sau.
 
 ```
-Activity Result
+Receive Request
+
+↓
+
+Create Execution
+
+↓
+
+Activate Workflow
+
+↓
+
+Activate Stage
+
+↓
+
+Activate Task
+
+↓
+
+Activate Activity
+
+↓
+
+Activity Finished
+
+↓
+
+Activate Next Activity
+
+↓
+
+Task Completed
+
+↓
+
+Activate Next Task
+
+↓
+
+Stage Completed
+
+↓
+
+Activate Next Stage
+
+↓
+
+Workflow Completed
+
+↓
+
+Execution Completed
+```
+
+Orchestrator luôn điều phối từ Runtime cha xuống Runtime con.
+
+---
+
+# Execution Strategy
+
+Phiên bản hiện tại sử dụng Sequential Execution.
+
+```
+Workflow
+
+↓
+
+Stage 1
+
+↓
+
+Stage 2
+
+↓
+
+Stage 3
+```
+
+Task trong Stage:
+
+```
+Task A
+
+↓
+
+Task B
+
+↓
+
+Task C
+```
+
+Activity trong Task:
+
+```
+Activity A
+
+↓
+
+Activity B
+
+↓
+
+Activity C
+```
+
+Các chiến lược khác sẽ được mở rộng trong các phiên bản tiếp theo.
+
+---
+
+# Decision Sources
+
+Để điều phối Runtime, Orchestrator sử dụng ba nguồn thông tin.
+
+## Workflow Definition
+
+Xác định cấu trúc Business Process.
+
+---
+
+## Runtime State
+
+Kiểm tra Runtime đã sẵn sàng để thực thi hay chưa.
+
+Runtime State được quản lý bởi State Machine.
+
+---
+
+## Runtime Context
+
+Cung cấp dữ liệu cần thiết cho Runtime.
+
+Runtime Context được quản lý bởi Context Model.
+
+---
+
+# Runtime Activation
+
+Orchestrator chỉ kích hoạt Runtime.
+
+Ví dụ:
+
+```
+Task Ready
+
+↓
+
+Activate Task
+
+↓
+
+Task Running
+```
+
+Việc thay đổi trạng thái được thực hiện bởi State Machine.
+
+---
+
+# Runtime Completion
+
+Sau khi Runtime hoàn thành:
+
+```
+Activity
 
 ↓
 
@@ -244,27 +268,15 @@ Workflow
 Execution
 ```
 
-Mỗi Runtime chịu trách nhiệm tổng hợp kết quả từ Runtime con.
+Orchestrator xác định Runtime tiếp theo cần được kích hoạt.
+
+Việc tổng hợp dữ liệu được thực hiện thông qua Context Model.
 
 ---
 
-# Failure Handling
+# Runtime Relationships
 
-Nếu một Runtime thất bại:
-
-- Runtime hiện tại kết thúc.
-- Runtime cha nhận thông tin lỗi.
-- Việc xử lý tiếp theo được quyết định theo Business Rules.
-
-Chi tiết được mô tả trong:
-
-- business-rules.md
-
----
-
-# Integration
-
-Orchestrator làm việc cùng:
+Orchestrator làm việc với các thành phần sau.
 
 ## Execution Model
 
@@ -272,21 +284,39 @@ Quản lý Runtime Instance.
 
 ---
 
-## Context Model
+## Workflow Model
 
-Cung cấp dữ liệu Runtime.
+Cung cấp Workflow Definition.
 
 ---
 
-## State Machine
+## Stage Model
 
-Theo dõi trạng thái Runtime.
+Cung cấp Stage Definition.
+
+---
+
+## Task Model
+
+Cung cấp Task Definition.
 
 ---
 
 ## Activity Model
 
-Thực thi các Activity.
+Cung cấp Activity Definition.
+
+---
+
+## State Machine
+
+Cung cấp Runtime State.
+
+---
+
+## Context Model
+
+Cung cấp Runtime Context.
 
 ---
 
@@ -294,17 +324,17 @@ Thực thi các Activity.
 
 Orchestrator chịu trách nhiệm:
 
-- Điều phối Runtime.
-- Khởi tạo Runtime Instance.
-- Gọi Runtime con.
-- Thu thập kết quả.
+- Điều hướng Runtime.
+- Kích hoạt Runtime.
+- Xác định Runtime tiếp theo.
 
 Orchestrator không chịu trách nhiệm:
 
+- Quản lý State.
+- Quản lý Context.
+- Thực hiện Activity.
+- Lưu trữ dữ liệu.
 - Business Logic.
-- Capability Implementation.
-- Context Storage.
-- State Transition Rules.
 
 ---
 
@@ -316,27 +346,33 @@ Orchestrator chỉ điều phối.
 
 ---
 
+## Stateless
+
+Orchestrator không lưu Runtime Data.
+
+---
+
 ## Definition Driven
 
-Luồng thực thi được quyết định bởi Definition Models.
+Luồng điều phối được xác định bởi Definition Models.
 
 ---
 
-## Runtime Oriented
+## State Aware
 
-Orchestrator chỉ làm việc với Runtime Instance.
+Orchestrator sử dụng Runtime State để đưa ra quyết định.
 
 ---
 
-## Hierarchical
+## Context Aware
 
-Runtime cha điều phối Runtime con.
+Orchestrator sử dụng Runtime Context để kích hoạt Runtime.
 
 ---
 
 ## Extensible
 
-Có thể bổ sung các chiến lược thực thi mới mà không thay đổi Definition Models.
+Có thể bổ sung các chiến lược điều phối mới mà không thay đổi Definition Models.
 
 ---
 
@@ -345,63 +381,85 @@ Có thể bổ sung các chiến lược thực thi mới mà không thay đổi
 ```
 Execution
 
-│
+↓
 
-└── Workflow
+Workflow Instance
 
-      │
+↓
 
-      ├── Stage
+Stage Instance
 
-      │      │
+↓
 
-      │      ├── Task
+Task Instance
 
-      │      │      │
+↓
 
-      │      │      ├── Activity
+Activity Instance
 
-      │      │      ├── Activity
+↓
 
-      │      │      └── Activity
+Activity Completed
 
-      │      │
+↓
 
-      │      └── Task
+Next Activity
 
-      │
+↓
 
-      └── Stage
+Task Completed
+
+↓
+
+Next Task
+
+↓
+
+Stage Completed
+
+↓
+
+Next Stage
+
+↓
+
+Workflow Completed
+
+↓
+
+Execution Completed
 ```
 
 Trong ví dụ trên:
 
-- Execution khởi tạo Workflow.
-- Workflow điều phối các Stage.
-- Stage điều phối các Task.
-- Task điều phối các Activity.
-- Activity thực hiện hành động kỹ thuật và trả kết quả ngược lên Runtime cha.
+- Orchestrator chỉ quyết định Runtime nào sẽ được kích hoạt tiếp theo.
+- State Machine quản lý trạng thái của từng Runtime Instance.
+- Context Model cung cấp dữ liệu cho Runtime.
+- Activity thực hiện hành động kỹ thuật.
+- Definition Models xác định cấu trúc Business Process.
 
 ---
 
 # Future Enhancements
 
-Các tính năng sau không thuộc phạm vi phiên bản hiện tại:
+Các khả năng sau không thuộc phạm vi phiên bản hiện tại:
 
 - Parallel Execution
 - Conditional Branching
-- Retry Policy
-- Timeout Policy
+- Retry Strategy
+- Timeout Strategy
 - Compensation
-- Distributed Execution
+- Distributed Orchestration
 - Event-driven Orchestration
 
-Các khả năng này có thể được bổ sung mà không làm thay đổi Definition Models.
+Những khả năng này có thể được bổ sung mà không thay đổi Definition Models.
 
 ---
 
 # Related Documents
 
+- README.md
+- specification.md
 - execution-model.md
 - workflow-model.md
 - stage-model.md
