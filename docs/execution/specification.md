@@ -2,376 +2,427 @@
 
 **Status:** Draft
 
-**Version:** 1.0
+**Version:** 3.0
 
 ---
 
 # Purpose
 
-Execution Layer chịu trách nhiệm quản lý và điều phối quá trình thực thi các Business Capability nhằm hoàn thành một yêu cầu nghiệp vụ.
+Execution Layer chịu trách nhiệm thực thi các Business Process đã được định nghĩa trong hệ thống.
 
-Execution Layer đảm bảo rằng các Capability được thực thi đúng trình tự, đúng điều kiện và trong đúng ngữ cảnh (Context), đồng thời tổng hợp kết quả để tạo ra phản hồi cuối cùng.
+Execution Layer chuyển đổi các Definition Model thành Runtime Instance và điều phối toàn bộ quá trình thực thi từ khi bắt đầu đến khi hoàn thành.
 
-Execution Layer không chứa Business Logic.
+Execution Layer không định nghĩa quy trình nghiệp vụ.
+
+Execution Layer chỉ chịu trách nhiệm thực thi quy trình đó.
 
 ---
 
 # Scope
 
-Execution Layer chịu trách nhiệm cho toàn bộ vòng đời thực thi của một yêu cầu, bao gồm:
+Execution Layer bao gồm:
 
-- Nhận yêu cầu từ Presentation Layer.
-- Khởi tạo Execution.
-- Xây dựng Workflow phù hợp.
-- Điều phối Stage và Task.
-- Thực thi Business Capability.
-- Quản lý Execution Context.
-- Theo dõi Execution State.
-- Tổng hợp kết quả.
-- Trả về Final Response.
+- Execution Management
+- Workflow Execution
+- Stage Execution
+- Task Execution
+- Activity Execution
+- State Management
+- Context Management
+- Orchestration
+- Result Collection
+- Error Handling
+- Monitoring
 
-Execution Layer không chịu trách nhiệm xử lý nghiệp vụ cụ thể của từng Capability.
+Execution Layer không chịu trách nhiệm:
+
+- Business Logic
+- Business Rules
+- Business Process Design
+- Business Capability Implementation
 
 ---
 
 # Objectives
 
-Execution Layer hướng đến các mục tiêu sau:
+Execution Layer hướng đến các mục tiêu sau.
 
-- Chuẩn hóa quy trình thực thi.
-- Điều phối nhiều Business Capability.
-- Hỗ trợ Workflow phức tạp.
-- Quản lý Context xuyên suốt Execution.
-- Theo dõi trạng thái thực thi.
-- Tăng khả năng tái sử dụng Workflow.
-- Giảm sự phụ thuộc giữa các Capability.
-- Hỗ trợ mở rộng hệ thống.
-
----
-
-# Inputs
-
-Execution Layer nhận các đầu vào sau.
-
-## User Request
-
-Yêu cầu từ người dùng hoặc hệ thống.
-
-Ví dụ:
-
-- Analyze Stock
-- Evaluate Portfolio
-- Screen Opportunities
+- Thực thi Business Process.
+- Điều phối Runtime Instance.
+- Quản lý Execution State.
+- Quản lý Execution Context.
+- Điều phối Activity.
+- Thu thập kết quả thực thi.
+- Đảm bảo khả năng mở rộng.
+- Hỗ trợ Versioning.
+- Hỗ trợ Observability.
 
 ---
 
-## Execution Context
+# Architecture
 
-Thông tin phục vụ việc thực thi.
+Execution Layer được chia thành hai nhóm mô hình.
 
-Ví dụ:
+## Definition Models
 
-- User Information
-- Request Parameters
-- Environment
-- Runtime Metadata
+Definition Models mô tả quy trình nghiệp vụ.
 
----
+```
+Workflow Definition
 
-## Workflow Definition
+↓
 
-Định nghĩa Workflow cần thực hiện.
+Stage Definition
 
-Workflow bao gồm:
+↓
 
-- Stages
-- Tasks
-- Execution Rules
+Task Definition
 
----
+↓
 
-## Business Capabilities
+Activity Definition
+```
 
-Các Capability được Execution Layer điều phối.
+Definition Models là Blueprint.
 
-Ví dụ:
-
-- Data Acquisition
-- Market Intelligence
-- Fundamental Analysis
-- Company Research
-- Valuation
+Chúng không được thực thi trực tiếp.
 
 ---
 
-# Outputs
+## Runtime Models
 
-Execution Layer tạo ra các đầu ra sau.
+Runtime Models đại diện cho quá trình thực thi.
 
-## Final Response
+```
+Execution
 
-Kết quả cuối cùng trả về Presentation Layer.
+↓
 
----
+Workflow Instance
 
-## Execution Result
+↓
 
-Thông tin về toàn bộ quá trình thực thi.
+Stage Instance
 
----
+↓
 
-## Execution Metadata
+Task Instance
 
-Thông tin phục vụ theo dõi và truy vết.
+↓
 
-Ví dụ:
+Activity Instance
+```
 
-- Execution ID
-- Workflow ID
-- Duration
-- Status
-
----
-
-## Execution Logs
-
-Thông tin phục vụ Monitoring và Debugging.
+Execution Layer chịu trách nhiệm tạo và quản lý toàn bộ Runtime Models.
 
 ---
 
-# Core Responsibilities
+# Responsibilities
 
 Execution Layer chịu trách nhiệm:
 
-## Execution Management
+## Instantiate Definitions
 
-Quản lý vòng đời của Execution.
-
----
-
-## Workflow Management
-
-Khởi tạo và thực thi Workflow.
+Tạo Runtime Instance từ Definition Models.
 
 ---
 
-## Stage Coordination
+## Orchestrate Execution
 
-Điều phối các Stage.
-
----
-
-## Task Coordination
-
-Điều phối các Task.
+Điều phối quá trình thực thi.
 
 ---
 
-## Capability Invocation
+## Manage Context
 
-Gọi và quản lý việc thực thi Business Capability.
-
----
-
-## Context Management
-
-Quản lý Context trong suốt Execution.
+Quản lý Context xuyên suốt toàn bộ Execution.
 
 ---
 
-## State Management
+## Manage State
+
+Quản lý trạng thái của Runtime Instance.
+
+---
+
+## Execute Activities
+
+Thực thi các Activity.
+
+---
+
+## Collect Results
+
+Thu thập kết quả từ các Activity.
+
+---
+
+## Handle Errors
+
+Xử lý lỗi trong Runtime.
+
+---
+
+## Monitor Execution
 
 Theo dõi trạng thái thực thi.
 
 ---
 
-## Result Aggregation
+# Execution Flow
 
-Tổng hợp kết quả từ nhiều Capability.
-
----
-
-## Error Management
-
-Xử lý lỗi trong quá trình thực thi.
-
----
-
-## Monitoring Support
-
-Cung cấp thông tin phục vụ Logging và Monitoring.
-
----
-
-# Functional Capabilities
-
-Execution Layer phải hỗ trợ các chức năng sau.
-
-## Workflow Execution
-
-Thực thi Workflow.
-
----
-
-## Sequential Execution
-
-Thực thi tuần tự.
-
----
-
-## Parallel Execution
-
-Thực thi song song.
-
----
-
-## Conditional Execution
-
-Thực thi theo điều kiện.
-
----
-
-## Retry Execution
-
-Thực hiện lại Task hoặc Stage khi cần.
-
----
-
-## Timeout Handling
-
-Quản lý thời gian thực thi.
-
----
-
-## Cancellation
-
-Hủy Execution khi được yêu cầu.
-
----
-
-## Result Aggregation
-
-Tổng hợp kết quả từ nhiều Task hoặc Capability.
-
----
-
-# Execution Lifecycle
-
-Execution Layer quản lý vòng đời sau.
+Execution Layer thực hiện theo trình tự sau.
 
 ```
 Receive Request
-        │
-        ▼
+
+↓
+
 Create Execution
-        │
-        ▼
-Build Workflow
-        │
-        ▼
-Execute Workflow
-        │
-        ▼
-Execute Stage
-        │
-        ▼
-Execute Task
-        │
-        ▼
-Invoke Capability
-        │
-        ▼
+
+↓
+
+Instantiate Workflow
+
+↓
+
+Instantiate Stage
+
+↓
+
+Instantiate Task
+
+↓
+
+Instantiate Activity
+
+↓
+
+Execute Activities
+
+↓
+
 Collect Results
-        │
-        ▼
-Return Response
+
+↓
+
+Complete Task
+
+↓
+
+Complete Stage
+
+↓
+
+Complete Workflow
+
+↓
+
+Complete Execution
 ```
 
 ---
 
-# Integration Points
+# Inputs
 
-Execution Layer tương tác với các thành phần sau.
+Execution Layer nhận:
 
-## Presentation Layer
-
-Nhận Request và trả về Response.
-
----
-
-## Business Capability Layer
-
-Điều phối việc thực thi Business Capability.
+- Workflow Definition
+- Execution Request
+- Initial Context
 
 ---
 
-## Infrastructure Layer
+# Outputs
 
-Sử dụng các dịch vụ hạ tầng như:
+Execution Layer tạo ra:
 
-- Storage
-- Queue
-- Cache
-- Event Bus
-- Logging
-- Monitoring
-
----
-
-# Constraints
-
-Execution Layer phải tuân thủ các nguyên tắc sau.
-
-- Không chứa Business Logic.
-- Không phụ thuộc vào Capability cụ thể.
-- Capability phải có khả năng tái sử dụng.
-- Context phải được quản lý tập trung.
-- Workflow phải có khả năng mở rộng.
-- Execution phải có khả năng theo dõi.
+- Execution Result
+- Runtime State
+- Runtime Context
+- Logs
+- Metrics
+- Events
 
 ---
 
-# Non-Functional Requirements
+# Runtime Components
 
-Execution Layer phải đáp ứng các yêu cầu sau.
+Execution Layer bao gồm các Runtime Components sau.
+
+## Execution
+
+Runtime Root.
+
+---
+
+## Workflow Instance
+
+Runtime của Workflow Definition.
+
+---
+
+## Stage Instance
+
+Runtime của Stage Definition.
+
+---
+
+## Task Instance
+
+Runtime của Task Definition.
+
+---
+
+## Activity Instance
+
+Runtime của Activity Definition.
+
+---
+
+# Context
+
+Execution Layer duy trì một Execution Context xuyên suốt toàn bộ Runtime.
+
+Execution Context được chia sẻ giữa các Runtime Instance theo các quy tắc được định nghĩa trong Context Model.
+
+---
+
+# State
+
+Execution Layer quản lý trạng thái của tất cả Runtime Instance.
+
+State Machine được định nghĩa riêng trong:
+
+- state-machine.md
+
+---
+
+# Orchestration
+
+Execution Layer chịu trách nhiệm điều phối:
+
+- Activity Execution
+- Dependency Resolution
+- Transition
+- Completion
+
+Chi tiết được định nghĩa trong:
+
+- orchestration-model.md
+
+---
+
+# Error Handling
+
+Execution Layer chịu trách nhiệm:
+
+- Error Propagation
+- Failure Isolation
+- Retry Coordination
+- Compensation Trigger
+
+Chi tiết được định nghĩa trong:
+
+- business-rules.md
+
+---
+
+# Non Functional Requirements
+
+Execution Layer phải đáp ứng:
 
 ## Reliability
 
-Đảm bảo Workflow được thực thi ổn định.
+Không mất Runtime State.
 
 ---
 
 ## Scalability
 
-Hỗ trợ số lượng lớn Workflow và Execution.
+Cho phép nhiều Execution chạy đồng thời.
 
 ---
 
 ## Extensibility
 
-Cho phép bổ sung Workflow mới mà không ảnh hưởng Workflow hiện có.
+Cho phép bổ sung:
+
+- Workflow
+- Stage
+- Task
+- Activity
+
+mà không thay đổi Execution Engine.
 
 ---
 
 ## Observability
 
-Hỗ trợ Logging, Monitoring và Tracing.
+Hỗ trợ:
+
+- Logging
+- Metrics
+- Tracing
+- Monitoring
 
 ---
 
-## Maintainability
+## Version Compatibility
 
-Cho phép thay đổi Execution Logic mà không ảnh hưởng Business Capability.
+Cho phép nhiều phiên bản Workflow Definition cùng tồn tại.
 
 ---
 
-# Success Criteria
+# Design Principles
 
-Execution Layer được xem là đáp ứng yêu cầu khi:
+Execution Layer được thiết kế theo các nguyên tắc sau.
 
-- Có thể điều phối nhiều Business Capability.
-- Workflow có thể tái sử dụng.
-- Context được quản lý xuyên suốt Execution.
-- Execution State được theo dõi đầy đủ.
-- Kết quả được tổng hợp chính xác.
-- Toàn bộ Execution có thể được Logging và Monitoring.
+## Separation of Definition and Runtime
+
+Definition Models chỉ mô tả quy trình.
+
+Runtime Models chỉ mô tả quá trình thực thi.
+
+---
+
+## Business Process Independence
+
+Execution Engine không chứa Business Logic.
+
+---
+
+## Single Responsibility
+
+Mỗi Runtime Component chỉ có một trách nhiệm.
+
+---
+
+## Composability
+
+Workflow được tạo thành từ Stage.
+
+Stage được tạo thành từ Task.
+
+Task được tạo thành từ Activity.
+
+---
+
+## Extensibility
+
+Có thể mở rộng Definition Models và Runtime Models mà không ảnh hưởng đến kiến trúc tổng thể.
+
+---
+
+# Related Documents
+
+- README.md
+- execution-model.md
+- workflow-model.md
+- stage-model.md
+- task-model.md
+- activity-model.md
+- orchestration-model.md
+- context-model.md
+- state-machine.md
+- business-rules.md
