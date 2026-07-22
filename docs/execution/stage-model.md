@@ -2,17 +2,17 @@
 
 **Status:** Draft
 
-**Version:** 2.0
+**Version:** 3.0
 
 ---
 
 # Purpose
 
-Stage Model định nghĩa cấu trúc và hành vi của một Stage Definition.
+Stage Model định nghĩa một Stage Definition.
 
-Stage Definition đại diện cho một giai đoạn (Business Milestone) trong Workflow.
+Stage Definition đại diện cho một Business Milestone trong một Workflow.
 
-Mỗi Stage tập hợp các Task có cùng mục tiêu nghiệp vụ.
+Mỗi Stage xác định một kết quả nghiệp vụ trung gian cần đạt được trước khi Workflow có thể chuyển sang giai đoạn tiếp theo.
 
 Stage Definition là một phần của Workflow Definition.
 
@@ -24,11 +24,12 @@ Stage Definition không đại diện cho quá trình thực thi.
 
 Stage Model hướng đến các mục tiêu sau.
 
-- Chia nhỏ Workflow thành các giai đoạn rõ ràng.
-- Nhóm các Task theo mục tiêu nghiệp vụ.
-- Tăng khả năng đọc và bảo trì Workflow.
-- Cho phép tái sử dụng Stage.
-- Hỗ trợ mở rộng Workflow.
+- Chia Business Process thành các Business Milestones rõ ràng.
+- Định nghĩa mục tiêu của từng giai đoạn.
+- Tách biệt mục tiêu nghiệp vụ và cách thực hiện.
+- Hỗ trợ tái sử dụng Stage.
+- Hỗ trợ Versioning.
+- Giúp Workflow dễ đọc, dễ mở rộng và dễ bảo trì.
 
 ---
 
@@ -36,36 +37,38 @@ Stage Model hướng đến các mục tiêu sau.
 
 Stage Definition mô tả:
 
-- Mục tiêu của Stage.
-- Các Task cần thực hiện.
-- Điều kiện bắt đầu.
-- Điều kiện hoàn thành.
-- Input.
-- Output.
+- Business Milestone
+- Business Scope
+- Input Definition
+- Output Definition
+- Task Definitions
+- Entry Criteria
+- Exit Criteria
+- Completion Criteria
 
 Stage Definition không lưu:
 
-- Runtime State.
-- Runtime Context.
-- Runtime Result.
+- Runtime State
+- Runtime Context
+- Runtime Result
+- Runtime Scheduling
 
 ---
 
 # Stage Structure
 
-Một Stage Definition bao gồm:
-
 ```
 Stage Definition
 
 ├── Metadata
-├── Objective
+├── Business Milestone
+├── Business Scope
 ├── Input Definition
 ├── Output Definition
 ├── Task Definitions
 ├── Entry Criteria
 ├── Exit Criteria
-└── Constraints
+└── Completion Criteria
 ```
 
 ---
@@ -85,40 +88,55 @@ Ví dụ:
 
 ---
 
-## Objective
+## Business Milestone
 
-Mục tiêu nghiệp vụ của Stage.
+Business Milestone là kết quả nghiệp vụ mà Stage cần đạt được.
 
 Ví dụ:
 
-- Collect Required Data
-- Analyze Market Trend
-- Evaluate Financial Health
-- Estimate Intrinsic Value
+- Required Data Collected
+- Market Analysis Completed
+- Financial Health Evaluated
+- Intrinsic Value Estimated
+- Recommendation Generated
+
+Business Milestone mô tả trạng thái mong muốn sau khi Stage hoàn thành.
+
+---
+
+## Business Scope
+
+Phạm vi nghiệp vụ của Stage.
+
+Ví dụ:
+
+Stage "Market Analysis" chỉ chịu trách nhiệm phân tích thị trường.
+
+Không thực hiện định giá doanh nghiệp.
 
 ---
 
 ## Input Definition
 
-Định nghĩa dữ liệu đầu vào cần thiết.
+Định nghĩa dữ liệu đầu vào của Stage.
 
 Ví dụ:
 
-- Stock Symbol
 - Market Data
+- Company Profile
 - Financial Statements
 
 ---
 
 ## Output Definition
 
-Định nghĩa dữ liệu đầu ra của Stage.
+Định nghĩa dữ liệu đầu ra.
 
 Ví dụ:
 
-- Market Analysis
-- Financial Analysis
-- Valuation Result
+- Market Analysis Result
+- Risk Assessment
+- Financial Metrics
 
 ---
 
@@ -126,7 +144,9 @@ Ví dụ:
 
 Stage bao gồm một hoặc nhiều Task Definition.
 
-Task là đơn vị công việc nhỏ nhất trong Stage.
+Task đại diện cho các Business Work Unit cần thực hiện để đạt được Business Milestone.
+
+Stage không quy định cách Task được thực thi.
 
 ---
 
@@ -137,36 +157,30 @@ Task là đơn vị công việc nhỏ nhất trong Stage.
 Ví dụ:
 
 - Previous Stage Completed
-- Required Data Available
+- Required Input Available
 
 ---
 
 ## Exit Criteria
 
-Điều kiện để Stage được xem là hoàn thành.
+Điều kiện để Stage được phép kết thúc.
 
 Ví dụ:
 
-- All Tasks Completed
-- Required Output Produced
+- All Required Tasks Completed
+- Required Outputs Produced
 
 ---
 
-## Constraints
+## Completion Criteria
 
-Các ràng buộc của Stage.
+Stage được xem là hoàn thành khi Business Milestone đã đạt được.
 
-Ví dụ:
-
-- Required Tasks
-- Required Inputs
-- Business Rules
+Completion Criteria mô tả kết quả nghiệp vụ, không mô tả trạng thái thực thi.
 
 ---
 
 # Stage Hierarchy
-
-Stage Definition được tổ chức như sau.
 
 ```
 Workflow Definition
@@ -176,41 +190,24 @@ Stage Definition
         │
         ▼
 Task Definition
+        │
+        ▼
+Activity Definition
 ```
 
-Stage Definition không chứa Runtime Instance.
+Stage chỉ quan tâm đến Task Definition.
 
----
-
-# Stage Instance
-
-Stage Definition không được thực thi trực tiếp.
-
-Khi Workflow Instance được tạo:
-
-```
-Stage Definition
-
-↓
-
-Execution Layer
-
-↓
-
-Stage Instance
-```
-
-Stage Instance được quản lý bởi Execution Model.
+Chi tiết kỹ thuật được mô tả trong Activity Definition.
 
 ---
 
 # Stage Relationships
 
-Stage Definition có quan hệ với các thành phần sau.
-
 ## Workflow Model
 
 Stage thuộc về một Workflow Definition.
+
+Workflow chịu trách nhiệm điều phối các Stage.
 
 ---
 
@@ -218,107 +215,81 @@ Stage thuộc về một Workflow Definition.
 
 Stage bao gồm nhiều Task Definition.
 
----
-
-## Business Capability
-
-Task trong Stage sẽ tham chiếu đến Business Capability tương ứng.
+Task thực hiện các Business Work Unit để đạt được Business Milestone.
 
 ---
 
-# Stage Types
+## Execution Model
 
-Execution Layer không giới hạn loại Stage.
-
-Một số Stage phổ biến:
-
----
-
-## Data Collection Stage
-
-Thu thập dữ liệu cần thiết.
-
----
-
-## Validation Stage
-
-Kiểm tra tính hợp lệ của dữ liệu.
-
----
-
-## Analysis Stage
-
-Thực hiện các phân tích nghiệp vụ.
-
----
-
-## Decision Stage
-
-Đưa ra đánh giá hoặc quyết định.
-
----
-
-## Reporting Stage
-
-Tổng hợp và xuất kết quả.
+Execution Layer tạo Stage Instance từ Stage Definition.
 
 ---
 
 # Stage Boundaries
 
-Stage Definition chịu trách nhiệm:
+Stage chịu trách nhiệm:
 
-- Mô tả mục tiêu nghiệp vụ.
-- Nhóm các Task.
+- Định nghĩa một Business Milestone.
+- Xác định phạm vi nghiệp vụ.
 - Định nghĩa Input và Output.
+- Tổ chức các Task.
 - Xác định điều kiện bắt đầu và kết thúc.
 
-Stage Definition không chịu trách nhiệm:
+Stage không chịu trách nhiệm:
 
 - Runtime State.
 - Runtime Context.
 - Scheduling.
 - Retry.
 - Timeout.
-- Monitoring.
+- Activity Execution.
+- Business Capability Invocation.
 
-Những nội dung này thuộc Execution Layer.
+Các trách nhiệm trên thuộc Execution Layer.
 
 ---
 
 # Design Principles
 
-Stage Definition được xây dựng dựa trên các nguyên tắc sau.
+## Milestone Driven
 
-## Goal Oriented
+Mỗi Stage đại diện cho một Business Milestone.
 
-Mỗi Stage phục vụ một mục tiêu nghiệp vụ rõ ràng.
+---
+
+## Business Oriented
+
+Stage phản ánh một giai đoạn nghiệp vụ.
 
 ---
 
 ## Cohesive
 
-Các Task trong cùng một Stage phải liên quan chặt chẽ đến cùng một mục tiêu.
+Tất cả Task trong cùng một Stage phải cùng phục vụ một Business Milestone.
 
 ---
 
 ## Independent
 
-Stage không chứa Business Logic.
-
-Stage chỉ tổ chức quy trình.
+Stage không phụ thuộc vào Runtime.
 
 ---
 
 ## Reusable
 
-Stage có thể được sử dụng trong nhiều Workflow khác nhau.
+Stage có thể được tái sử dụng trong nhiều Workflow.
+
+---
+
+## Versionable
+
+Stage hỗ trợ nhiều phiên bản.
 
 ---
 
 ## Extensible
 
-Có thể bổ sung hoặc thay đổi Stage mà không ảnh hưởng đến các Stage khác.
+Có thể bổ sung hoặc thay đổi Task mà không làm thay đổi Business Milestone.
 
 ---
 
@@ -331,30 +302,54 @@ Analyze Stock
 
 │
 ├── Stage
-│      Data Collection
-│      │
-│      ├── Acquire Market Data
-│      ├── Acquire Financial Data
-│      └── Acquire News
+│
+│   Business Milestone
+│
+│   Required Data Collected
+│
+│   Tasks
+│
+│   ├── Acquire Market Data
+│   ├── Acquire Financial Statements
+│   └── Acquire Company Profile
 │
 ├── Stage
-│      Market Analysis
-│      │
-│      ├── Analyze Trend
-│      ├── Analyze Volume
-│      └── Analyze Liquidity
+│
+│   Business Milestone
+│
+│   Market Analysis Completed
+│
+│   Tasks
+│
+│   ├── Analyze Trend
+│   ├── Analyze Liquidity
+│   └── Analyze Volume
 │
 ├── Stage
-│      Fundamental Analysis
+│
+│   Business Milestone
+│
+│   Financial Health Evaluated
 │
 ├── Stage
-│      Valuation
+│
+│   Business Milestone
+│
+│   Intrinsic Value Estimated
 │
 └── Stage
-       Recommendation
+
+    Business Milestone
+
+    Investment Recommendation Generated
 ```
 
-Khi Workflow được thực thi, mỗi Stage Definition sẽ được Execution Layer tạo thành một Stage Instance và quản lý trong suốt vòng đời thực thi.
+Trong ví dụ trên:
+
+- Workflow định nghĩa toàn bộ quy trình phân tích cổ phiếu.
+- Mỗi Stage đại diện cho một Business Milestone.
+- Mỗi Task là một Business Work Unit để đạt được Milestone.
+- Activity (được định nghĩa trong Activity Model) mô tả cách thực hiện từng Task.
 
 ---
 
@@ -363,5 +358,6 @@ Khi Workflow được thực thi, mỗi Stage Definition sẽ được Execution
 - execution-model.md
 - workflow-model.md
 - task-model.md
+- activity-model.md
 - orchestration-model.md
 - state-machine.md
