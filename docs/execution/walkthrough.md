@@ -2,92 +2,134 @@
 
 **Status:** Draft
 
-**Version:** 1.0
+**Version:** 3.0
 
 ---
 
-# Overview
+# 1. Overview
 
-Tài liệu này mô tả toàn bộ vòng đời của một Execution trong Execution Layer, từ thời điểm hệ thống nhận một yêu cầu từ Client cho đến khi Workflow hoàn thành.
+## Purpose
 
-Mục tiêu của tài liệu là giúp người đọc hiểu cách các thành phần trong Execution Layer phối hợp với nhau trong quá trình thực thi.
+Tài liệu này mô tả toàn bộ vòng đời của một **Execution**, từ khi hệ thống nhận yêu cầu thực thi đến khi Workflow hoàn thành.
 
-Walkthrough không tập trung vào chi tiết cài đặt của từng thành phần mà mô tả cách chúng tương tác trong một phiên thực thi thực tế.
+Khác với các tài liệu kiến trúc chỉ mô tả cấu trúc của hệ thống, tài liệu này tập trung vào **hành vi của Execution Engine trong quá trình thực thi**.
 
-Trong suốt tài liệu, chúng ta sẽ theo dõi cùng một Execution và quan sát sự thay đổi của:
+Thông qua một ví dụ cụ thể, người đọc sẽ quan sát được:
 
-- Runtime Objects
-- Runtime State
-- Runtime Context
-- Execution Flow
-- Component Interaction
+- Cách Workflow Definition được chuyển thành Runtime Hierarchy.
+- Cách Execution Runtime được khởi tạo.
+- Cách Orchestrator liên tục đánh giá Runtime.
+- Cách Execution Command được sinh ra.
+- Cách State Machine và Activity Executor thực thi các Command.
+- Cách Runtime State và Runtime Context thay đổi theo thời gian.
+- Cách Execution hoàn thành thông qua Event Loop.
 
-Sau khi hoàn thành walkthrough, người đọc sẽ hiểu:
-
-- Một Execution được tạo như thế nào.
-- Runtime Hierarchy được xây dựng ra sao.
-- Orchestrator điều phối Workflow như thế nào.
-- State Machine quản lý Runtime State ra sao.
-- Activity Executor thực thi Activity như thế nào.
-- Context được truyền và cập nhật trong Runtime Hierarchy.
-- Một Workflow hoàn thành như thế nào.
+Mục tiêu của tài liệu là giúp người đọc hiểu **Execution Engine hoạt động như thế nào**, thay vì chỉ biết **Execution Engine được thiết kế như thế nào**.
 
 ---
 
-# Business Scenario
+## Scope
 
-Để minh họa cho toàn bộ quá trình thực thi, chúng ta sử dụng một Workflow có tên:
+Walkthrough tập trung vào luồng thực thi (Happy Path) của một Workflow hoàn chỉnh.
 
-> **Analyze Company**
+Các chủ đề bao gồm:
 
-Workflow này phân tích một doanh nghiệp và tạo báo cáo đầu tư.
+- Workflow Initialization
+- Runtime Hierarchy Creation
+- Execution Event Loop
+- Runtime State Transition
+- Context Propagation
+- Activity Execution
+- Workflow Completion
 
-Client gửi yêu cầu phân tích một mã cổ phiếu.
+Các chủ đề nâng cao như Retry, Parallel Execution, Compensation hoặc Human Approval sẽ được trình bày trong các tài liệu riêng.
+
+---
+
+## Audience
+
+Tài liệu này dành cho:
+
+- Backend Engineers
+- Workflow Engine Developers
+- AI Agent Developers
+- Contributors của Execution Layer
+- Người muốn hiểu cách Execution Engine hoạt động
+
+---
+
+## Reading Prerequisites
+
+Để dễ theo dõi tài liệu này, nên đọc trước:
+
+- README.md
+- architecture.md
+- execution-model.md
+- orchestration-model.md
+- execution-command.md
+- state-machine.md
+
+---
+
+## Walkthrough Strategy
+
+Toàn bộ quá trình thực thi sẽ được mô tả theo đúng thứ tự mà Execution Engine xử lý Runtime.
+
+Mỗi bước sẽ bao gồm các nội dung sau:
+
+- Runtime Snapshot
+- Context Snapshot (nếu có thay đổi)
+- Orchestrator Evaluation
+- Generated Execution Command
+- Command Execution
+- Runtime Update
+
+Điều này cho phép người đọc theo dõi toàn bộ Execution giống như đang quan sát một phiên debug của Workflow Engine.
+
+---
+
+# 2. Business Scenario
+
+Để minh họa cách Execution Engine hoạt động, tài liệu sử dụng một quy trình phân tích doanh nghiệp đơn giản trong hệ thống Investment AI.
+
+Người dùng gửi yêu cầu phân tích một công ty niêm yết trên thị trường chứng khoán Việt Nam.
 
 Ví dụ:
 
-```json
+```http
 POST /analysis
-
-{
-    "ticker": "FPT",
-    "market": "VN"
-}
 ```
 
-Execution Layer sẽ thực hiện các bước sau.
+Request
 
-1. Tạo Execution Runtime.
-2. Khởi tạo Runtime Context.
-3. Khởi tạo Workflow Runtime.
-4. Thực thi các Stage.
-5. Thực thi các Task.
-6. Thực thi từng Activity.
-7. Tổng hợp kết quả.
-8. Sinh báo cáo cuối cùng.
+```yaml
+ticker: FPT
+market: VN
+```
 
-Đây là một ví dụ đơn giản nhưng đủ để minh họa gần như toàn bộ kiến trúc của Execution Layer.
+Sau khi nhận yêu cầu, hệ thống sẽ thực hiện toàn bộ quy trình phân tích doanh nghiệp và tạo ra một báo cáo đầu tư.
+
+Expected Output
+
+```yaml
+reportId: report-001
+
+ticker: FPT
+
+status: Completed
+
+generatedAt: 2026-07-23T10:15:30Z
+```
 
 ---
 
-# Workflow Definition
+## Business Process
 
-Workflow Definition mô tả toàn bộ Business Process cần thực hiện.
+Business Process được định nghĩa dưới dạng một Workflow.
 
-Workflow không chứa Runtime State và không được thực thi trực tiếp.
+Workflow bao gồm ba Stage chính.
 
-Nó chỉ đóng vai trò là blueprint cho Execution Runtime.
-
-Workflow của ví dụ này được định nghĩa như sau.
-
-```
-Workflow
-└── Analyze Company
-```
-
-Workflow bao gồm ba Stage.
-
-```
+```text
 Analyze Company
 
 ├── Load Company Data
@@ -95,160 +137,32 @@ Analyze Company
 └── Generate Report
 ```
 
-Mỗi Stage đại diện cho một Business Milestone.
+Mỗi Stage được chia thành nhiều Task.
 
-Workflow chỉ mô tả cấu trúc nghiệp vụ.
-
-Việc thực thi sẽ được thực hiện bởi Runtime Models trong Execution Layer.
-
----
-
-# Workflow Hierarchy
-
-Workflow được tổ chức theo cấu trúc phân cấp.
-
-```
-Workflow
-    │
-    ├── Stage
-    │       │
-    │       ├── Task
-    │       │      │
-    │       │      └── Activity
-    │       │
-    │       └── Task
-    │
-    └── Stage
-```
-
-Mỗi cấp có trách nhiệm khác nhau.
-
-| Level | Responsibility |
-|---------|----------------|
-| Workflow | Business Process |
-| Stage | Business Milestone |
-| Task | Business Work |
-| Activity | Technical Action |
-
-Execution Layer sẽ tạo Runtime tương ứng cho từng Definition này.
-
----
-
-# Stage Definition
-
-Workflow của ví dụ bao gồm ba Stage.
-
-## Stage 1
-
-```
-Load Company Data
-```
-
-Mục tiêu.
-
-Thu thập toàn bộ dữ liệu đầu vào cần thiết cho việc phân tích.
-
-Stage này không thực hiện phân tích.
-
-Nó chỉ chuẩn bị dữ liệu.
-
----
-
-## Stage 2
-
-```
-Analyze Company
-```
-
-Mục tiêu.
-
-Thực hiện toàn bộ quá trình phân tích doanh nghiệp.
-
-Bao gồm.
-
-- Financial Analysis
-- Valuation
-- Risk Analysis
-
-Đây là Stage quan trọng nhất của Workflow.
-
----
-
-## Stage 3
-
-```
-Generate Report
-```
-
-Mục tiêu.
-
-Tổng hợp toàn bộ kết quả phân tích thành báo cáo cuối cùng.
-
----
-
-# Task Definition
-
-Mỗi Stage bao gồm nhiều Task.
-
-Task đại diện cho một đơn vị công việc có ý nghĩa nghiệp vụ.
-
-## Stage 1
-
-```
-Load Company Data
-
-├── Load Company Profile
-└── Load Financial Statements
-```
-
----
-
-## Stage 2
-
-```
+```text
 Analyze Company
 
-├── Analyze Financials
-├── Analyze Valuation
-└── Analyze Risks
+├── Load Company Data
+│
+│   ├── Load Company Profile
+│   └── Load Financial Statements
+│
+├── Analyze Company
+│
+│   ├── Analyze Financial Health
+│   ├── Analyze Valuation
+│   └── Analyze Business Risks
+│
+└── Generate Report
+    │
+    └── Build Investment Report
 ```
 
----
+Mỗi Task tiếp tục được chia thành các Activity nhỏ hơn.
 
-## Stage 3
+Ví dụ:
 
-```
-Generate Report
-
-├── Build Investment Report
-└── Publish Report
-```
-
-Task không trực tiếp gọi API hoặc Database.
-
-Task chỉ mô tả Business Work.
-
-Các Technical Actions sẽ được chia nhỏ thành Activity.
-
----
-
-# Activity Definition
-
-Activity là đơn vị thực thi nhỏ nhất trong Execution Layer.
-
-Mỗi Activity thực hiện đúng một Technical Action.
-
-Ví dụ.
-
-Task:
-
-```
-Load Company Profile
-```
-
-Bao gồm ba Activity.
-
-```
+```text
 Load Company Profile
 
 ├── Call Company API
@@ -256,652 +170,441 @@ Load Company Profile
 └── Store Company Profile
 ```
 
-Một ví dụ khác.
+Hoặc:
 
-Task:
+```text
+Analyze Valuation
 
-```
-Analyze Financials
-```
-
-Bao gồm.
-
-```
-Analyze Financials
-
-├── Calculate Revenue Growth
-├── Calculate Profit Margin
-├── Calculate ROE
-└── Generate Financial Summary
+├── Calculate PE
+├── Calculate PB
+├── Compare Industry Average
+└── Generate Valuation Summary
 ```
 
-Mỗi Activity có thể được thực hiện bởi một Activity Handler khác nhau.
-
-Ví dụ.
-
-| Activity | Handler |
-|-----------|----------|
-| Call API | API Handler |
-| Execute SQL | Database Handler |
-| Invoke LLM | LLM Handler |
-| Publish Event | Event Handler |
-| Save File | File Handler |
-
-Activity không biết ai gọi nó.
-
-Activity chỉ mô tả hành động kỹ thuật cần thực hiện.
+Đây là các đơn vị thực thi nhỏ nhất của Workflow.
 
 ---
 
-# Complete Workflow Definition
+## Workflow Definition
 
-Toàn bộ Workflow được biểu diễn như sau.
+Điều quan trọng cần lưu ý là ở thời điểm này **chưa có bất kỳ Runtime nào được tạo ra**.
 
-```
-Workflow
-└── Analyze Company
-    │
-    ├── Stage
-    │     Load Company Data
-    │     │
-    │     ├── Task
-    │     │     Load Company Profile
-    │     │
-    │     │     ├── Call Company API
-    │     │     ├── Parse Response
-    │     │     └── Store Company Profile
-    │     │
-    │     └── Task
-    │           Load Financial Statements
-    │
-    ├── Stage
-    │     Analyze Company
-    │     │
-    │     ├── Analyze Financials
-    │     ├── Analyze Valuation
-    │     └── Analyze Risks
-    │
-    └── Stage
-          Generate Report
-          │
-          ├── Build Investment Report
-          └── Publish Report
+Workflow hiện chỉ tồn tại dưới dạng Definition.
+
+```text
+Workflow Definition
+        │
+        ├── Stage Definitions
+        │
+        ├── Task Definitions
+        │
+        └── Activity Definitions
 ```
 
-Đây chỉ là Definition.
+Definition chỉ mô tả:
 
-Tại thời điểm này:
+- Cấu trúc Workflow.
+- Thứ tự thực hiện.
+- Quan hệ cha - con giữa các thành phần.
+- Metadata cần thiết cho việc thực thi.
 
-- Chưa có Runtime.
-- Chưa có Context.
-- Chưa có State.
-- Chưa có Execution.
-- Chưa có Activity được thực thi.
+Definition không chứa:
 
-Execution Layer sẽ sử dụng Definition này để tạo Runtime Hierarchy trong phần tiếp theo của walkthrough.
-
----
-
-# Next Step
-
-Ở phần tiếp theo, hệ thống sẽ nhận yêu cầu từ Client và bắt đầu khởi tạo Execution Runtime.
-
-Chúng ta sẽ quan sát quá trình tạo:
-
-- Execution Runtime
-- Workflow Runtime
-- Stage Runtime
-- Task Runtime
-- Activity Runtime
+- Runtime State
 - Runtime Context
+- Execution Result
+- Execution Progress
 
-Đây là thời điểm Execution chính thức bắt đầu.
-
-# Execution Initialization
-
-Execution Initialization là giai đoạn đầu tiên của Runtime Execution.
-
-Mục tiêu của giai đoạn này là chuyển một Client Request thành một Runtime Hierarchy có thể được Execution Engine thực thi.
-
-Tại thời điểm này:
-
-- Workflow Definition đã tồn tại.
-- Chưa có Runtime Objects.
-- Chưa có Activity được thực thi.
-- Chưa có Business Logic được xử lý.
-
-Execution Layer sẽ khởi tạo toàn bộ Runtime trước khi bắt đầu điều phối.
+Những thông tin này chỉ xuất hiện sau khi hệ thống bắt đầu khởi tạo một Execution.
 
 ---
 
-# Execution Initialization Flow
+## Execution Goal
 
-Quá trình khởi tạo được thực hiện theo thứ tự sau.
+Mục tiêu của Execution lần này là:
 
-```
-Client Request
-        │
-        ▼
-Load Workflow Definition
-        │
-        ▼
-Create Execution Runtime
-        │
-        ▼
-Create Runtime Context
-        │
-        ▼
-Create Workflow Runtime
-        │
-        ▼
-Create Stage Runtime
-        │
-        ▼
-Create Task Runtime
-        │
-        ▼
-Create Activity Runtime
-        │
-        ▼
-Runtime Ready
-```
+1. Tạo một Execution Runtime từ Workflow Definition.
+2. Khởi tạo toàn bộ Runtime Hierarchy.
+3. Thực thi từng Activity theo đúng Workflow.
+4. Thu thập dữ liệu trong quá trình thực thi.
+5. Tổng hợp kết quả phân tích.
+6. Sinh báo cáo đầu tư hoàn chỉnh.
+7. Đánh dấu Execution ở trạng thái **Completed**.
 
-Sau bước này, Execution Engine đã có đầy đủ Runtime Objects để bắt đầu thực thi.
+Các phần tiếp theo của tài liệu sẽ mô tả chi tiết từng bước mà Execution Engine thực hiện để đạt được mục tiêu này.
 
----
+## 3. Workflow Definition
 
-# Step 1 — Client Request
+Sau khi nhận được yêu cầu phân tích doanh nghiệp, Execution Engine **không tạo Runtime ngay lập tức**.
 
-Execution bắt đầu khi Client gửi một yêu cầu.
+Bước đầu tiên là tải **Workflow Definition** đã được thiết kế trước.
 
-Ví dụ.
+Workflow Definition mô tả **Business Process** cần thực hiện, nhưng **không đại diện cho một lần thực thi cụ thể**.
 
-```http
-POST /analysis
-```
+Definition có thể được sử dụng lại bởi nhiều Execution khác nhau.
 
-Body.
+Ví dụ:
 
-```json
-{
-    "ticker": "FPT",
-    "market": "VN"
-}
-```
-
-Execution Layer nhận Request và xác định Workflow cần thực thi.
-
-Ví dụ.
-
-```
-Workflow
+```text
+Workflow Definition
 
 Analyze Company
 ```
 
-Tại thời điểm này, hệ thống mới chỉ biết:
+Workflow này bao gồm ba Stage.
 
-- Workflow cần chạy.
-- Input của Workflow.
-
-Chưa có Runtime nào được tạo.
-
----
-
-# Runtime Snapshot
-
-```
-Execution Runtime
-
-Not Created
-```
-
-```
-Workflow Runtime
-
-Not Created
-```
-
-```
-Stage Runtime
-
-Not Created
-```
-
-```
-Task Runtime
-
-Not Created
-```
-
-```
-Activity Runtime
-
-Not Created
-```
-
----
-
-# Step 2 — Load Workflow Definition
-
-Execution Layer tải Workflow Definition từ Definition Repository.
-
-```
-Workflow
-
+```text
 Analyze Company
+
+├── Stage 1 : Load Company Data
+├── Stage 2 : Analyze Company
+└── Stage 3 : Generate Report
 ```
 
-Definition được nạp vào bộ nhớ để phục vụ việc tạo Runtime.
+---
 
-Lưu ý.
+### Stage Definitions
 
-Definition chỉ là blueprint.
+Mỗi Stage mô tả một nhóm nghiệp vụ độc lập.
 
-Definition không thay đổi trong suốt vòng đời của Execution.
+```text
+Load Company Data
 
-Một Workflow Definition có thể được nhiều Execution Runtime sử dụng đồng thời.
+├── Load Company Profile
+└── Load Financial Statements
+```
+
+```text
+Analyze Company
+
+├── Analyze Financial Health
+├── Analyze Valuation
+└── Analyze Business Risks
+```
+
+```text
+Generate Report
+
+└── Build Investment Report
+```
+
+Stage chỉ mô tả cấu trúc.
+
+Stage không chứa trạng thái thực thi.
+
+---
+
+### Task Definitions
+
+Mỗi Stage bao gồm một hoặc nhiều Task.
 
 Ví dụ.
 
-```
-Execution A
-
-↓
-
-Analyze Company
+```text
+Load Company Profile
 ```
 
+Task này có thể được mô tả như sau.
+
+```yaml
+id: task-load-profile
+
+name: Load Company Profile
 ```
-Execution B
 
-↓
+Task Definition xác định:
 
-Analyze Company
-```
+- tên Task
+- các Activity cần thực hiện
+- quan hệ với Stage
+- metadata phục vụ thực thi
 
-Hai Execution chia sẻ cùng một Definition nhưng có Runtime độc lập.
+Task vẫn chưa được thực thi.
 
 ---
 
-# Runtime Snapshot
+### Activity Definitions
 
-```
-Definition
-
-Loaded
-```
-
-```
-Runtime
-
-Not Created
-```
-
----
-
-# Step 3 — Create Execution Runtime
-
-Execution Runtime là Aggregate Root của toàn bộ Runtime Hierarchy.
-
-Execution Layer tạo một Execution Runtime mới.
+Activity là đơn vị thực thi nhỏ nhất.
 
 Ví dụ.
 
-```yaml
-Execution Runtime
+```text
+Load Company Profile
 
-id: exec-001
-
-workflow: Analyze Company
-
-state: Created
+├── Call Company API
+├── Parse Response
+└── Store Company Profile
 ```
 
-Execution Runtime chịu trách nhiệm quản lý:
+Hoặc.
 
-- Workflow Runtime
-- Stage Runtime
-- Task Runtime
-- Activity Runtime
+```text
+Analyze Valuation
 
-Execution Runtime chưa bắt đầu thực thi.
+├── Calculate PE
+├── Calculate PB
+├── Compare Industry Average
+└── Generate Valuation Summary
+```
+
+Mỗi Activity sẽ được Activity Executor thực thi trong Runtime.
+
+Definition chỉ mô tả Activity.
+
+Không chứa:
+
+- trạng thái
+- context
+- kết quả
 
 ---
 
-# Runtime Snapshot
+### Definition Hierarchy
 
-```yaml
-Execution Runtime
+Toàn bộ Definition có thể được biểu diễn như sau.
 
-id: exec-001
+```text
+Workflow Definition
 
-state: Created
+└── Stage Definition
+
+      └── Task Definition
+
+             └── Activity Definition
 ```
+
+Đây chỉ là **template** của Business Process.
+
+Definition hoàn toàn bất biến (Immutable) trong suốt quá trình thực thi.
+
+Nhiều Execution có thể cùng tham chiếu đến một Workflow Definition mà không ảnh hưởng lẫn nhau.
 
 ---
 
-# Step 4 — Create Execution Context
+### Definition Summary
 
-Execution Context được khởi tạo từ Client Request.
-
-Ví dụ.
-
-```yaml
-Execution Context
-
-ticker: FPT
-
-market: VN
-```
-
-Execution Context là Context cấp cao nhất.
-
-Toàn bộ Runtime Hierarchy có thể đọc dữ liệu từ Execution Context.
-
-Các Runtime phía dưới sẽ kế thừa Context này trong quá trình thực thi.
-
----
-
-# Context Snapshot
-
-```yaml
-Execution Context
-
-ticker: FPT
-
-market: VN
-```
-
----
-
-# Step 5 — Create Workflow Runtime
-
-Execution Runtime tạo Workflow Runtime.
-
-```yaml
-Workflow Runtime
-
-id: workflow-001
-
-definition: Analyze Company
-
-state: Created
-```
-
-Workflow Runtime đại diện cho một lần thực thi của Workflow Definition.
-
-Workflow Runtime tham chiếu tới:
+Đến thời điểm này, hệ thống mới chỉ có:
 
 - Workflow Definition
-- Workflow Context
-- Workflow State
+- Stage Definitions
+- Task Definitions
+- Activity Definitions
 
-Workflow Runtime không sao chép Definition.
+Chưa tồn tại:
+
+- Execution Runtime
+- Runtime State
+- Runtime Context
+- Execution Result
+
+Những thành phần này sẽ được tạo ở bước tiếp theo.
 
 ---
 
-# Runtime Snapshot
+## 4. Execution Initialization
 
-```yaml
+Sau khi Workflow Definition được tải thành công, Execution Engine bắt đầu khởi tạo một phiên thực thi mới.
+
+Mỗi yêu cầu thực thi sẽ tạo ra **một Execution Runtime độc lập**.
+
+Execution Runtime đại diện cho toàn bộ vòng đời của Workflow trong lần thực thi này.
+
+---
+
+### Step 1. Create Execution Runtime
+
+Execution Engine tạo Aggregate Root của Runtime Hierarchy.
+
+```text
 Execution Runtime
-  state: Created
-
-Workflow Runtime
-  state: Created
 ```
-
----
-
-# Step 6 — Create Stage Runtime
-
-Execution Layer đọc Workflow Definition.
-
-Workflow gồm ba Stage.
-
-```
-Load Company Data
-
-Analyze Company
-
-Generate Report
-```
-
-Từ Definition này, hệ thống tạo ba Stage Runtime.
-
-```yaml
-Stage Runtime
-
-- stage-001
-- stage-002
-- stage-003
-```
-
-Ban đầu.
-
-```yaml
-state: Created
-```
-
-Tất cả Stage Runtime đã tồn tại nhưng chưa được thực thi.
-
----
-
-# Runtime Snapshot
-
-```yaml
-Execution
-  Created
-
-Workflow
-  Created
-
-Stages
-
-- Created
-- Created
-- Created
-```
-
----
-
-# Step 7 — Create Task Runtime
-
-Execution Layer tiếp tục tạo Task Runtime.
 
 Ví dụ.
 
-```
-Stage
-
-Load Company Data
-```
-
-Bao gồm.
-
-```
-Task
-
-Load Company Profile
-
-Load Financial Statements
-```
-
-Execution Layer tạo.
-
 ```yaml
-Task Runtime
+id: exec-001
 
-task-001
+definitionId: workflow-analyze-company
 
-task-002
+status: Created
+
+createdAt: 2026-07-23T09:00:00Z
 ```
 
-Mỗi Task Runtime tham chiếu tới Task Definition tương ứng.
+Execution Runtime là điểm truy cập duy nhất tới toàn bộ Runtime Hierarchy.
 
 ---
 
-# Runtime Snapshot
+### Step 2. Create Runtime Hierarchy
 
-```yaml
-Execution
+Từ Workflow Definition, Execution Engine tạo toàn bộ Runtime Objects.
 
-Created
-
-Workflow
-
-Created
-
-Stages
-
-3 Created
-
-Tasks
-
-7 Created
-```
-
----
-
-# Step 8 — Create Activity Runtime
-
-Execution Layer tiếp tục tạo Activity Runtime.
-
-Ví dụ.
-
-Task.
-
-```
-Load Company Profile
-```
-
-Bao gồm.
-
-```
-Call Company API
-
-Parse Response
-
-Store Company Profile
-```
-
-Execution Runtime tạo ba Activity Runtime.
-
-```yaml
-Activity Runtime
-
-activity-001
-
-activity-002
-
-activity-003
-```
-
-Tất cả Activity Runtime đều ở trạng thái.
-
-```yaml
-Created
-```
-
-Lưu ý.
-
-Activity Runtime được tạo trước khi thực thi.
-
-Việc tạo trước toàn bộ Runtime giúp:
-
-- Quan sát toàn bộ Execution.
-- Theo dõi tiến độ.
-- Hỗ trợ Resume.
-- Hỗ trợ Retry.
-- Hỗ trợ Monitoring.
-
----
-
-# Runtime Snapshot
-
-```yaml
-Execution
-  Created
-
-Workflow
-  Created
-
-Stages
-  3 Created
-
-Tasks
-  7 Created
-
-Activities
-  18 Created
-```
-
----
-
-# Step 9 — Runtime Hierarchy Completed
-
-Sau khi hoàn tất quá trình khởi tạo, Runtime Hierarchy có cấu trúc như sau.
-
-```
+```text
 Execution Runtime
-│
+
 └── Workflow Runtime
-      │
+
       ├── Stage Runtime
-      │      │
+
       │      ├── Task Runtime
-      │      │      │
+
       │      │      ├── Activity Runtime
-      │      │      ├── Activity Runtime
+
       │      │      └── Activity Runtime
+
       │      │
       │      └── Task Runtime
+
       │
       ├── Stage Runtime
       │
       └── Stage Runtime
 ```
 
-Toàn bộ Runtime đã sẵn sàng.
+Mỗi Runtime giữ tham chiếu đến Definition tương ứng.
 
-Tuy nhiên.
+Ví dụ.
 
-- Chưa có Activity nào chạy.
-- Chưa có State Transition.
-- Chưa có Context Update.
-- Chưa có Business Rule được đánh giá.
+```text
+Task Runtime
 
-Execution Engine sẽ bắt đầu điều phối ở phần tiếp theo.
+↓
+
+Task Definition
+```
+
+Runtime không sao chép Definition.
 
 ---
 
-# Final Runtime Snapshot
+### Step 3. Initialize Runtime State
+
+Sau khi Runtime Hierarchy được tạo, mọi Runtime đều bắt đầu với trạng thái **Created**.
+
+```text
+Execution Runtime    Created
+
+Workflow Runtime     Created
+
+Stage Runtime        Created
+
+Task Runtime         Created
+
+Activity Runtime     Created
+```
+
+Chưa có Runtime nào được phép thực thi.
+
+---
+
+### Step 4. Create Execution Context
+
+Tiếp theo, Execution Engine khởi tạo Execution Context.
+
+Context ban đầu chứa dữ liệu đầu vào của người dùng.
 
 ```yaml
-Execution Runtime
+ticker: FPT
 
-id: exec-001
+market: VN
+```
 
-state: Created
+Execution Context sẽ được truyền xuống các Runtime con trong quá trình thực thi.
 
+Tại thời điểm này chưa có dữ liệu phân tích.
+
+---
+
+### Step 5. Bind Runtime References
+
+Mỗi Runtime được liên kết với Definition tương ứng.
+
+Ví dụ.
+
+```text
 Workflow Runtime
 
-state: Created
+↓
 
-Stages
+Workflow Definition
+```
 
-3 Created
+```text
+Stage Runtime
 
-Tasks
+↓
 
-7 Created
+Stage Definition
+```
 
-Activities
+```text
+Task Runtime
 
-18 Created
+↓
 
-Execution Context
+Task Definition
+```
 
+```text
+Activity Runtime
+
+↓
+
+Activity Definition
+```
+
+Việc sử dụng Reference thay vì sao chép Definition giúp nhiều Execution có thể chia sẻ cùng một Definition.
+
+---
+
+### Step 6. Runtime Initialization Completed
+
+Sau khi hoàn thành khởi tạo, hệ thống đã có đầy đủ các thành phần cần thiết để bắt đầu thực thi.
+
+Runtime Snapshot.
+
+```text
+Execution Runtime
+
+Status : Created
+
+└── Workflow Runtime
+
+      Status : Created
+
+      ├── Stage Runtime
+
+      │      Status : Created
+
+      │      ├── Task Runtime
+
+      │      │      Status : Created
+
+      │      │      ├── Activity Runtime
+
+      │      │      │      Status : Created
+
+      │      │      └── Activity Runtime
+
+      │      │             Status : Created
+
+      │      └── Task Runtime
+
+      │             Status : Created
+
+      ├── Stage Runtime
+
+      │      Status : Created
+
+      └── Stage Runtime
+
+             Status : Created
+```
+
+Context Snapshot.
+
+```yaml
 ticker: FPT
 
 market: VN
@@ -909,19 +612,768 @@ market: VN
 
 ---
 
-# Summary
+### Initialization Result
 
-Sau giai đoạn Execution Initialization, hệ thống đã:
+Đến thời điểm này:
 
-- Nhận yêu cầu từ Client.
-- Tải Workflow Definition.
-- Tạo Execution Runtime.
-- Khởi tạo Execution Context.
-- Tạo toàn bộ Runtime Hierarchy.
-- Liên kết Runtime với Definition tương ứng.
+- Workflow Definition đã được tải.
+- Execution Runtime đã được tạo.
+- Runtime Hierarchy đã hoàn chỉnh.
+- Runtime State đã được khởi tạo.
+- Execution Context đã sẵn sàng.
+- Runtime đã liên kết với Definition.
 
-Execution Layer đã hoàn tất việc chuẩn bị.
+Tuy nhiên, **chưa có Activity nào được thực thi**.
 
-Ở phần tiếp theo, Execution Engine sẽ bắt đầu điều phối Runtime thông qua Orchestrator, State Machine và Activity Executor để thực hiện Workflow.
+Execution Engine chỉ mới chuẩn bị môi trường thực thi.
 
+Ở phần tiếp theo, **Orchestrator sẽ bắt đầu Event Loop đầu tiên**, đánh giá Runtime Hierarchy và sinh ra Execution Command đầu tiên để khởi động Workflow.
 
+## 5. Execution Event Loop
+
+Sau khi Execution Runtime được khởi tạo hoàn tất, Execution Engine bắt đầu vòng lặp thực thi (Execution Event Loop).
+
+Event Loop là cơ chế trung tâm của Execution Layer.
+
+Trong mỗi vòng lặp, Orchestrator sẽ:
+
+1. Đánh giá Runtime Hierarchy.
+2. Lựa chọn Runtime có thể thực thi.
+3. Sinh Execution Command.
+4. Chuyển Command cho thành phần thực thi phù hợp.
+5. Cập nhật Runtime.
+6. Bắt đầu vòng lặp tiếp theo.
+
+Toàn bộ quá trình có thể được mô tả như sau.
+
+```text
+Execution Started
+        │
+        ▼
+Evaluate Runtime Hierarchy
+        │
+        ▼
+Generate Execution Command
+        │
+        ▼
+Execute Command
+        │
+        ▼
+Runtime Updated
+        │
+        └──────────────┐
+                       │
+                       ▼
+        Evaluate Runtime Hierarchy
+```
+
+Execution chỉ kết thúc khi không còn Runtime nào có thể thực thi.
+
+---
+
+### Event Loop Iteration 1
+
+#### Runtime Snapshot
+
+```text
+Execution Runtime    Created
+
+Workflow Runtime     Created
+```
+
+#### Orchestrator Evaluation
+
+Orchestrator bắt đầu từ Aggregate Root và duyệt Runtime Hierarchy.
+
+Workflow Runtime đang ở trạng thái **Created** và đủ điều kiện để được kích hoạt.
+
+#### Generated Execution Command
+
+```yaml
+type: TransitionState
+
+runtime: workflow-runtime
+
+from: Created
+
+to: Ready
+```
+
+#### Command Execution
+
+State Machine nhận Command và kiểm tra tính hợp lệ của State Transition.
+
+Transition hợp lệ nên Workflow Runtime được chuyển sang trạng thái **Ready**.
+
+#### Runtime Snapshot
+
+```text
+Workflow Runtime
+
+Ready
+```
+
+---
+
+### Event Loop Iteration 2
+
+#### Runtime Snapshot
+
+```text
+Workflow Runtime
+
+Ready
+```
+
+#### Orchestrator Evaluation
+
+Workflow đã sẵn sàng để bắt đầu thực thi.
+
+#### Generated Execution Command
+
+```yaml
+type: TransitionState
+
+runtime: workflow-runtime
+
+from: Ready
+
+to: Running
+```
+
+#### Command Execution
+
+State Machine chuyển Workflow sang trạng thái **Running**.
+
+#### Runtime Snapshot
+
+```text
+Workflow Runtime
+
+Running
+```
+
+---
+
+### Event Loop Iteration 3
+
+#### Runtime Snapshot
+
+```text
+Stage Runtime
+
+Created
+```
+
+#### Orchestrator Evaluation
+
+Workflow đã chạy.
+
+Stage đầu tiên có thể được kích hoạt.
+
+#### Generated Execution Command
+
+```yaml
+type: TransitionState
+
+runtime: stage-runtime
+
+from: Created
+
+to: Ready
+```
+
+#### Runtime Snapshot
+
+```text
+Stage Runtime
+
+Ready
+```
+
+---
+
+### Event Loop Iteration 4
+
+Stage Runtime chuyển từ **Ready** sang **Running**.
+
+```yaml
+type: TransitionState
+
+runtime: stage-runtime
+
+from: Ready
+
+to: Running
+```
+
+---
+
+### Event Loop Iteration 5
+
+Task Runtime đầu tiên được kích hoạt.
+
+```yaml
+type: TransitionState
+
+runtime: task-runtime
+
+from: Created
+
+to: Ready
+```
+
+---
+
+### Event Loop Iteration 6
+
+Task Runtime bắt đầu thực thi.
+
+```yaml
+type: TransitionState
+
+runtime: task-runtime
+
+from: Ready
+
+to: Running
+```
+
+---
+
+### Event Loop Iteration 7
+
+Activity Runtime đầu tiên được kích hoạt.
+
+```yaml
+type: TransitionState
+
+runtime: activity-runtime
+
+from: Created
+
+to: Ready
+```
+
+---
+
+### Event Loop Iteration 8
+
+Activity Runtime bắt đầu thực thi.
+
+```yaml
+type: TransitionState
+
+runtime: activity-runtime
+
+from: Ready
+
+to: Running
+```
+
+---
+
+### Event Loop Iteration 9
+
+#### Runtime Snapshot
+
+```text
+Activity Runtime
+
+Running
+```
+
+#### Orchestrator Evaluation
+
+Activity đang ở trạng thái Running và sẵn sàng được thực thi.
+
+#### Generated Execution Command
+
+```yaml
+type: ExecuteActivity
+
+runtime: activity-runtime
+```
+
+#### Command Execution
+
+Activity Executor nhận Command.
+
+Activity Executor thực hiện các bước:
+
+1. Resolve Activity Handler.
+2. Chuẩn bị Input từ Context.
+3. Gọi Handler.
+4. Thu thập Output.
+5. Cập nhật Context.
+
+Ví dụ Context sau khi thực thi.
+
+```yaml
+companyProfile:
+  ticker: FPT
+  companyName: FPT Corporation
+```
+
+Sau khi Activity hoàn thành, State Machine cập nhật trạng thái.
+
+```text
+Activity Runtime
+
+Completed
+```
+
+---
+
+### Event Loop Iteration 10
+
+Orchestrator đánh giá lại Runtime Hierarchy.
+
+Activity tiếp theo được chọn và quy trình tương tự lặp lại.
+
+```text
+Transition Activity → Ready
+
+↓
+
+Transition Activity → Running
+
+↓
+
+Execute Activity
+
+↓
+
+Activity Completed
+```
+
+---
+
+### Event Loop Continues
+
+Execution Engine tiếp tục lặp lại quy trình trên cho đến khi toàn bộ Activity của Task hoàn thành.
+
+Sau đó:
+
+```text
+Task Runtime
+
+Completed
+```
+
+Tiếp theo:
+
+```text
+Stage Runtime
+
+Completed
+```
+
+Cuối cùng:
+
+```text
+Workflow Runtime
+
+Completed
+```
+
+và sau khi tất cả Workflow Runtime hoàn thành:
+
+```text
+Execution Runtime
+
+Completed
+```
+
+---
+
+### Event Loop Termination
+
+Sau mỗi Runtime Update, Orchestrator luôn bắt đầu một vòng đánh giá mới.
+
+Khi không còn Runtime nào có thể thực thi:
+
+```text
+Evaluate Runtime Hierarchy
+
+↓
+
+No Executable Runtime
+
+↓
+
+Execution Completed
+```
+
+Đây là điều kiện dừng duy nhất của Execution Event Loop.
+
+## 6. Execution Completion
+
+Sau nhiều vòng lặp của Execution Event Loop, toàn bộ Activity trong Workflow đã được thực thi thành công.
+
+Khi Activity cuối cùng hoàn thành, Execution Engine tiếp tục chạy một vòng đánh giá Runtime mới.
+
+Lần đánh giá này, Orchestrator nhận thấy:
+
+- Không còn Activity nào ở trạng thái `Created` hoặc `Ready`.
+- Không còn Task nào đang thực thi.
+- Tất cả Task trong Stage hiện tại đều đã hoàn thành.
+- Tất cả Stage trong Workflow đều đã hoàn thành.
+- Workflow đã đạt điều kiện kết thúc.
+
+Từ đó, Orchestrator lần lượt sinh các Execution Command để hoàn tất các Runtime còn lại.
+
+Quá trình kết thúc diễn ra theo đúng Runtime Hierarchy.
+
+```text
+Activity Runtime
+
+Completed
+
+↓
+
+Task Runtime
+
+Completed
+
+↓
+
+Stage Runtime
+
+Completed
+
+↓
+
+Workflow Runtime
+
+Completed
+
+↓
+
+Execution Runtime
+
+Completed
+```
+
+Điều quan trọng là **Execution Engine không "nhảy" trực tiếp từ Activity lên Execution**.
+
+Mỗi Runtime chỉ được đánh dấu hoàn thành khi tất cả Runtime con trực tiếp của nó đã hoàn thành.
+
+Điều này đảm bảo Runtime Hierarchy luôn nhất quán trong suốt vòng đời của Execution.
+
+---
+
+### Final Event Loop
+
+Sau khi Execution Runtime chuyển sang trạng thái `Completed`, Orchestrator tiếp tục thực hiện thêm một vòng đánh giá cuối cùng.
+
+```text
+Evaluate Runtime Hierarchy
+
+↓
+
+No Executable Runtime
+
+↓
+
+Execution Completed
+
+↓
+
+Exit Event Loop
+```
+
+Đây là điều kiện dừng duy nhất của Execution Engine.
+
+Execution không kết thúc vì một Runtime được đánh dấu `Completed`.
+
+Execution chỉ kết thúc khi **không còn Runtime nào có thể thực thi hoặc chuyển trạng thái**.
+
+---
+
+### Execution Result
+
+Sau khi Execution hoàn thành, hệ thống tổng hợp kết quả cuối cùng.
+
+Ví dụ.
+
+```yaml
+executionId: exec-001
+
+status: Completed
+
+startedAt: 2026-07-23T09:00:00Z
+
+completedAt: 2026-07-23T09:00:18Z
+
+duration: 18s
+
+result:
+
+  reportId: report-001
+```
+
+Execution Result đại diện cho kết quả của toàn bộ Business Process.
+
+Các Runtime trung gian vẫn được giữ lại để phục vụ:
+
+- Audit
+- Monitoring
+- Debugging
+- Retry (nếu được hỗ trợ)
+- Execution History
+
+---
+
+## 7. Final Runtime Snapshot
+
+Sau khi Execution hoàn thành, toàn bộ Runtime Hierarchy có trạng thái như sau.
+
+```text
+Execution Runtime
+Status : Completed
+
+└── Workflow Runtime
+    Status : Completed
+
+    ├── Stage Runtime
+    │   Status : Completed
+    │
+    │   ├── Task Runtime
+    │   │   Status : Completed
+    │   │
+    │   │   ├── Activity Runtime
+    │   │   │   Status : Completed
+    │   │   │
+    │   │   ├── Activity Runtime
+    │   │   │   Status : Completed
+    │   │   │
+    │   │   └── Activity Runtime
+    │   │       Status : Completed
+    │   │
+    │   └── Task Runtime
+    │       Status : Completed
+    │
+    ├── Stage Runtime
+    │   Status : Completed
+    │
+    └── Stage Runtime
+        Status : Completed
+```
+
+Toàn bộ Runtime đều đã hoàn thành và không còn Runtime nào ở trạng thái:
+
+- Created
+- Ready
+- Running
+
+---
+
+### Final Context Snapshot
+
+Execution Context lúc này đã được bổ sung đầy đủ dữ liệu được tạo ra trong suốt quá trình thực thi.
+
+Ví dụ.
+
+```yaml
+input:
+
+  ticker: FPT
+
+  market: VN
+
+companyProfile:
+
+  ...
+
+financialStatements:
+
+  ...
+
+financialAnalysis:
+
+  ...
+
+valuation:
+
+  ...
+
+riskAnalysis:
+
+  ...
+
+investmentReport:
+
+  reportId: report-001
+```
+
+Execution Context đại diện cho toàn bộ dữ liệu được tích lũy trong suốt vòng đời của Execution.
+
+---
+
+### Runtime Timeline
+
+Có thể hình dung toàn bộ vòng đời của Execution như sau.
+
+```text
+Created
+
+↓
+
+Initialized
+
+↓
+
+Running
+
+↓
+
+Completed
+```
+
+Trong giai đoạn `Running`, Execution Engine liên tục thực hiện:
+
+```text
+Evaluate Runtime
+
+↓
+
+Generate Execution Command
+
+↓
+
+Execute Command
+
+↓
+
+Update Runtime
+
+↓
+
+Repeat
+```
+
+Đây chính là cơ chế Event Loop của Execution Layer.
+
+---
+
+## 8. Key Takeaways
+
+Qua walkthrough này, chúng ta có thể rút ra một số nguyên tắc quan trọng của Execution Layer.
+
+### Definition và Runtime được tách biệt
+
+Workflow Definition chỉ mô tả Business Process.
+
+Execution Runtime đại diện cho một lần thực thi cụ thể của Workflow đó.
+
+Một Workflow Definition có thể được sử dụng bởi nhiều Execution khác nhau.
+
+---
+
+### Execution Runtime là Aggregate Root
+
+Execution Runtime là điểm truy cập duy nhất tới Runtime Hierarchy.
+
+Mọi Runtime đều thuộc về một Execution Runtime.
+
+---
+
+### Orchestrator chỉ đưa ra quyết định
+
+Orchestrator không trực tiếp:
+
+- thay đổi Runtime State;
+- thực thi Activity;
+- cập nhật Context.
+
+Nhiệm vụ duy nhất của Orchestrator là đánh giá Runtime Hierarchy và sinh Execution Command phù hợp.
+
+---
+
+### Execution Command là cầu nối giữa Decision và Execution
+
+Execution Command biểu diễn một quyết định của Orchestrator.
+
+Các Command được chuyển cho các thành phần chuyên trách như:
+
+- State Machine
+- Activity Executor
+
+để thực hiện hành động tương ứng.
+
+---
+
+### State chỉ được thay đổi bởi State Machine
+
+Mọi thay đổi Runtime State đều phải đi qua State Machine.
+
+Điều này đảm bảo:
+
+- State Transition nhất quán.
+- Runtime Lifecycle được kiểm soát.
+- Không có thành phần nào tự ý thay đổi trạng thái Runtime.
+
+---
+
+### Activity chỉ được thực thi bởi Activity Executor
+
+Activity Executor chịu trách nhiệm:
+
+- Resolve Handler.
+- Chuẩn bị Input.
+- Thực thi Activity.
+- Thu thập Output.
+- Cập nhật Context.
+
+Business Logic không nằm trong Execution Engine mà nằm trong các Capability hoặc Handler được Activity gọi tới.
+
+---
+
+### Context được tích lũy trong suốt Execution
+
+Execution Context bắt đầu từ dữ liệu đầu vào của người dùng.
+
+Qua mỗi Activity, Context được mở rộng bằng các kết quả trung gian và cuối cùng trở thành dữ liệu đầu ra của toàn bộ Workflow.
+
+---
+
+### Execution Engine hoạt động theo Event Loop
+
+Execution Engine không thực thi Workflow theo cách đệ quy (recursive) hay theo một luồng tuyến tính cố định.
+
+Thay vào đó, hệ thống liên tục:
+
+1. Đánh giá Runtime Hierarchy.
+2. Đưa ra quyết định.
+3. Sinh Execution Command.
+4. Thực thi Command.
+5. Cập nhật Runtime.
+6. Lặp lại cho đến khi không còn Runtime nào có thể thực thi.
+
+Mô hình này giúp Execution Layer dễ dàng mở rộng để hỗ trợ các khả năng như:
+
+- Parallel Execution
+- Retry
+- Timeout
+- Compensation
+- Human Approval
+- Distributed Execution
+
+mà không cần thay đổi kiến trúc cốt lõi của hệ thống.
+
+---
+
+### Tổng kết
+
+Thông qua walkthrough này, chúng ta đã theo dõi toàn bộ vòng đời của một Execution:
+
+1. Tải Workflow Definition.
+2. Khởi tạo Execution Runtime.
+3. Xây dựng Runtime Hierarchy.
+4. Khởi tạo Context.
+5. Thực thi Workflow thông qua Execution Event Loop.
+6. Hoàn thành toàn bộ Runtime.
+7. Sinh Execution Result.
+
+Đây là luồng thực thi chuẩn (Happy Path) của Execution Layer và là nền tảng cho các kịch bản nâng cao như xử lý lỗi, Retry, Parallel Execution và Compensation sẽ được trình bày trong các tài liệu chuyên biệt.
