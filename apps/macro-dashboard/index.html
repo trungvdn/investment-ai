@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Vietnam macro intelligence dashboard" />
+    <title>Investment AI · Vietnam Macro Dashboard</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="dashboard-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Investment AI / Market Intelligence</p>
+          <h1>Vietnam Macro Dashboard</h1>
+          <p class="subtitle">A transparent macro context built from 15 tracked indicators.</p>
+        </div>
+        <p id="as-of" class="as-of"></p>
+      </header>
+      <section id="macro-summary" class="summary-grid" aria-label="Macro summary"></section>
+      <section aria-labelledby="groups-heading">
+        <div class="section-heading">
+          <div><p class="eyebrow">Macro context</p><h2 id="groups-heading">Group scores</h2></div>
+          <span class="caption">Scores are evidence-based mock assessments</span>
+        </div>
+        <div id="group-scores" class="group-grid"></div>
+      </section>
+      <section class="insight-grid" aria-label="Trend and macro alerts">
+        <article class="panel chart-panel"><div class="panel-heading"><div><p class="eyebrow">Six-month view</p><h2>Macro score trend</h2></div><span id="trend-copy" class="trend-copy"></span></div><div id="chart" class="chart" role="img" aria-label="Macro score history"></div></article>
+        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">Attention</p><h2>Macro alerts</h2></div></div><div id="alerts" class="alerts"></div></article>
+      </section>
+      <section aria-labelledby="indicators-heading">
+        <div class="section-heading"><div><p class="eyebrow">Published knowledge</p><h2 id="indicators-heading">Indicator monitor</h2></div><span class="caption">Mock data · August 2026</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Indicator</th><th>Group</th><th>Latest value</th><th>Trend</th><th>Assessment</th></tr></thead><tbody id="indicator-table"></tbody></table></div>
+      </section>
+    </main>
+    <script type="module" src="./src/presentation/app.js"></script>
+  </body>
+</html>
