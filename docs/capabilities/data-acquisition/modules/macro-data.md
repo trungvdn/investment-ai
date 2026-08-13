@@ -335,3 +335,15 @@ Ví dụ:
 - information-model.md
 - knowledge-contracts.md
 - business-rules.md
+
+---
+
+# Phase 2 Reference Implementation
+
+`apps/macro-api` implements the data foundation only: indicator metadata, canonical observations, provider normalization, deterministic quality checks, a repository port, ingestion, and read APIs. It intentionally does not calculate trends, scores, regimes, or investment implications.
+
+The five supported indicators are `VN_M2_GROWTH`, `VN_CREDIT_GROWTH`, `VN_INTERBANK_ON`, `VN_SBV_TBILL`, and `VN_USD_VND`. The initial `MockMacroDataProvider` supplies deterministic, clearly labelled `MOCK` observations for six representative months. These are development fixtures, not real market data.
+
+Provider-shaped records flow through `MacroDataNormalizer` before becoming canonical observations. The in-memory development repository enforces `(indicatorCode, observationDate, sourceCode)` uniqueness because the repository has no database infrastructure yet; a database adapter can later replace it without changing the domain or application services.
+
+Run `MACRO_DATA_MODE=mock npm run start:macro-api` to seed and serve the API. Available endpoints are `GET /api/macro/indicators`, `GET /api/macro/indicators/{code}`, `GET /api/macro/observations/{code}`, and `GET /api/macro/observations?indicators=...`, with optional `from` and `to` filters. The dashboard’s `macro-api-client.js` is an adapter boundary and leaves its existing mock mode unchanged until all fifteen indicators are available.
