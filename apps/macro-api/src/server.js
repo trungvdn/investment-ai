@@ -1,0 +1,6 @@
+import { createServer } from "node:http";
+import { MacroDataIngestionService, MacroDataQueryService } from "./application/macro-data-services.js";
+import { createMacroHttpHandler } from "./api/macro-http-api.js";
+import { InMemoryMacroObservationRepository, MacroDataNormalizer, MockMacroDataProvider } from "./infrastructure/macro-infrastructure.js";
+export async function buildMacroApplication({provider=new MockMacroDataProvider(),logger=console}={}){const repository=new InMemoryMacroObservationRepository();const ingestionService=new MacroDataIngestionService({provider,normalizer:new MacroDataNormalizer(),repository,logger});await ingestionService.ingest();const queryService=new MacroDataQueryService({repository});return {repository,ingestionService,queryService,server:createServer(createMacroHttpHandler(queryService))};}
+if(process.argv[1]?.endsWith("server.js")){const mode=process.env.MACRO_DATA_MODE??"mock";if(mode!=="mock")throw new Error("Only MACRO_DATA_MODE=mock is supported in Phase 2.");buildMacroApplication().then(({server})=>server.listen(Number(process.env.PORT??3000),()=>console.info(JSON.stringify({event:"macro.api.started",mode,port:Number(process.env.PORT??3000)}))));}

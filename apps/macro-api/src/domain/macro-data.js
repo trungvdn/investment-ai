@@ -1,0 +1,17 @@
+export const MacroCategory = Object.freeze({ LIQUIDITY: "LIQUIDITY", CREDIT: "CREDIT", EXTERNAL: "EXTERNAL" });
+export const MacroFrequency = Object.freeze({ DAILY: "DAILY", MONTHLY: "MONTHLY" });
+export const QualityStatus = Object.freeze({ VALID: "VALID", WARNING: "WARNING", INVALID: "INVALID" });
+export class MacroDataError extends Error { constructor(code, message) { super(message); this.code = code; } }
+export const INDICATOR_CATALOG = Object.freeze([
+  { code:"VN_M2_GROWTH", name:"M2 Growth", category:"LIQUIDITY", description:"Vietnam broad money growth.", unit:"%", frequency:"MONTHLY", country:"VN", active:true },
+  { code:"VN_CREDIT_GROWTH", name:"Credit Growth", category:"CREDIT", description:"Vietnam domestic credit growth.", unit:"%", frequency:"MONTHLY", country:"VN", active:true },
+  { code:"VN_INTERBANK_ON", name:"Interbank Overnight Rate", category:"LIQUIDITY", description:"Vietnam interbank overnight funding rate.", unit:"%", frequency:"DAILY", country:"VN", active:true },
+  { code:"VN_SBV_TBILL", name:"SBV Treasury Bill Rate", category:"LIQUIDITY", description:"State Bank of Vietnam Treasury bill rate.", unit:"%", frequency:"DAILY", country:"VN", active:true },
+  { code:"VN_USD_VND", name:"USD/VND Exchange Rate", category:"EXTERNAL", description:"Vietnamese dong per US dollar.", unit:"VND", frequency:"DAILY", country:"VN", active:true }
+]);
+export const DATA_SOURCES = Object.freeze([{ code:"MOCK", name:"Development Mock Source", provider:"Investment AI", type:"MOCK", reliability:"DEVELOPMENT_ONLY", enabled:true }]);
+export const listMacroIndicators = () => INDICATOR_CATALOG;
+export const findMacroIndicator = (code) => INDICATOR_CATALOG.find((item) => item.code === code);
+export const findMacroDataSource = (code) => DATA_SOURCES.find((item) => item.code === code);
+export const createMacroObservation = (input) => Object.freeze({ indicatorCode:input.indicatorCode, value:input.value, previousValue:input.previousValue ?? null, observationDate:input.observationDate, unit:input.unit, sourceCode:input.sourceCode, collectedAt:input.collectedAt, qualityStatus:input.qualityStatus ?? "VALID", metadata:Object.freeze({ ...(input.metadata ?? {}) }) });
+export function assessObservation(observation) { const reasons=[]; const indicator=findMacroIndicator(observation.indicatorCode); const source=findMacroDataSource(observation.sourceCode); if(!indicator) reasons.push("UNKNOWN_INDICATOR"); if(observation.value===null||observation.value===undefined||!Number.isFinite(observation.value)) reasons.push("MISSING_OR_INVALID_VALUE"); if(!/^\d{4}-\d{2}-\d{2}$/.test(observation.observationDate??"")||Number.isNaN(Date.parse(`${observation.observationDate}T00:00:00Z`))) reasons.push("INVALID_OBSERVATION_DATE"); if(indicator&&observation.unit!==indicator.unit) reasons.push("UNIT_MISMATCH"); if(!source||!source.enabled) reasons.push("UNKNOWN_OR_DISABLED_SOURCE"); if(Number.isFinite(observation.value)&&observation.value<0&&["VN_INTERBANK_ON","VN_SBV_TBILL","VN_USD_VND"].includes(observation.indicatorCode)) reasons.push("IMPOSSIBLE_NEGATIVE_VALUE"); if(!observation.collectedAt||Number.isNaN(Date.parse(observation.collectedAt))) reasons.push("INVALID_COLLECTION_TIMESTAMP"); if(observation.collectedAt&&observation.observationDate&&Date.parse(observation.collectedAt)<Date.parse(`${observation.observationDate}T00:00:00Z`)) reasons.push("COLLECTED_BEFORE_OBSERVATION"); return Object.freeze({status:reasons.length?"INVALID":"VALID",reasons:Object.freeze(reasons)}); }

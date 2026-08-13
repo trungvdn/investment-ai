@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "start:macro-api": "node apps/macro-api/src/server.js"
   }
 }
