@@ -120,13 +120,13 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis,error) {
 	if result.Phase==PhaseUnknown {
 		switch {
 		case hasEvent(result.Events,"SPRING") || hasEvent(result.Events,"UTAD"): result.Phase=PhaseC
-		case hasEvent(result.Events,"SOS") || hasEvent(result.Events,"SOW") || hasEvent(result.Events,"TEST"): result.Phase=PhaseD
+		case hasEvent(result.Events,"SOS") || hasEvent(result.Events,"SOW") || hasEvent(result.Events,"LPS") || hasEvent(result.Events,"LPSY"): result.Phase=PhaseD
 		case result.Structure==StructureAccumulation || result.Structure==StructureDistribution:
 			if hasEvent(result.Events,"SC")||hasEvent(result.Events,"BC"){result.Phase=PhaseA}else{result.Phase=PhaseB}
 		}
 	}
 	if result.Structure==StructureAccumulation {
-		if hasEvent(result.Events,"SOS") || hasEvent(result.Events,"TEST") {result.Phase=PhaseD}
+		if hasEvent(result.Events,"SOS") || hasEvent(result.Events,"LPS") {result.Phase=PhaseD}
 		if hasEvent(result.Events,"SPRING") && !hasEvent(result.Events,"SOS") {result.Phase=PhaseC}
 	}
 	if result.Structure==StructureDistribution {
