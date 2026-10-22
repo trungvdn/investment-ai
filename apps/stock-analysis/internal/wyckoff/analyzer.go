@@ -7,91 +7,115 @@ import (
 	"sort"
 )
 
-var ErrInsufficientData = errors.New("at least 30 valid candles are required")
+var ErrInsufficientData = errors.New("at least 60 valid candles are required")
 
 type Config struct { RangeWindow, TrendWindow, VolumeWindow int }
-func DefaultConfig() Config { return Config{RangeWindow:20, TrendWindow:10, VolumeWindow:20} }
+func DefaultConfig() Config { return Config{RangeWindow:40, TrendWindow:20, VolumeWindow:20} }
 type Analyzer struct { cfg Config }
 func NewAnalyzer(cfg Config) *Analyzer {
-	if cfg.RangeWindow < 5 { cfg.RangeWindow=20 }
-	if cfg.TrendWindow < 3 { cfg.TrendWindow=10 }
-	if cfg.VolumeWindow < 5 { cfg.VolumeWindow=20 }
+	if cfg.RangeWindow<20 { cfg.RangeWindow=40 }; if cfg.TrendWindow<5 {cfg.TrendWindow=20}; if cfg.VolumeWindow<5 {cfg.VolumeWindow=20}
 	return &Analyzer{cfg:cfg}
 }
+type candleStats struct { spread, closeLocation, relativeVolume, change float64 }
+func stats(c Candle, avgVol float64) candleStats {
+	spread:=c.High-c.Low; clv:=0.5
+	if spread>0 {clv=(c.Close-c.Low)/spread}
+	rv:=0.0; if avgVol>0 {rv=c.Volume/avgVol}
+	return candleStats{spread:spread,closeLocation:clv,relativeVolume:rv,change:(c.Close-c.Open)}
+}
+func avgVolume(cs []Candle) float64 { total:=0.0; for _,c:=range cs {total+=c.Volume}; if len(cs)==0{return 0}; return total/float64(len(cs)) }
+func bounds(cs []Candle)(float64,float64){lo,hi:=math.MaxFloat64,-math.MaxFloat64;for _,c:=range cs{if c.Low<lo{lo=c.Low};if c.High>hi{hi=c.High}};return lo,hi}
+func hasEvent(es []Event, kind string) bool {for _,e:=range es{if e.Type==kind{return true}};return false}
 
-// Analyze applies transparent heuristics to OHLCV. Confidence is a rule-strength
-// score, not a statistically calibrated probability or investment recommendation.
+// Analyze evaluates price/volume context and event sequences. Confidence is a
+// heuristic evidence score, not a calibrated probability or investment advice.
 func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis,error) {
-	if len(candles)<30 { return Analysis{},ErrInsufficientData }
-	candles=append([]Candle(nil),candles...)
-	sort.Slice(candles,func(i,j int)bool{return candles[i].Date.Before(candles[j].Date)})
-	for i,c:=range candles {
-		if c.High<c.Low || c.High<c.Open || c.High<c.Close || c.Low>c.Open || c.Low>c.Close || c.Close<=0 || c.Volume<0 {
-			return Analysis{},fmt.Errorf("invalid candle at index %d",i)
+	if len(candles)<60{return Analysis{},ErrInsufficientData}
+	cs:=append([]Candle(nil),candles...)
+	sort.Slice(cs,func(i,j int)bool{return cs[i].Date.Before(cs[j].Date)})
+	for i,c:=range cs {if c.High<c.Low||c.High<c.Open||c.High<c.Close||c.Low>c.Open||c.Low>c.Close||c.Close<=0||c.Volume<0{return Analysis{},fmt.Errorf("invalid candle at index %d",i)}}
+	last:=cs[len(cs)-1]; n:=len(cs); tw:=a.cfg.TrendWindow; rw:=a.cfg.RangeWindow
+	if tw>n/2{tw=n/2}; if rw>n-tw-1{rw=n-tw-1}
+	priorRange:=cs[n-rw-1:n-1]; support,resistance:=bounds(priorRange)
+	widthPct:=(resistance-support)/math.Max(0.00001,(resistance+support)/2)*100
+	vw:=a.cfg.VolumeWindow; if vw>n-1{vw=n-1}; avgVol:=avgVolume(cs[n-vw-1:n-1])
+	lastStats:=stats(last,avgVol)
+	priorClose:=cs[n-tw-1].Close; trendChange:=(last.Close-priorClose)/priorClose
+	preTrendStart:=cs[n-2*tw-1].Close; preTrendChange:=(cs[n-tw-1].Close-preTrendStart)/preTrendStart
+	// Long enough to identify context: accumulation usually follows markdown;
+	// distribution usually follows markup. Range shape alone is not sufficient.
+	result:=Analysis{Symbol:symbol,AsOf:last.Date,Structure:StructureUnclear,Phase:PhaseUnknown,Confidence:0.20,TradingRange:&TradingRange{Support:support,Resistance:resistance,WidthPct:widthPct},Events:[]Event{},Evidence:[]string{},DataPoints:n,DataMode:"real"}
+	add:=func(kind string, idx int, conf float64, why string){result.Events=append(result.Events,Event{Type:kind,Date:cs[idx].Date,Confidence:conf,Evidence:why});result.Evidence=append(result.Evidence,fmt.Sprintf("%s (%s): %s",kind,cs[idx].Date.Format("2006-01-02"),why))}
+	// Detect candidate events over the last 12 candles, with event levels formed
+	// by earlier candles to avoid look-ahead contamination.
+	start:=n-12; if start<tw{start=tw}
+	for i:=start;i<n;i++ {
+		windowStart:=i-rw; if windowStart<0{windowStart=0}; if windowStart>=i{continue}
+		lo,hi:=bounds(cs[windowStart:i]); c:=cs[i]; st:=stats(c,avgVolume(cs[maxInt(0,i-vw):i]))
+		prevTrendStart:=i-tw; if prevTrendStart<0{prevTrendStart=0}
+		ctxChange:=(cs[i-1].Close-cs[prevTrendStart].Close)/cs[prevTrendStart].Close
+		if ctxChange < -0.08 && c.Low<lo && c.Close>lo && st.closeLocation>=0.55 && st.relativeVolume<1.25 {
+			add("SPRING",i,0.72,"After a declining context, price undercut prior support and recovered into the range without exceptional selling volume.")
 		}
+		if ctxChange > 0.08 && c.High>hi && c.Close<hi && st.closeLocation<=0.45 && st.relativeVolume>0.8 {
+			add("UTAD",i,0.70,"After a rising context, price exceeded prior resistance and closed back inside the range.")
+		}
+		if c.Close>hi && st.closeLocation>=0.70 && st.relativeVolume>=1.2 {
+			add("SOS",i,0.70,"Close broke above prior resistance with a strong close and expanding volume.")
+		}
+		if c.Close<lo && st.closeLocation<=0.30 && st.relativeVolume>=1.2 {
+			add("SOW",i,0.70,"Close broke below prior support with a weak close and expanding volume.")
+		}
+		// Selling/buying climax candidates: wide spread, elevated volume and
+		// rejection/reversal close after an established directional move.
+		if ctxChange < -0.12 && st.relativeVolume>=1.5 && st.spread>0 && st.closeLocation>=0.55 { add("SC",i,0.62,"High-volume wide-spread decline was rejected and closed in the upper part of the bar.") }
+		if ctxChange > 0.12 && st.relativeVolume>=1.5 && st.spread>0 && st.closeLocation<=0.45 { add("BC",i,0.62,"High-volume wide-spread advance was rejected and closed in the lower part of the bar.") }
 	}
-	last:=candles[len(candles)-1]
-	rw:=a.cfg.RangeWindow
-	if rw>len(candles)-1 { rw=len(candles)-1 }
-	prevWindow:=candles[len(candles)-rw-1:len(candles)-1]
-	support,resistance:=math.MaxFloat64,-math.MaxFloat64
-	for _,c:=range prevWindow { if c.Low<support {support=c.Low}; if c.High>resistance {resistance=c.High} }
-	widthPct:=(resistance-support)/((resistance+support)/2)*100
-	tr:=&TradingRange{Support:support,Resistance:resistance,WidthPct:widthPct}
-	vw:=a.cfg.VolumeWindow
-	if vw>len(candles)-1 {vw=len(candles)-1}
-	avgVolume:=0.0
-	for _,c:=range candles[len(candles)-1-vw:len(candles)-1] {avgVolume+=c.Volume}
-	avgVolume/=float64(vw)
-	result:=Analysis{Symbol:symbol,AsOf:last.Date,Structure:StructureUnclear,Phase:PhaseUnknown,Confidence:0.25,TradingRange:tr,Events:[]Event{},Evidence:[]string{},DataPoints:len(candles),DataMode:"heuristic"}
-	addEvent:=func(kind string,confidence float64,evidence string){
-		result.Events=append(result.Events,Event{Type:kind,Date:last.Date,Confidence:confidence,Evidence:evidence})
-		result.Evidence=append(result.Evidence,evidence)
+	// Automatic Rally / Reaction: meaningful countertrend response following a
+	// climax, only report if the move is large enough to be observable.
+	if hasEvent(result.Events,"SC") && trendChange>0.05 { add("AR",n-1,0.58,"A meaningful rally followed a selling-climax candidate.") }
+	if hasEvent(result.Events,"BC") && trendChange < -0.05 { add("AR",n-1,0.58,"A meaningful reaction followed a buying-climax candidate.") }
+	// Test: after a Spring, require low supply and no close below the spring low.
+	for i:=len(result.Events)-1;i>=0;i-- {
+		e:=result.Events[i]; if e.Type!="SPRING"{continue}
+		springIdx:=0; for j:=range cs{if cs[j].Date.Equal(e.Date){springIdx=j;break}}
+		for j:=springIdx+1;j<n;j++ {st:=stats(cs[j],avgVolume(cs[maxInt(0,j-vw):j])); if cs[j].Low>=cs[springIdx].Low && st.relativeVolume<0.8 && st.closeLocation>=0.55 {add("TEST",j,0.68,"Retest held above the Spring low with below-average volume and a firm close.");break}}
+		break
 	}
-	if last.Low<support && last.Close>support && last.Close>last.Open && last.Volume<avgVolume {
-		addEvent("SPRING",0.70,"Price pierced prior support and closed back above it on below-average volume.")
-	}
-	if last.High>resistance && last.Close<resistance && last.Close<last.Open && last.Volume>avgVolume {
-		addEvent("UTAD",0.68,"Price pierced prior resistance and closed back below it on above-average volume.")
-	}
-	// Use prior-window levels, not levels that include the current candle.
-	if last.Close>resistance && last.Volume>avgVolume { addEvent("SOS",0.65,"Close broke above the prior range on above-average volume.") }
-	if last.Close<support && last.Volume>avgVolume { addEvent("SOW",0.65,"Close broke below the prior range on above-average volume.") }
-
-	trendWindow:=a.cfg.TrendWindow
-	start:=candles[len(candles)-1-trendWindow].Close
-	change:=(last.Close-start)/start
+	// Structural interpretation uses context + sequence rather than one event.
 	switch {
-	case widthPct>25 && change>0.08:
+	case trendChange>0.08 && widthPct>15 && (hasEvent(result.Events,"SOS") || (trendChange>0.15 && last.Close>resistance)):
 		result.Structure=StructureMarkup; result.Phase=PhaseE
-		result.Evidence=append(result.Evidence,"Price advanced materially over the recent trend window.")
-	case widthPct>25 && change < -0.08:
+	case trendChange < -0.08 && widthPct>15 && (hasEvent(result.Events,"SOW") || (trendChange < -0.15 && last.Close<support)):
 		result.Structure=StructureMarkdown; result.Phase=PhaseE
-		result.Evidence=append(result.Evidence,"Price declined materially over the recent trend window.")
-	case hasEvent(result.Events,"SPRING") || hasEvent(result.Events,"SOS"):
+	case hasEvent(result.Events,"SPRING") || hasEvent(result.Events,"SC"):
 		result.Structure=StructureAccumulation
-	case hasEvent(result.Events,"UTAD") || hasEvent(result.Events,"SOW"):
+	case hasEvent(result.Events,"UTAD") || hasEvent(result.Events,"BC"):
 		result.Structure=StructureDistribution
-	case widthPct<=25 && change < -0.08:
+	case widthPct<=30 && preTrendChange < -0.08:
 		result.Structure=StructureAccumulation
-	case widthPct<=25 && change>0.08:
+	case widthPct<=30 && preTrendChange > 0.08:
 		result.Structure=StructureDistribution
 	}
 	if result.Phase==PhaseUnknown {
 		switch {
 		case hasEvent(result.Events,"SPRING") || hasEvent(result.Events,"UTAD"): result.Phase=PhaseC
-		case hasEvent(result.Events,"SOS") || hasEvent(result.Events,"SOW"): result.Phase=PhaseD
-		case result.Structure==StructureAccumulation || result.Structure==StructureDistribution: result.Phase=PhaseB
+		case hasEvent(result.Events,"SOS") || hasEvent(result.Events,"SOW") || hasEvent(result.Events,"TEST"): result.Phase=PhaseD
+		case result.Structure==StructureAccumulation || result.Structure==StructureDistribution:
+			if hasEvent(result.Events,"SC")||hasEvent(result.Events,"BC"){result.Phase=PhaseA}else{result.Phase=PhaseB}
 		}
 	}
-	if result.Phase!=PhaseUnknown {
-		result.Confidence=0.45
-		if len(result.Events)>0 {result.Confidence=0.65}
-		if len(result.Events)>1 {result.Confidence=0.75}
-	} else {
-		result.Evidence=append(result.Evidence,"Available OHLCV does not support a reliable Wyckoff phase classification.")
+	if result.Structure==StructureAccumulation {
+		if hasEvent(result.Events,"SOS") || hasEvent(result.Events,"TEST") {result.Phase=PhaseD}
+		if hasEvent(result.Events,"SPRING") && !hasEvent(result.Events,"SOS") {result.Phase=PhaseC}
 	}
-	result.Evidence=append(result.Evidence,fmt.Sprintf("Prior trading range: support %.2f, resistance %.2f (width %.1f%%).",support,resistance,widthPct))
+	if result.Structure==StructureDistribution {
+		if hasEvent(result.Events,"SOW") {result.Phase=PhaseD}
+		if hasEvent(result.Events,"UTAD") && !hasEvent(result.Events,"SOW") {result.Phase=PhaseC}
+	}
+	if result.Phase!=PhaseUnknown {result.Confidence=0.42;if len(result.Events)>0{result.Confidence=0.55};if len(result.Events)>=2{result.Confidence=0.68};if hasEvent(result.Events,"TEST")&&(hasEvent(result.Events,"SPRING")||hasEvent(result.Events,"SOS")){result.Confidence=0.76}}
+	result.Evidence=append(result.Evidence,fmt.Sprintf("Prior range support %.2f / resistance %.2f; width %.1f%%. Recent trend change %.1f%%.",support,resistance,widthPct,trendChange*100))
+	if result.Phase==PhaseUnknown {result.Evidence=append(result.Evidence,"Phase remains UNKNOWN: evidence is insufficient or conflicting; wait for confirmation rather than anticipate.")}
 	return result,nil
 }
-func hasEvent(events []Event,kind string)bool{for _,e:=range events{if e.Type==kind{return true}};return false}
+func maxInt(a,b int)int{if a>b{return a};return b}
