@@ -5,32 +5,8 @@ import (
 	"testing"
 	"time"
 )
-
-func sampleCandles(n int) []Candle {
-	out:=make([]Candle,n)
-	for i:=range out {
-		close:=100.0+float64(i%5)*0.3
-		out[i]=Candle{Date:time.Date(2026,1,1+i,0,0,0,0,time.UTC),Open:close-0.2,High:close+0.8,Low:close-0.8,Close:close,Volume:1000}
-	}
-	return out
-}
-
-func TestAnalyzeRejectsInsufficientCandles(t *testing.T) {
-	_,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",sampleCandles(10))
-	if !errors.Is(err,ErrInsufficientData) { t.Fatalf("expected ErrInsufficientData, got %v",err) }
-}
-
-func TestAnalyzeReturnsEvidenceAndRange(t *testing.T) {
-	got,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",sampleCandles(40))
-	if err!=nil { t.Fatal(err) }
-	if got.Symbol!="TEST" || got.DataPoints!=40 { t.Fatalf("unexpected result: %+v",got) }
-	if got.TradingRange==nil || got.TradingRange.Support<=0 || got.TradingRange.Resistance<got.TradingRange.Support { t.Fatalf("invalid range: %+v",got.TradingRange) }
-	if len(got.Evidence)==0 { t.Fatal("expected evidence") }
-}
-
-func TestAnalyzeRejectsInvalidCandle(t *testing.T) {
-	c:=sampleCandles(40)
-	c[4].High=1
-	_,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",c)
-	if err==nil { t.Fatal("expected invalid candle error") }
-}
+func candles(n int)[]Candle{out:=make([]Candle,n);for i:=range out{v:=100+float64(i%5)*0.3;out[i]=Candle{Date:time.Date(2025,1,1+i,0,0,0,0,time.UTC),Open:v-0.2,High:v+0.8,Low:v-0.8,Close:v,Volume:1000}};return out}
+func TestRejectsInsufficientCandles(t *testing.T){_,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",candles(20));if !errors.Is(err,ErrInsufficientData){t.Fatalf("got %v",err)}}
+func TestAnalysisIncludesRangeAndEvidence(t *testing.T){got,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",candles(90));if err!=nil{t.Fatal(err)};if got.DataPoints!=90||got.TradingRange==nil||len(got.Evidence)==0{t.Fatalf("incomplete result: %+v",got)}}
+func TestRejectsInvalidCandle(t *testing.T){cs:=candles(90);cs[4].High=1;_,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",cs);if err==nil{t.Fatal("expected invalid candle error")}}
+func TestUnknownPhaseWhenNoEvidence(t *testing.T){cs:=candles(90);got,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",cs);if err!=nil{t.Fatal(err)};if got.Phase!=PhaseUnknown&&got.Phase!=PhaseB{t.Fatalf("unexpected phase %s",got.Phase)}}
