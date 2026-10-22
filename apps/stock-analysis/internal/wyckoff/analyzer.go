@@ -66,6 +66,15 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis,error) {
 		if c.Close<lo && st.closeLocation<=0.30 && st.relativeVolume>=1.2 {
 			add("SOW",i,0.70,"Close broke below prior support with a weak close and expanding volume.")
 		}
+		if ctxChange < -0.08 && math.Abs(c.Low-lo)/math.Max(lo,0.00001) < 0.025 && st.relativeVolume < 0.85 && st.spread < (hi-lo)*0.65 {
+			add("ST",i,0.58,"A secondary test approached support with reduced volume and a relatively narrow spread.")
+		}
+		if ctxChange > 0.08 && c.High>hi && c.Close<hi && st.closeLocation<0.45 && st.relativeVolume>1.0 {
+			add("UT",i,0.60,"Price briefly exceeded resistance and was rejected back into the range.")
+		}
+		if ctxChange < -0.08 && st.relativeVolume >= 1.5 && st.spread < (hi-lo)*0.5 && c.Close >= c.Open {
+			add("PS",i,0.55,"Potential preliminary support: elevated volume with limited downside result.")
+		}
 		// Selling/buying climax candidates: wide spread, elevated volume and
 		// rejection/reversal close after an established directional move.
 		if ctxChange < -0.12 && st.relativeVolume>=1.5 && st.spread>0 && st.closeLocation>=0.55 { add("SC",i,0.62,"High-volume wide-spread decline was rejected and closed in the upper part of the bar.") }
@@ -75,6 +84,17 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis,error) {
 	// climax, only report if the move is large enough to be observable.
 	if hasEvent(result.Events,"SC") && trendChange>0.05 { add("AR",n-1,0.58,"A meaningful rally followed a selling-climax candidate.") }
 	if hasEvent(result.Events,"BC") && trendChange < -0.05 { add("AR",n-1,0.58,"A meaningful reaction followed a buying-climax candidate.") }
+	// Last Point of Support / Supply candidates after confirmed range breaks.
+	for i:=0;i<n-1;i++ {
+		if cs[i].Close>resistance && stats(cs[i],avgVol).relativeVolume>=1.2 {
+			for j:=i+1;j<n;j++ { st:=stats(cs[j],avgVolume(cs[maxInt(0,j-vw):j])); if cs[j].Low>=resistance*0.98 && cs[j].Close>=resistance && st.relativeVolume<0.9 { add("LPS",j,0.62,"Pullback held the former resistance as support with reduced volume after a breakout."); break } }
+			break
+		}
+		if cs[i].Close<support && stats(cs[i],avgVol).relativeVolume>=1.2 {
+			for j:=i+1;j<n;j++ { st:=stats(cs[j],avgVolume(cs[maxInt(0,j-vw):j])); if cs[j].High<=support*1.02 && cs[j].Close<=support && st.relativeVolume<0.9 { add("LPSY",j,0.62,"Rally failed near former support/resistance with reduced demand after a breakdown."); break } }
+			break
+		}
+	}
 	// Test: after a Spring, require low supply and no close below the spring low.
 	for i:=len(result.Events)-1;i>=0;i-- {
 		e:=result.Events[i]; if e.Type!="SPRING"{continue}
