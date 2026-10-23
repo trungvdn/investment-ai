@@ -10,7 +10,21 @@ go test ./...
 go run ./cmd/server
 ```
 
-`GET /api/stocks/VCI/wyckoff` fetches the last two years of daily candles from the KB Securities public history endpoint. Optional query parameters: `from=YYYY-MM-DD` and `to=YYYY-MM-DD`. `GET /healthz` is the health check. Set `PORT` to change the port (default 8081).
+`GET /api/stocks/VCI/wyckoff` returns the raw, structured Wyckoff analyzer result. `GET /api/stocks/VCI/report` returns the standardized, presentation-oriented report. Both fetch the last two years of daily candles from the KB Securities public history endpoint. Optional query parameters: `from=YYYY-MM-DD` and `to=YYYY-MM-DD`. `GET /healthz` is the health check. Set `PORT` to change the port (default 8081).
+
+## Standardized analysis report (schema v1.0)
+
+The report endpoint returns a stable JSON contract with `schemaVersion`, `symbol`, `asOf`, `headline`, `summary`, `structure`, `phase`, `confidence`, `tradingRange`, `events`, `evidence`, `risks`, `watchlist`, `dataQuality`, and `disclaimer`.
+
+- `headline` and `summary` provide a deterministic human-readable interpretation of the current analyzer classification.
+- `tradingRange.status` distinguishes `IDENTIFIED` from `PROVISIONAL`; a provisional range is not a confirmed structure.
+- `events` retains the event dates, confidence scores, and evidence text from the analyzer.
+- `evidence` preserves the analyzer's evidence statements; `risks` highlights uncertainty, low confidence, missing range, or demo data.
+- `watchlist` contains follow-up conditions to observe, not buy/sell instructions.
+- `dataQuality` identifies the data mode and history count; demo data is explicitly marked.
+- `disclaimer` states that the output is for research and is not investment advice.
+
+The raw `/wyckoff` endpoint remains available so existing consumers are not forced to migrate immediately.
 
 For local deterministic testing only, set `MARKET_DATA_PROVIDER=demo`. Real market data is the default; provider errors return HTTP 502 instead of silently falling back to mock data.
 
