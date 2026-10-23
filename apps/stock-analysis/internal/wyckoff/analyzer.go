@@ -557,6 +557,22 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		}
 	}
 	sort.SliceStable(result.Events, func(i, j int) bool { return result.Events[i].Date.Before(result.Events[j].Date) })
+	// Order event evidence by canonical Wyckoff reading order, while leaving
+	// result.Events chronologically sorted for timeline consumers.
+	evidenceOrder := map[string]int{"PS": 0, "SC": 1, "AR": 2, "ST": 3, "SPRING": 4, "SOS": 5, "LPS": 6}
+	evidenceEvents := append([]Event(nil), result.Events...)
+	sort.SliceStable(evidenceEvents, func(i, j int) bool {
+		iOrder, iOK := evidenceOrder[evidenceEvents[i].Type]
+		jOrder, jOK := evidenceOrder[evidenceEvents[j].Type]
+		if !iOK { iOrder = len(evidenceOrder) }
+		if !jOK { jOrder = len(evidenceOrder) }
+		if iOrder != jOrder { return iOrder < jOrder }
+		return evidenceEvents[i].Date.Before(evidenceEvents[j].Date)
+	})
+	result.Evidence = result.Evidence[:0]
+	for _, e := range evidenceEvents {
+		result.Evidence = append(result.Evidence, fmt.Sprintf("%s (%s): %s", e.Type, e.Date.Format("2006-01-02"), e.Evidence))
+	})
 	// Evidence for sequence quality and candidate range.
 	result.Evidence = append(result.Evidence, fmt.Sprintf("Recent range candidate: valid=%t, support=%.2f, resistance=%.2f, width=%.1f%%, quality=%.2f, pre-range trend=%.1f%%.", rc.valid, support, resistance, widthPct, rc.quality, rc.preTrend*100))
 	result.Evidence = append(result.Evidence, fmt.Sprintf("Recent trend change %.1f%%; PS->SC->AR->ST sequence=%t.", trendChange*100, accumulationSequence))
