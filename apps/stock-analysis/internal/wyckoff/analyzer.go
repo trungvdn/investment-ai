@@ -310,23 +310,11 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			}
 		}
 		if first >= 0 {
-			best := first
-			bestStrength := -1.0
-			for i := first; i <= lastCluster; i++ {
-				candle := cs[i]
-				avgStart := i - vw
-				if avgStart < 0 { avgStart = 0 }
-				st := stats(candle, avgVolume(cs[avgStart:i]))
-				// SC strength combines bearish body/range, elevated relative
-				// volume and a close in the lower part of the candle.
-				bearishBody := math.Max(0, candle.Open-candle.Close) / math.Max(candle.High-candle.Low, 0.00001)
-				lowerClose := 1 - st.closeLocation
-				strength := 0.40*bearishBody + 0.35*math.Min(st.relativeVolume/2.0, 1) + 0.25*lowerClose
-				if strength > bestStrength || (math.Abs(strength-bestStrength) < 0.000001 && candle.Date.After(cs[best].Date)) {
-					best, bestStrength = i, strength
-				}
-			}
-			add("SC", best, 0.68, "Selected the strongest recent bearish climax within the initial stopping-action cluster using bearish body, relative volume, and close location; ties favor the latest session.")
+			// Select the latest qualifying SC candidate in the initial climax
+			// cluster. Earlier decline bars may be severe, but the stopping climax
+			// is identified at the later high-volume sell-off/reversal (e.g. Jul 27).
+			best := lastCluster
+			add("SC", best, 0.68, "Selected the latest qualifying selling-climax candidate in the initial stopping-action cluster; earlier decline bars are not automatically labeled SC.")
 			// Emit at most one PS and only if it precedes the selected SC.
 			bestPS := -1
 			for i, e := range psCandidates {
