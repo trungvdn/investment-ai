@@ -2,6 +2,7 @@ package wyckoff
 
 import (
 	"errors"
+	"math"
 	"testing"
 	"time"
 )
