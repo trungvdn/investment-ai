@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -276,6 +277,15 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		}
 	}
 	result.Events = kept
+	// Candidate labels are internal diagnostics, not final Wyckoff events.
+	cleanEvidence := result.Evidence[:0]
+	for _, evidence := range result.Evidence {
+		if strings.HasPrefix(evidence, "PS_CANDIDATE ") || strings.HasPrefix(evidence, "SC_CANDIDATE ") || strings.HasPrefix(evidence, "BC_CANDIDATE ") {
+			continue
+		}
+		cleanEvidence = append(cleanEvidence, evidence)
+	}
+	result.Evidence = cleanEvidence
 	findBar := func(date time.Time) int {
 		for i := range cs { if cs[i].Date.Equal(date) { return i } }
 		return -1
