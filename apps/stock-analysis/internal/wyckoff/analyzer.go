@@ -217,7 +217,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		// available, not a moving window that changes the definition every day.
 		if useRangeLevels {
 			lo, hi = support, resistance
-	}
+		}
 		c := cs[i]
 		volStart := i - vw
 		if volStart < 0 {
@@ -274,11 +274,16 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	kept := result.Events[:0]
 	for _, e := range result.Events {
 		switch e.Type {
-		case "PS_CANDIDATE": psCandidates = append(psCandidates, e)
-		case "SC_CANDIDATE": scCandidates = append(scCandidates, e)
-		case "BC_CANDIDATE": bcCandidates = append(bcCandidates, e)
-		case "SOS_CANDIDATE": sosCandidates = append(sosCandidates, e)
-		default: kept = append(kept, e)
+		case "PS_CANDIDATE":
+			psCandidates = append(psCandidates, e)
+		case "SC_CANDIDATE":
+			scCandidates = append(scCandidates, e)
+		case "BC_CANDIDATE":
+			bcCandidates = append(bcCandidates, e)
+		case "SOS_CANDIDATE":
+			sosCandidates = append(sosCandidates, e)
+		default:
+			kept = append(kept, e)
 		}
 	}
 	result.Events = kept
@@ -292,7 +297,11 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	}
 	result.Evidence = cleanEvidence
 	findBar := func(date time.Time) int {
-		for i := range cs { if cs[i].Date.Equal(date) { return i } }
+		for i := range cs {
+			if cs[i].Date.Equal(date) {
+				return i
+			}
+		}
 		return -1
 	}
 	if len(scCandidates) > 0 {
@@ -306,15 +315,21 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			// first detected candidate, inspect the next five trading sessions for
 			// a later bearish sell-off and prefer the latest qualifying sell-off.
 			lastSearch := first + 5
-			if lastSearch >= n { lastSearch = n - 1 }
+			if lastSearch >= n {
+				lastSearch = n - 1
+			}
 			best := first
 			for i := first + 1; i <= lastSearch; i++ {
 				candle := cs[i]
 				avgStart := i - vw
-				if avgStart < 0 { avgStart = 0 }
+				if avgStart < 0 {
+					avgStart = 0
+				}
 				st := stats(candle, avgVolume(cs[avgStart:i]))
 				dayChange := 0.0
-				if cs[i-1].Close > 0 { dayChange = (candle.Close-cs[i-1].Close)/cs[i-1].Close }
+				if cs[i-1].Close > 0 {
+					dayChange = (candle.Close - cs[i-1].Close) / cs[i-1].Close
+				}
 				bearishBody := math.Max(0, candle.Open-candle.Close) / math.Max(candle.High-candle.Low, 0.00001)
 				// Require a real bearish session with meaningful selling effort.
 				// This intentionally lets a later climax bar qualify even if it
@@ -328,7 +343,9 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			bestPS := -1
 			for i, e := range psCandidates {
 				idx := findBar(e.Date)
-				if idx >= 0 && idx < best && (bestPS < 0 || idx > findBar(psCandidates[bestPS].Date)) { bestPS = i }
+				if idx >= 0 && idx < best && (bestPS < 0 || idx > findBar(psCandidates[bestPS].Date)) {
+					bestPS = i
+				}
 			}
 			if bestPS >= 0 {
 				add("PS", findBar(psCandidates[bestPS].Date), 0.55, "Preliminary support before the selected selling climax.")
@@ -358,7 +375,9 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	if len(bcCandidates) > 0 {
 		best := 0
 		for i := 1; i < len(bcCandidates); i++ {
-			if bcCandidates[i].Confidence > bcCandidates[best].Confidence { best = i }
+			if bcCandidates[i].Confidence > bcCandidates[best].Confidence {
+				best = i
+			}
 		}
 		add("BC", findBar(bcCandidates[best].Date), 0.62, "Selected buying-climax candidate from the recent advance.")
 	}
@@ -427,12 +446,18 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	// A low-volume touch of support before the automatic rally is not a secondary test.
 	scDateForST, arDateForST := time.Time{}, time.Time{}
 	for _, e := range result.Events {
-		if e.Type == "SC" && (scDateForST.IsZero() || e.Date.Before(scDateForST)) { scDateForST = e.Date }
-		if e.Type == "AR" && (arDateForST.IsZero() || e.Date.Before(arDateForST)) { arDateForST = e.Date }
+		if e.Type == "SC" && (scDateForST.IsZero() || e.Date.Before(scDateForST)) {
+			scDateForST = e.Date
+		}
+		if e.Type == "AR" && (arDateForST.IsZero() || e.Date.Before(arDateForST)) {
+			arDateForST = e.Date
+		}
 	}
 	filteredEvents := result.Events[:0]
 	for _, e := range result.Events {
-		if e.Type == "ST" && (scDateForST.IsZero() || arDateForST.IsZero() || !e.Date.After(arDateForST)) { continue }
+		if e.Type == "ST" && (scDateForST.IsZero() || arDateForST.IsZero() || !e.Date.After(arDateForST)) {
+			continue
+		}
 		filteredEvents = append(filteredEvents, e)
 	}
 	result.Events = filteredEvents
@@ -564,15 +589,21 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	sort.SliceStable(evidenceEvents, func(i, j int) bool {
 		iOrder, iOK := evidenceOrder[evidenceEvents[i].Type]
 		jOrder, jOK := evidenceOrder[evidenceEvents[j].Type]
-		if !iOK { iOrder = len(evidenceOrder) }
-		if !jOK { jOrder = len(evidenceOrder) }
-		if iOrder != jOrder { return iOrder < jOrder }
+		if !iOK {
+			iOrder = len(evidenceOrder)
+		}
+		if !jOK {
+			jOrder = len(evidenceOrder)
+		}
+		if iOrder != jOrder {
+			return iOrder < jOrder
+		}
 		return evidenceEvents[i].Date.Before(evidenceEvents[j].Date)
 	})
 	result.Evidence = result.Evidence[:0]
 	for _, e := range evidenceEvents {
 		result.Evidence = append(result.Evidence, fmt.Sprintf("%s (%s): %s", e.Type, e.Date.Format("2006-01-02"), e.Evidence))
-	})
+	}
 	// Evidence for sequence quality and candidate range.
 	result.Evidence = append(result.Evidence, fmt.Sprintf("Recent range candidate: valid=%t, support=%.2f, resistance=%.2f, width=%.1f%%, quality=%.2f, pre-range trend=%.1f%%.", rc.valid, support, resistance, widthPct, rc.quality, rc.preTrend*100))
 	result.Evidence = append(result.Evidence, fmt.Sprintf("Recent trend change %.1f%%; PS->SC->AR->ST sequence=%t.", trendChange*100, accumulationSequence))
