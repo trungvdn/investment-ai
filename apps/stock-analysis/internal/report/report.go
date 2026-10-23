@@ -115,7 +115,7 @@ func Build(a wyckoff.Analysis) Report {
 		report.DataQuality.Status = "INSUFFICIENT"
 		report.DataQuality.Notes = append(report.DataQuality.Notes, "Fewer than 60 candles were supplied; the analyzer's minimum-history requirement is not met.")
 	}
-	if a.DataQuality.Status == "OK" && a.DataPoints > 0 {
+	if report.DataQuality.Status == "OK" && a.DataPoints > 0 {
 		report.DataQuality.Notes = append(report.DataQuality.Notes, "Data-point count meets the analyzer's minimum history requirement; this does not guarantee data completeness.")
 	}
 	if a.TradingRange != nil && a.TradingRange.WidthPct > 0 {
