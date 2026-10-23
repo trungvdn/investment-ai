@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/trungvdn/investment-ai/apps/stock-analysis/internal/marketdata"
+	"github.com/trungvdn/investment-ai/apps/stock-analysis/internal/report"
 	"github.com/trungvdn/investment-ai/apps/stock-analysis/internal/wyckoff"
 )
 
@@ -29,7 +30,8 @@ func main() {
 		}
 
 		parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-		if len(parts) != 4 || parts[0] != "api" || parts[1] != "stocks" || parts[3] != "wyckoff" {
+		if len(parts) != 4 || parts[0] != "api" || parts[1] != "stocks" ||
+			(parts[3] != "wyckoff" && parts[3] != "report") {
 			http.NotFound(w, r)
 			return
 		}
@@ -95,6 +97,10 @@ func main() {
 
 		result.DataMode = mode
 		w.Header().Set("Content-Type", "application/json")
+		if parts[3] == "report" {
+			_ = json.NewEncoder(w).Encode(report.Build(result))
+			return
+		}
 		_ = json.NewEncoder(w).Encode(result)
 	})
 
