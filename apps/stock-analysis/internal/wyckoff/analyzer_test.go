@@ -83,13 +83,13 @@ func TestUnclearStructureCannotBeAssignedPhaseDFromEventsAlone(t *testing.T) {
 }
 
 func TestTradingRangeDetectorRequiresStableRange(t *testing.T) {
-	cs := candles(100)
-	// Establish a decline, followed by a bounded sideways range.
-	for i := 0; i < 35; i++ {
-		v := 130 - float64(i)
+	cs := candles(140)
+	// Establish a gradual decline, followed by a bounded sideways range.
+	for i := 0; i < 70; i++ {
+		v := 130 - float64(i)*0.49
 		cs[i] = Candle{Date: cs[i].Date, Open: v + 0.2, High: v + 1, Low: v - 1, Close: v, Volume: 2000}
 	}
-	for i := 35; i < len(cs); i++ {
+	for i := 70; i < len(cs); i++ {
 		v := 96 + float64((i%8)-4)*0.45
 		cs[i] = Candle{Date: cs[i].Date, Open: v - 0.1, High: v + 1.2, Low: v - 1.2, Close: v, Volume: 1000}
 	}
