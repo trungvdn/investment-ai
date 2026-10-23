@@ -87,7 +87,7 @@ func TestTradingRangeDetectorRequiresStableRange(t *testing.T) {
 	cs := candles(140)
 	// Establish a gradual decline, followed by a bounded sideways range.
 	for i := 0; i < 70; i++ {
-		v := 130 - float64(i)*0.49
+		v := 140 - float64(i)*0.62
 		cs[i] = Candle{Date: cs[i].Date, Open: v + 0.2, High: v + 1, Low: v - 1, Close: v, Volume: 2000}
 	}
 	for i := 70; i < len(cs); i++ {
@@ -110,7 +110,7 @@ func TestTradingRangeDetectorRejectsStrongTrend(t *testing.T) {
 		v := 50 + float64(i)*0.8
 		cs[i] = Candle{Date: cs[i].Date, Open: v - 0.1, High: v + 0.3, Low: v - 0.3, Close: v, Volume: 1000}
 	}
-	rc := NewAnalyzer(DefaultConfig()).detectTradingRange(cs, 0.2)
+	rc := NewAnalyzer(DefaultConfig()).detectTradingRange(cs, 0.21)
 	if rc.valid {
 		t.Fatalf("strong trend should not be classified as a stable trading range: %+v", rc)
 	}
@@ -121,7 +121,7 @@ func TestTradingRangeUsesFullActiveCycleAndRetainsSupportTouches(t *testing.T) {
 	// A markdown transitions into a wide but bounded range. The range should
 	// include the SC low and later resistance tests, not just the last 40 bars.
 	for i := range cs {
-		v := 50.0 - float64(i)*0.12
+		v := 55.0 - float64(i)*0.20
 		if i >= 75 {
 			v = 41.0 + float64((i%7)-3)*0.25
 		}
@@ -133,9 +133,12 @@ func TestTradingRangeUsesFullActiveCycleAndRetainsSupportTouches(t *testing.T) {
 		cs[i].Open, cs[i].High, cs[i].Low, cs[i].Close = v+0.15, v+0.8, v-0.8, v
 		cs[i].Volume = 1000
 	}
+	// Keep the pre-range reference bar elevated enough to represent a clear markdown.
+	cs[65] = Candle{Date: cs[65].Date, Open: 44.7, High: 45.4, Low: 44.2, Close: 45.0, Volume: 1000}
 	cs[82] = Candle{Date: cs[82].Date, Open: 38.8, High: 39.4, Low: 36.5, Close: 38.6, Volume: 3000}
 	cs[95] = Candle{Date: cs[95].Date, Open: 44.0, High: 45.5, Low: 43.8, Close: 45.0, Volume: 1400}
 	cs[110] = Candle{Date: cs[110].Date, Open: 44.0, High: 45.5, Low: 43.8, Close: 45.0, Volume: 1200}
+	cs[120] = Candle{Date: cs[120].Date, Open: 44.0, High: 45.5, Low: 43.8, Close: 45.0, Volume: 1300}
 	cs[130] = Candle{Date: cs[130].Date, Open: 37.0, High: 38.0, Low: 36.5, Close: 37.6, Volume: 500}
 	cs[137] = Candle{Date: cs[137].Date, Open: 37.0, High: 38.0, Low: 36.6, Close: 37.7, Volume: 500}
 

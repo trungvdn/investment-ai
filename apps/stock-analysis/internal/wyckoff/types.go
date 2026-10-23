@@ -15,11 +15,11 @@ type Candle struct {
 type Structure string
 
 const (
-	StructureAccumulation  Structure = "ACCUMULATION"
-	StructureDistribution  Structure = "DISTRIBUTION"
-	StructureMarkup        Structure = "MARKUP"
-	StructureMarkdown      Structure = "MARKDOWN"
-	StructureUnclear       Structure = "UNCLEAR"
+	StructureAccumulation Structure = "ACCUMULATION"
+	StructureDistribution Structure = "DISTRIBUTION"
+	StructureMarkup       Structure = "MARKUP"
+	StructureMarkdown     Structure = "MARKDOWN"
+	StructureUnclear      Structure = "UNCLEAR"
 )
 
 type Phase string
