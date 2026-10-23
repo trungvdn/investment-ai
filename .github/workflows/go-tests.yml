@@ -37,8 +37,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: apps/stock-analysis/go.mod
-          cache: true
-          cache-dependency-path: apps/stock-analysis/go.sum
 
       - name: Verify formatting
         run: |
