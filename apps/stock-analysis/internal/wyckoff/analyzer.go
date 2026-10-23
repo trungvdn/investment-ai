@@ -300,21 +300,30 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		// Keep the cluster open for up to five trading sessions so a later,
 		// stronger decline (rather than the first detected down-spike) can win.
 		first := findBar(scCandidates[0].Date)
-		lastCluster := first
-		for _, candidate := range scCandidates[1:] {
-			idx := findBar(candidate.Date)
-			if idx >= 0 && idx-lastCluster <= 5 {
-				lastCluster = idx
-			} else {
-				break
-			}
-		}
 		if first >= 0 {
-			// Select the latest qualifying SC candidate in the initial climax
-			// cluster. Earlier decline bars may be severe, but the stopping climax
-			// is identified at the later high-volume sell-off/reversal (e.g. Jul 27).
-			best := lastCluster
-			add("SC", best, 0.68, "Selected the latest qualifying selling-climax candidate in the initial stopping-action cluster; earlier decline bars are not automatically labeled SC.")
+			// A strict SC candidate predicate can miss the final climax bar when
+			// its contextual trend metric changes on the day. Starting from the
+			// first detected candidate, inspect the next five trading sessions for
+			// a later bearish sell-off and prefer the latest qualifying sell-off.
+			lastSearch := first + 5
+			if lastSearch >= n { lastSearch = n - 1 }
+			best := first
+			for i := first + 1; i <= lastSearch; i++ {
+				candle := cs[i]
+				avgStart := i - vw
+				if avgStart < 0 { avgStart = 0 }
+				st := stats(candle, avgVolume(cs[avgStart:i]))
+				dayChange := 0.0
+				if cs[i-1].Close > 0 { dayChange = (candle.Close-cs[i-1].Close)/cs[i-1].Close }
+				bearishBody := math.Max(0, candle.Open-candle.Close) / math.Max(candle.High-candle.Low, 0.00001)
+				// Require a real bearish session with meaningful selling effort.
+				// This intentionally lets a later climax bar qualify even if it
+				// did not pass the earlier multi-day ctxChange predicate.
+				if dayChange < -0.015 && bearishBody >= 0.20 && st.relativeVolume >= 0.8 {
+					best = i
+				}
+			}
+			add("SC", best, 0.68, "Selected the latest meaningful bearish sell-off within five sessions after the first climax candidate; later down days are checked independently of the multi-day trend predicate.")
 			// Emit at most one PS and only if it precedes the selected SC.
 			bestPS := -1
 			for i, e := range psCandidates {
