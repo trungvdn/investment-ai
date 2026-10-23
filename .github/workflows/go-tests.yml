@@ -1,0 +1,56 @@
+name: Go Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/stock-analysis/**"
+      - ".github/workflows/go-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/stock-analysis/**"
+      - ".github/workflows/go-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test stock-analysis
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/stock-analysis
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/stock-analysis/go.mod
+          cache: true
+          cache-dependency-path: apps/stock-analysis/go.sum
+
+      - name: Verify formatting
+        run: |
+          files="$(gofmt -l .)"
+          if [ -n "$files" ]; then
+            echo "The following Go files are not formatted:"
+            echo "$files"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Run static analysis
+        run: go vet ./...
