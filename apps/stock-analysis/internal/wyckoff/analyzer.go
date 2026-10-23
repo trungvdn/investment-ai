@@ -77,6 +77,7 @@ func bounds(cs []Candle) (float64, float64) {
 	}
 	return lo, hi
 }
+
 // orderEventsForEvidence returns a copy ordered for human-readable Wyckoff evidence.
 // Unknown event types follow the canonical sequence; same-type events are chronological.
 func orderEventsForEvidence(events []Event) []Event {
@@ -671,4 +672,3 @@ func maxInt(a, b int) int {
 	}
 	return b
 }
-
