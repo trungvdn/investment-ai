@@ -85,7 +85,6 @@ func eventIndex(es []Event, kind string) int {
 	return -1
 }
 func abs(v float64) float64 { return math.Abs(v) }
-func zeroTime() time.Time { return time.Time{} }
 
 type rangeCandidate struct {
 	start, end                             int
@@ -140,10 +139,6 @@ func (a *Analyzer) detectTradingRange(cs []Candle, trendChange float64) rangeCan
 	}
 	if start > preStart && cs[preStart].Close > 0 {
 		preTrend = (cs[start].Close - cs[preStart].Close) / cs[preStart].Close
-	}
-	rangeDrift := 0.0
-	if len(window) > 1 && window[0].Close > 0 {
-		rangeDrift = (window[len(window)-1].Close - window[0].Close) / window[0].Close
 	}
 	valid := width >= 4 && width <= 35 && insideRatio >= 0.35 && lowTouches >= 2 && highTouches >= 2 &&
 		abs(trendChange) <= 0.20
@@ -329,7 +324,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	}
 	// Keep ST labels only when they occur after the SC -> AR stopping action.
 	// A low-volume touch of support before the automatic rally is not a secondary test.
-	scDateForST, arDateForST := zeroTime(), zeroTime()
+	scDateForST, arDateForST := time.Time{}, time.Time{}
 	for _, e := range result.Events {
 		if e.Type == "SC" && (scDateForST.IsZero() || e.Date.Before(scDateForST)) { scDateForST = e.Date }
 		if e.Type == "AR" && (arDateForST.IsZero() || e.Date.Before(arDateForST)) { arDateForST = e.Date }
