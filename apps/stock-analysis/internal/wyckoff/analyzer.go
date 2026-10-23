@@ -321,7 +321,10 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	// Candidate labels are internal diagnostics, not final Wyckoff events.
 	cleanEvidence := result.Evidence[:0]
 	for _, evidence := range result.Evidence {
-		if strings.HasPrefix(evidence, "PS_CANDIDATE ") || strings.HasPrefix(evidence, "SC_CANDIDATE ") || strings.HasPrefix(evidence, "BC_CANDIDATE ") || strings.HasPrefix(evidence, "SOS_CANDIDATE ") {
+		if strings.HasPrefix(evidence, "PS_CANDIDATE ") ||
+			strings.HasPrefix(evidence, "SC_CANDIDATE ") ||
+			strings.HasPrefix(evidence, "BC_CANDIDATE ") ||
+			strings.HasPrefix(evidence, "SOS_CANDIDATE ") {
 			continue
 		}
 		cleanEvidence = append(cleanEvidence, evidence)
@@ -369,7 +372,12 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 					best = i
 				}
 			}
-			add("SC", best, 0.68, "Selected the latest meaningful bearish sell-off within five sessions after the first climax candidate; later down days are checked independently of the multi-day trend predicate.")
+			add(
+				"SC",
+				best,
+				0.68,
+				"Selected the latest meaningful bearish sell-off within five sessions after the first climax candidate; later down days are checked independently of the multi-day trend predicate.",
+			)
 			// Emit at most one PS and only if it precedes the selected SC.
 			bestPS := -1
 			for i, e := range psCandidates {
@@ -619,7 +627,10 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		result.Evidence = append(result.Evidence, fmt.Sprintf("%s (%s): %s", e.Type, e.Date.Format("2006-01-02"), e.Evidence))
 	}
 	// Evidence for sequence quality and candidate range.
-	result.Evidence = append(result.Evidence, fmt.Sprintf("Recent range candidate: valid=%t, support=%.2f, resistance=%.2f, width=%.1f%%, quality=%.2f, pre-range trend=%.1f%%.", rc.valid, support, resistance, widthPct, rc.quality, rc.preTrend*100))
+	result.Evidence = append(result.Evidence, fmt.Sprintf(
+		"Recent range candidate: valid=%t, support=%.2f, resistance=%.2f, width=%.1f%%, quality=%.2f, pre-range trend=%.1f%%.",
+		rc.valid, support, resistance, widthPct, rc.quality, rc.preTrend*100,
+	))
 	result.Evidence = append(result.Evidence, fmt.Sprintf("Recent trend change %.1f%%; PS->SC->AR->ST sequence=%t.", trendChange*100, accumulationSequence))
 	if result.Phase != PhaseUnknown {
 		result.Confidence = 0.42
