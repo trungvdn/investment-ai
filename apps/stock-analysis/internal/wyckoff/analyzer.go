@@ -340,7 +340,14 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	// Validate the accumulation stopping sequence PS -> SC -> AR -> ST. These
 	// flags are evidence, not hard requirements for every legitimate schematic.
 	ps, sc, ar, stIdx := eventIndex(result.Events, "PS"), eventIndex(result.Events, "SC"), eventIndex(result.Events, "AR"), eventIndex(result.Events, "ST")
-	accumulationSequence := ps >= 0 && sc > ps && ar > sc && stIdx > ar
+	// Sequence events must occur on strictly later bars; same-day PS and SC
+	// candidates do not establish the stopping sequence.
+	accumulationSequence := false
+	if ps >= 0 && sc >= 0 && ar >= 0 && stIdx >= 0 {
+		psDate, scDate := result.Events[ps].Date, result.Events[sc].Date
+		arDate, stDate := result.Events[ar].Date, result.Events[stIdx].Date
+		accumulationSequence = psDate.Before(scDate) && scDate.Before(arDate) && arDate.Before(stDate)
+	}
 	if rc.valid && rc.preTrend < -0.08 && (accumulationSequence || (sc >= 0 && ar > sc && stIdx > ar)) {
 		result.Structure = StructureAccumulation
 		switch {
