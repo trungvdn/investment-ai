@@ -149,3 +149,49 @@ func TestTradingRangeUsesFullActiveCycleAndRetainsSupportTouches(t *testing.T) {
 		t.Fatalf("expected range [36.5, 45.5], got [%.2f, %.2f]", rc.support, rc.resistance)
 	}
 }
+
+func TestEvidenceEventsUseCanonicalWyckoffOrder(t *testing.T) {
+	date := func(day int) time.Time {
+		return time.Date(2026, time.July, day, 0, 0, 0, 0, time.UTC)
+	}
+	input := []Event{
+		{Type: "SOS", Date: date(20)},
+		{Type: "ST", Date: date(15)},
+		{Type: "PS", Date: date(2)},
+		{Type: "LPS", Date: date(22)},
+		{Type: "SC", Date: date(5)},
+		{Type: "SPRING", Date: date(18)},
+		{Type: "AR", Date: date(10)},
+		{Type: "ST", Date: date(12)},
+		{Type: "SOW", Date: date(23)},
+	}
+	got := orderEventsForEvidence(input)
+	wantTypes := []string{"PS", "SC", "AR", "ST", "ST", "SPRING", "SOS", "LPS", "SOW"}
+	if len(got) != len(wantTypes) {
+		t.Fatalf("got %d evidence events, want %d", len(got), len(wantTypes))
+	}
+	for i, want := range wantTypes {
+		if got[i].Type != want {
+			t.Fatalf("evidence event %d = %s, want %s; all types: %+v", i, got[i].Type, want, got)
+		}
+	}
+	if !got[3].Date.Before(got[4].Date) {
+		t.Fatalf("same-type events must be chronological: %s before %s", got[3].Date, got[4].Date)
+	}
+	// Sorting for Evidence must not mutate the chronological Events source slice.
+	if input[0].Type != "SOS" || input[0].Date != date(20) {
+		t.Fatal("orderEventsForEvidence mutated its input")
+	}
+}
+
+func TestAnalysisEventsRemainChronological(t *testing.T) {
+	got, err := NewAnalyzer(DefaultConfig()).Analyze("TEST", candles(90))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 1; i < len(got.Events); i++ {
+		if got.Events[i].Date.Before(got.Events[i-1].Date) {
+			t.Fatalf("Events must remain chronological: %s appears before %s", got.Events[i-1].Date, got.Events[i].Date)
+		}
+	}
+}
