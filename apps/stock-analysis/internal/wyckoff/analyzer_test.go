@@ -114,3 +114,37 @@ func TestTradingRangeDetectorRejectsStrongTrend(t *testing.T) {
 		t.Fatalf("strong trend should not be classified as a stable trading range: %+v", rc)
 	}
 }
+
+
+func TestTradingRangeUsesFullActiveCycleAndRetainsSupportTouches(t *testing.T) {
+	cs := candles(150)
+	// A markdown transitions into a wide but bounded range. The range should
+	// include the SC low and later resistance tests, not just the last 40 bars.
+	for i := range cs {
+		v := 50.0 - float64(i)*0.12
+		if i >= 75 {
+			v = 41.0 + float64((i%7)-3)*0.25
+		}
+		cs[i] = Candle{Date: time.Date(2026, 6, 1+i, 0, 0, 0, 0, time.UTC), Open: v - 0.1, High: v + 1.0, Low: v - 1.0, Close: v, Volume: 1000}
+	}
+	// The SC candle establishes the range low after a short, sharp markdown.
+	for i := 62; i < 82; i++ {
+		v := 44.0 - float64(i-62)*0.28
+		cs[i].Open, cs[i].High, cs[i].Low, cs[i].Close = v+0.15, v+0.8, v-0.8, v
+		cs[i].Volume = 1000
+	}
+	cs[82] = Candle{Date: cs[82].Date, Open: 38.8, High: 39.4, Low: 36.5, Close: 38.6, Volume: 3000}
+	cs[95] = Candle{Date: cs[95].Date, Open: 44.0, High: 45.5, Low: 43.8, Close: 45.0, Volume: 1400}
+	cs[110] = Candle{Date: cs[110].Date, Open: 44.0, High: 45.5, Low: 43.8, Close: 45.0, Volume: 1200}
+	cs[130] = Candle{Date: cs[130].Date, Open: 37.0, High: 38.0, Low: 36.5, Close: 37.6, Volume: 500}
+	cs[137] = Candle{Date: cs[137].Date, Open: 37.0, High: 38.0, Low: 36.6, Close: 37.7, Volume: 500}
+
+	a := NewAnalyzer(DefaultConfig())
+	rc := a.detectTradingRange(cs, 0.02)
+	if !rc.valid {
+		t.Fatalf("expected active range candidate, got %+v", rc)
+	}
+	if math.Abs(rc.support-36.5) > 0.001 || math.Abs(rc.resistance-45.5) > 0.001 {
+		t.Fatalf("expected range [36.5, 45.5], got [%.2f, %.2f]", rc.support, rc.resistance)
+	}
+}
