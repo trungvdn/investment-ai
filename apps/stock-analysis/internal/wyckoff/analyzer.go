@@ -138,9 +138,6 @@ func (a *Analyzer) detectTradingRange(cs []Candle, trendChange float64) rangeCan
 		end = n
 	}
 	w := a.cfg.RangeWindow
-	if w < EventLookback {
-		w = EventLookback
-	}
 	if w > end {
 		w = end
 	}
