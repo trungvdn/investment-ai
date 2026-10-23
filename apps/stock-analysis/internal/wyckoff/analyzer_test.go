@@ -116,7 +116,6 @@ func TestTradingRangeDetectorRejectsStrongTrend(t *testing.T) {
 	}
 }
 
-
 func TestTradingRangeUsesFullActiveCycleAndRetainsSupportTouches(t *testing.T) {
 	cs := candles(150)
 	// A markdown transitions into a wide but bounded range. The range should
