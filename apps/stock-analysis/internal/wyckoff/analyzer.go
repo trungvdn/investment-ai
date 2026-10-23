@@ -51,10 +51,15 @@ type rangeCandidate struct {
 // detectTradingRange looks for a reasonably stable recent range after a directional
 // move. This is a heuristic candidate detector, not a discretionary chart label.
 func (a *Analyzer) detectTradingRange(cs []Candle, trendChange float64) rangeCandidate {
-	n:=len(cs); w:=a.cfg.RangeWindow
-	if w>n-1 {w=n-1}
-	start:=n-w
-	window:=cs[start:n]
+	n:=len(cs)
+	// Exclude the last five bars from range construction so a fresh breakout
+	// does not erase the range it is breaking out of.
+	end := n - 5
+	if end < 1 { end = n }
+	w:=a.cfg.RangeWindow
+	if w>end {w=end}
+	start:=end-w
+	window:=cs[start:end]
 	support,resistance:=bounds(window)
 	mid:=(support+resistance)/2
 	width:=(resistance-support)/math.Max(mid,0.00001)*100
@@ -80,10 +85,8 @@ func (a *Analyzer) detectTradingRange(cs []Candle, trendChange float64) rangeCan
 	}
 	valid:=width>=4 && width<=35 && insideRatio>=0.35 && lowTouches>=2 && highTouches>=2
 	// If the range is actively expanding into a breakout, don't call it a range.
-	lastClose:=cs[n-1].Close
-	if lastClose>resistance*1.01 || lastClose<support*0.99 { valid=false }
 	_ = trendChange
-	return rangeCandidate{start:start,end:n-1,support:support,resistance:resistance,widthPct:width,quality:quality,preTrend:preTrend,valid:valid}
+	return rangeCandidate{start:start,end:end-1,support:support,resistance:resistance,widthPct:width,quality:quality,preTrend:preTrend,valid:valid}
 }
 
 // Analyze identifies a candidate range, then evaluates events within that
@@ -127,6 +130,11 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis,error) {
 		if historyStart<rangeStart {historyStart=rangeStart}
 		if historyStart>=i {continue}
 		lo,hi:=bounds(cs[historyStart:i])
+		// Range-dependent events use the established candidate boundaries when
+		// available, not a moving window that changes the definition every day.
+		if rc.valid {
+			lo,hi = support,resistance
+		}
 		c:=cs[i]
 		volStart:=i-vw; if volStart<0 {volStart=0}
 		st:=stats(c,avgVolume(cs[volStart:i]))
