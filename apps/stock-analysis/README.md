@@ -17,6 +17,9 @@ For local deterministic testing only, set `MARKET_DATA_PROVIDER=demo`. Real mark
 ## Wyckoff rules implemented (initial heuristic)
 
 - Context: preceding directional move and recent trading range.
+- Event reporting is scoped to the most recent 70 candles (roughly a trading quarter) so events from prior cycles do not dominate the current analysis.
+- LPS/LPSY use local historical breakout levels and volume baselines, and are restricted to the recent event window.
+- Phase assignment is gated by the interpreted structure; an `UNCLEAR` structure remains `UNKNOWN` rather than being assigned Phase D from an isolated LPS/LPSY event.
 - Events: candidate Selling Climax (SC), Buying Climax (BC), Automatic Rally/Reaction (AR), Spring, UTAD, SOS, SOW and low-volume Spring Test.
 - Accumulation: normally follows markdown; Phase A looks for stopping action/climax and AR/ST, B is range/cause building, C is Spring + Test, D is SOS/LPS and E is markup.
 - Distribution: normally follows markup; Phase A looks for buying climax and reaction, B is range/cause building, C is UT/UTAD, D is SOW/LPSY and E is markdown.
