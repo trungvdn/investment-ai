@@ -297,13 +297,13 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	}
 	if len(scCandidates) > 0 {
 		// Consolidate nearby SC candidates into the first stopping-action cluster.
-		// Prefer the latest and strongest bearish climax candle in that cluster,
-		// rather than automatically selecting the first detected down-spike.
+		// Keep the cluster open for up to five trading sessions so a later,
+		// stronger decline (rather than the first detected down-spike) can win.
 		first := findBar(scCandidates[0].Date)
 		lastCluster := first
 		for _, candidate := range scCandidates[1:] {
 			idx := findBar(candidate.Date)
-			if idx >= 0 && idx-lastCluster <= 3 {
+			if idx >= 0 && idx-lastCluster <= 5 {
 				lastCluster = idx
 			} else {
 				break
@@ -326,7 +326,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 					best, bestStrength = i, strength
 				}
 			}
-			add("SC", best, 0.68, "Selected one selling-climax event from the first adjacent climax cluster using bearish candle strength, relative volume, and close location; ties favor the latest session.")
+			add("SC", best, 0.68, "Selected the strongest recent bearish climax within the initial stopping-action cluster using bearish body, relative volume, and close location; ties favor the latest session.")
 			// Emit at most one PS and only if it precedes the selected SC.
 			bestPS := -1
 			for i, e := range psCandidates {
@@ -439,6 +439,12 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		filteredEvents = append(filteredEvents, e)
 	}
 	result.Events = filteredEvents
+	// Rebuild event evidence from the final event list so filtered-out labels
+	// (for example an early ST before AR) do not remain in the API response.
+	result.Evidence = result.Evidence[:0]
+	for _, e := range result.Events {
+		result.Evidence = append(result.Evidence, fmt.Sprintf("%s (%s): %s", e.Type, e.Date.Format("2006-01-02"), e.Evidence))
+	}
 	// Sort events chronologically after event candidates have been appended.
 	sort.SliceStable(result.Events, func(i, j int) bool { return result.Events[i].Date.Before(result.Events[j].Date) })
 	// Validate the accumulation stopping sequence PS -> SC -> AR -> ST. These
