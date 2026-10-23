@@ -17,6 +17,10 @@ For local deterministic testing only, set `MARKET_DATA_PROVIDER=demo`. Real mark
 ## Wyckoff rules implemented (initial heuristic)
 
 - Context: preceding directional move and recent trading range.
+- Trading Range: evaluate a bounded recent window excluding the latest five candles, with width, close overlap, repeated reactions near both edges, and preceding trend context. A breakout can then be evaluated against the range it is leaving.
+- Accumulation event sequence: PS → SC → AR → ST is tracked chronologically as supporting evidence; it is not treated as mandatory for every valid schematic.
+- Spring/Test: Spring requires penetration and recovery of a detected range boundary; Test must follow within 15 sessions, hold above the Spring low, and show reduced supply.
+- SOS/LPS: SOS requires a close above the candidate range with strong close location and expanding relative volume; LPS is only considered as a pullback after SOS within the active range window.
 - Event reporting is scoped to the most recent 70 candles (roughly a trading quarter) so events from prior cycles do not dominate the current analysis.
 - LPS/LPSY use local historical breakout levels and volume baselines, and are restricted to the recent event window.
 - Phase assignment is gated by the interpreted structure; an `UNCLEAR` structure remains `UNKNOWN` rather than being assigned Phase D from an isolated LPS/LPSY event.
