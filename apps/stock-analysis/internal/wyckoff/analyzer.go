@@ -15,13 +15,13 @@ const EventLookback = 70
 
 type Config struct{ RangeWindow, TrendWindow, VolumeWindow int }
 
-func DefaultConfig() Config { return Config{RangeWindow: EventLookback, TrendWindow: 20, VolumeWindow: 20} }
+func DefaultConfig() Config { return Config{RangeWindow: 40, TrendWindow: 20, VolumeWindow: 20} }
 
 type Analyzer struct{ cfg Config }
 
 func NewAnalyzer(cfg Config) *Analyzer {
-	if cfg.RangeWindow < 30 {
-		cfg.RangeWindow = EventLookback
+	if cfg.RangeWindow < 20 {
+		cfg.RangeWindow = 40
 	}
 	if cfg.TrendWindow < 5 {
 		cfg.TrendWindow = 20
@@ -184,7 +184,8 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	// Use the detected candidate's bounds if valid; otherwise expose recent
 	// bounds as provisional levels, explicitly retaining UNKNOWN structure.
 	support, resistance := rc.support, rc.resistance
-	if !rc.valid {
+	useRangeLevels := rc.widthPct >= 4 && rc.widthPct <= 35
+	if !useRangeLevels {
 		support, resistance = bounds(recent)
 	}
 	widthPct := (resistance - support) / math.Max((resistance+support)/2, 0.00001) * 100
@@ -213,9 +214,9 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		lo, hi := bounds(cs[historyStart:i])
 		// Range-dependent events use the established candidate boundaries when
 		// available, not a moving window that changes the definition every day.
-		if rc.valid {
+		if useRangeLevels {
 			lo, hi = support, resistance
-		}
+	}
 		c := cs[i]
 		volStart := i - vw
 		if volStart < 0 {
@@ -234,15 +235,15 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		// Preliminary support and climax candidates require an established decline,
 		// relative volume expansion, and meaningful result-vs-effort evidence.
 		if ctxChange < -0.08 && st.relativeVolume >= 1.3 && st.spread <= rangeWidth*0.7 && st.closeLocation >= 0.45 {
-			add("PS", i, 0.55, "Potential preliminary support after a decline: elevated volume with limited downside result.")
+			add("PS_CANDIDATE", i, 0.55, "Potential preliminary-support candidate.")
 		}
 		if ctxChange < -0.12 && st.relativeVolume >= 1.5 && st.spread >= rangeWidth*0.18 && st.closeLocation >= 0.55 {
-			add("SC", i, 0.62, "Selling-climax candidate after a decline: elevated volume and rejection from the lower part of the bar.")
+			add("SC_CANDIDATE", i, 0.62, "Selling-climax candidate after a decline.")
 		}
 		if ctxChange > 0.12 && st.relativeVolume >= 1.5 && st.spread >= rangeWidth*0.18 && st.closeLocation <= 0.45 {
-			add("BC", i, 0.62, "Buying-climax candidate after an advance: elevated volume and rejection from the upper part of the bar.")
+			add("BC_CANDIDATE", i, 0.62, "Buying-climax candidate after an advance.")
 		}
-		if rc.valid {
+		if useRangeLevels {
 			if ctxChange < -0.05 && c.Low < support && c.Close > support && st.closeLocation >= 0.55 && st.relativeVolume < 1.35 {
 				add("SPRING", i, 0.72, "Price undercut the established range support and closed back inside on non-exceptional volume.")
 			}
@@ -260,6 +261,56 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 				lastSTIndex = i
 			}
 		}
+	}
+	// Consolidate noisy per-bar candidates into one event per stopping action.
+	// Keep only the strongest PS candidate before the selected SC, and select one
+	// SC from a short climax cluster using the deepest low, breaking ties by volume.
+	var psCandidates, scCandidates, bcCandidates []Event
+	kept := result.Events[:0]
+	for _, e := range result.Events {
+		switch e.Type {
+		case "PS_CANDIDATE": psCandidates = append(psCandidates, e)
+		case "SC_CANDIDATE": scCandidates = append(scCandidates, e)
+		case "BC_CANDIDATE": bcCandidates = append(bcCandidates, e)
+		default: kept = append(kept, e)
+		}
+	}
+	result.Events = kept
+	findBar := func(date time.Time) int {
+		for i := range cs { if cs[i].Date.Equal(date) { return i } }
+		return -1
+	}
+	if len(scCandidates) > 0 {
+		// First SC candidate opens a 15-session climax cluster. Select the bar
+		// with the lowest low in that cluster; this identifies the actual stopping low
+		// even when volume/close-location thresholds fluctuate across adjacent sessions.
+		first := findBar(scCandidates[0].Date)
+		if first >= 0 {
+			end := first + 15
+			if end >= n { end = n-1 }
+			best := first
+			for i := first+1; i <= end; i++ {
+				if cs[i].Low < cs[best].Low { best = i }
+			}
+			add("SC", best, 0.68, "Selected selling-climax bar from the local climax cluster by the lowest low; volume and rejection evidence are assessed across adjacent candidate bars.")
+			// PS is a single preliminary event, and must precede SC. Prefer the latest
+			// qualifying PS candidate before SC rather than emitting one on every bar.
+			bestPS := -1
+			for i, e := range psCandidates {
+				idx := findBar(e.Date)
+				if idx >= 0 && idx < best && (bestPS < 0 || idx > findBar(psCandidates[bestPS].Date)) { bestPS = i }
+			}
+			if bestPS >= 0 {
+				add("PS", findBar(psCandidates[bestPS].Date), 0.55, "Preliminary support before the selected selling climax.")
+			}
+		}
+	}
+	if len(bcCandidates) > 0 {
+		best := 0
+		for i := 1; i < len(bcCandidates); i++ {
+			if bcCandidates[i].Confidence > bcCandidates[best].Confidence { best = i }
+		}
+		add("BC", findBar(bcCandidates[best].Date), 0.62, "Selected buying-climax candidate from the recent advance.")
 	}
 	// Sequence-aware AR: a rally/reaction must occur after a climax and be
 	// observable in subsequent closes, rather than assigning AR to the latest day.
@@ -348,7 +399,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		arDate, stDate := result.Events[ar].Date, result.Events[stIdx].Date
 		accumulationSequence = psDate.Before(scDate) && scDate.Before(arDate) && arDate.Before(stDate)
 	}
-	if rc.valid && rc.preTrend < -0.08 && (accumulationSequence || (sc >= 0 && ar > sc && stIdx > ar)) {
+	if useRangeLevels && rc.preTrend < -0.08 && (accumulationSequence || (sc >= 0 && ar > sc && stIdx > ar)) {
 		result.Structure = StructureAccumulation
 		switch {
 		case hasEvent(result.Events, "SOS") || hasEvent(result.Events, "LPS"):
@@ -364,7 +415,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		default:
 			result.Phase = PhaseB
 		}
-	} else if rc.valid && rc.preTrend > 0.08 && (hasEvent(result.Events, "BC") || hasEvent(result.Events, "UTAD") || hasEvent(result.Events, "SOW")) {
+	} else if useRangeLevels && rc.preTrend > 0.08 && (hasEvent(result.Events, "BC") || hasEvent(result.Events, "UTAD") || hasEvent(result.Events, "SOW")) {
 		result.Structure = StructureDistribution
 		switch {
 		case hasEvent(result.Events, "SOW") || hasEvent(result.Events, "LPSY"):
@@ -385,7 +436,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	}
 	// Only evaluate Test after a Spring within the same recent range; it must
 	// happen shortly afterward, hold above the Spring low, and show lower supply.
-	if rc.valid {
+	if useRangeLevels {
 		for i := range result.Events {
 			if result.Events[i].Type != "SPRING" {
 				continue
@@ -416,7 +467,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		}
 	}
 	// LPS only follows an SOS in the same active range and within 15 sessions.
-	if rc.valid && hasEvent(result.Events, "SOS") {
+	if useRangeLevels && hasEvent(result.Events, "SOS") {
 		for i := range result.Events {
 			if result.Events[i].Type != "SOS" {
 				continue
