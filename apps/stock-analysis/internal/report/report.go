@@ -13,21 +13,21 @@ const SchemaVersion = "1.0"
 // Report is the stable, presentation-oriented contract for a stock analysis.
 // It deliberately separates the human-readable summary from the underlying analysis.
 type Report struct {
-	SchemaVersion string               `json:"schemaVersion"`
-	Symbol        string               `json:"symbol"`
-	AsOf          time.Time            `json:"asOf"`
-	Headline      string               `json:"headline"`
-	Summary       string               `json:"summary"`
-	Structure     wyckoff.Structure    `json:"structure"`
-	Phase         wyckoff.Phase        `json:"phase"`
-	Confidence    float64              `json:"confidence"`
-	TradingRange  *RangeSection        `json:"tradingRange,omitempty"`
-	Events        []EventSection       `json:"events"`
-	Evidence      []string             `json:"evidence"`
-	Risks         []string             `json:"risks"`
-	Watchlist     []string             `json:"watchlist"`
-	DataQuality   DataQualitySection   `json:"dataQuality"`
-	Disclaimer    string               `json:"disclaimer"`
+	SchemaVersion string             `json:"schemaVersion"`
+	Symbol        string             `json:"symbol"`
+	AsOf          time.Time          `json:"asOf"`
+	Headline      string             `json:"headline"`
+	Summary       string             `json:"summary"`
+	Structure     wyckoff.Structure  `json:"structure"`
+	Phase         wyckoff.Phase      `json:"phase"`
+	Confidence    float64            `json:"confidence"`
+	TradingRange  *RangeSection      `json:"tradingRange,omitempty"`
+	Events        []EventSection     `json:"events"`
+	Evidence      []string           `json:"evidence"`
+	Risks         []string           `json:"risks"`
+	Watchlist     []string           `json:"watchlist"`
+	DataQuality   DataQualitySection `json:"dataQuality"`
+	Disclaimer    string             `json:"disclaimer"`
 }
 
 type RangeSection struct {
@@ -45,9 +45,9 @@ type EventSection struct {
 }
 
 type DataQualitySection struct {
-	Mode       string `json:"mode"`
-	DataPoints int    `json:"dataPoints"`
-	Status     string `json:"status"`
+	Mode       string   `json:"mode"`
+	DataPoints int      `json:"dataPoints"`
+	Status     string   `json:"status"`
 	Notes      []string `json:"notes"`
 }
 
