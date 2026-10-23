@@ -127,6 +127,8 @@ func TestTradingRangeUsesFullActiveCycleAndRetainsSupportTouches(t *testing.T) {
 		}
 		cs[i] = Candle{Date: time.Date(2026, 6, 1+i, 0, 0, 0, 0, time.UTC), Open: v - 0.1, High: v + 1.0, Low: v - 1.0, Close: v, Volume: 1000}
 	}
+	// Keep the pre-range reference bar elevated enough to represent a clear markdown.
+	cs[65] = Candle{Date: cs[65].Date, Open: 44.7, High: 45.4, Low: 44.2, Close: 45.0, Volume: 1000}
 	// The SC candle establishes the range low after a short, sharp markdown.
 	for i := 62; i < 82; i++ {
 		v := 44.0 - float64(i-62)*0.28
