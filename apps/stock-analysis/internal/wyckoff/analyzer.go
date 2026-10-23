@@ -77,9 +77,15 @@ func orderEventsForEvidence(events []Event) []Event {
 	sort.SliceStable(ordered, func(i, j int) bool {
 		iOrder, iOK := order[ordered[i].Type]
 		jOrder, jOK := order[ordered[j].Type]
-		if !iOK { iOrder = len(order) }
-		if !jOK { jOrder = len(order) }
-		if iOrder != jOrder { return iOrder < jOrder }
+		if !iOK {
+			iOrder = len(order)
+		}
+		if !jOK {
+			jOrder = len(order)
+		}
+		if iOrder != jOrder {
+			return iOrder < jOrder
+		}
 		return ordered[i].Date.Before(ordered[j].Date)
 	})
 	return ordered
