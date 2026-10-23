@@ -58,3 +58,4 @@ type TradingRange struct {
 	Resistance float64 `json:"resistance"`
 	WidthPct   float64 `json:"widthPct"`
 }
+
