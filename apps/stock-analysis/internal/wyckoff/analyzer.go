@@ -245,14 +245,14 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			add("BC_CANDIDATE", i, 0.62, "Buying-climax candidate after an advance.")
 		}
 		if useRangeLevels {
-			if ctxChange < -0.05 && c.Low < support && c.Close > support && st.closeLocation >= 0.55 && st.relativeVolume < 1.35 {
-				add("SPRING", i, 0.72, "Price undercut the established range support and closed back inside on non-exceptional volume.")
+			if rc.valid && i >= rc.start && i <= rc.end && ctxChange < -0.05 && c.Low < support && c.Close > support && st.closeLocation >= 0.55 && st.relativeVolume < 1.35 {
+				add("SPRING", i, 0.72, "After the trading range formed, price undercut support and closed back inside on non-exceptional volume.")
 			}
 			if ctxChange > 0.05 && c.High > resistance && c.Close < resistance && st.closeLocation <= 0.45 && st.relativeVolume > 0.8 {
 				add("UTAD", i, 0.70, "Price exceeded established range resistance and closed back inside after an advance.")
 			}
-			if c.Close > resistance && st.closeLocation >= 0.70 && st.relativeVolume >= 1.2 {
-				add("SOS", i, 0.70, "Close broke above established range resistance with a strong close and expanding volume.")
+			if rc.valid && i > rc.end && c.Close > resistance && st.closeLocation >= 0.70 && st.relativeVolume >= 1.2 {
+				add("SOS_CANDIDATE", i, 0.70, "Post-range close broke above established resistance with a strong close and expanding volume.")
 			}
 			// SOW is a post-range weakness signal: do not label a breakdown
 			// that occurs before the candidate trading range has completed.
@@ -270,13 +270,14 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	// Consolidate noisy per-bar candidates into one event per stopping action.
 	// Keep only the strongest PS candidate before the selected SC, and select one
 	// SC from a short climax cluster using the deepest low, breaking ties by volume.
-	var psCandidates, scCandidates, bcCandidates []Event
+	var psCandidates, scCandidates, bcCandidates, sosCandidates []Event
 	kept := result.Events[:0]
 	for _, e := range result.Events {
 		switch e.Type {
 		case "PS_CANDIDATE": psCandidates = append(psCandidates, e)
 		case "SC_CANDIDATE": scCandidates = append(scCandidates, e)
 		case "BC_CANDIDATE": bcCandidates = append(bcCandidates, e)
+		case "SOS_CANDIDATE": sosCandidates = append(sosCandidates, e)
 		default: kept = append(kept, e)
 		}
 	}
@@ -284,7 +285,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	// Candidate labels are internal diagnostics, not final Wyckoff events.
 	cleanEvidence := result.Evidence[:0]
 	for _, evidence := range result.Evidence {
-		if strings.HasPrefix(evidence, "PS_CANDIDATE ") || strings.HasPrefix(evidence, "SC_CANDIDATE ") || strings.HasPrefix(evidence, "BC_CANDIDATE ") {
+		if strings.HasPrefix(evidence, "PS_CANDIDATE ") || strings.HasPrefix(evidence, "SC_CANDIDATE ") || strings.HasPrefix(evidence, "BC_CANDIDATE ") || strings.HasPrefix(evidence, "SOS_CANDIDATE ") {
 			continue
 		}
 		cleanEvidence = append(cleanEvidence, evidence)
@@ -309,11 +310,11 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			}
 		}
 		if first >= 0 {
-			best := first
-			for i := first + 1; i <= lastCluster; i++ {
-				if cs[i].Low < cs[best].Low { best = i }
-			}
-			add("SC", best, 0.68, "Selected one selling-climax event from the first adjacent climax cluster; the lowest low within the cluster determines the event date.")
+			// Prefer the final climax candidate in the first contiguous cluster:
+			// the initial high-volume bar can be preliminary pressure, while the
+			// later bar may mark the actual stopping action (e.g. 2026-07-28).
+			best := lastCluster
+			add("SC", best, 0.68, "Selected one selling-climax event from the first adjacent climax cluster; the final qualifying climax bar marks the stopping action.")
 			// Emit at most one PS and only if it precedes the selected SC.
 			bestPS := -1
 			for i, e := range psCandidates {
@@ -324,6 +325,22 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 				add("PS", findBar(psCandidates[bestPS].Date), 0.55, "Preliminary support before the selected selling climax.")
 			}
 		}
+	}
+	// Merge consecutive post-range SOS bars into one breakout event.
+	// Keep the first bar in each contiguous cluster.
+	if len(sosCandidates) > 0 {
+		clusterStart := findBar(sosCandidates[0].Date)
+		clusterLast := clusterStart
+		for _, candidate := range sosCandidates[1:] {
+			idx := findBar(candidate.Date)
+			if idx >= 0 && idx-clusterLast <= 1 {
+				clusterLast = idx
+				continue
+			}
+			add("SOS", clusterStart, 0.70, "Post-range sign of strength; consecutive breakout bars are consolidated into one event.")
+			clusterStart, clusterLast = idx, idx
+		}
+		add("SOS", clusterStart, 0.70, "Post-range sign of strength; consecutive breakout bars are consolidated into one event.")
 	}
 	if len(bcCandidates) > 0 {
 		best := 0
