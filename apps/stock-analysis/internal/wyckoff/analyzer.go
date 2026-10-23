@@ -281,20 +281,26 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		return -1
 	}
 	if len(scCandidates) > 0 {
-		// First SC candidate opens a 15-session climax cluster. Select the bar
-		// with the lowest low in that cluster; this identifies the actual stopping low
-		// even when volume/close-location thresholds fluctuate across adjacent sessions.
+		// SC candidates separated by at most three trading bars belong to one
+		// climax cluster. A later, separate volume spike (e.g. a test/retest) must
+		// not replace the original stopping action.
 		first := findBar(scCandidates[0].Date)
+		lastCluster := first
+		for _, candidate := range scCandidates[1:] {
+			idx := findBar(candidate.Date)
+			if idx >= 0 && idx-lastCluster <= 3 {
+				lastCluster = idx
+			} else {
+				break
+			}
+		}
 		if first >= 0 {
-			end := first + 15
-			if end >= n { end = n-1 }
 			best := first
-			for i := first+1; i <= end; i++ {
+			for i := first + 1; i <= lastCluster; i++ {
 				if cs[i].Low < cs[best].Low { best = i }
 			}
-			add("SC", best, 0.68, "Selected selling-climax bar from the local climax cluster by the lowest low; volume and rejection evidence are assessed across adjacent candidate bars.")
-			// PS is a single preliminary event, and must precede SC. Prefer the latest
-			// qualifying PS candidate before SC rather than emitting one on every bar.
+			add("SC", best, 0.68, "Selected one selling-climax event from the first adjacent climax cluster; the lowest low within the cluster determines the event date.")
+			// Emit at most one PS and only if it precedes the selected SC.
 			bestPS := -1
 			for i, e := range psCandidates {
 				idx := findBar(e.Date)
