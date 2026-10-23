@@ -254,8 +254,12 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			if c.Close > resistance && st.closeLocation >= 0.70 && st.relativeVolume >= 1.2 {
 				add("SOS", i, 0.70, "Close broke above established range resistance with a strong close and expanding volume.")
 			}
-			if c.Close < support && st.closeLocation <= 0.30 && st.relativeVolume >= 1.2 {
-				add("SOW", i, 0.70, "Close broke below established range support with a weak close and expanding volume.")
+			// SOW is a post-range weakness signal: do not label a breakdown
+			// that occurs before the candidate trading range has completed.
+			// detectTradingRange intentionally ends five bars before the latest
+			// candle, leaving those bars available to confirm a range breakout.
+			if rc.valid && i > rc.end && c.Close < support && st.closeLocation <= 0.30 && st.relativeVolume >= 1.2 {
+				add("SOW", i, 0.70, "After the established trading range, price broke below support with a weak close and expanding volume.")
 			}
 			if abs(c.Low-support)/math.Max(support, 0.00001) < 0.025 && st.relativeVolume < 0.85 && st.spread < rangeWidth*0.65 && i-lastSTIndex >= 3 {
 				add("ST", i, 0.58, "Secondary test approached established support with reduced volume and a relatively narrow spread.")
