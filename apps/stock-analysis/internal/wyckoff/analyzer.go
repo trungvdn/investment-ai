@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"time"
 )
 
 var ErrInsufficientData = errors.New("insufficient valid candles")
@@ -14,13 +15,13 @@ const EventLookback = 70
 
 type Config struct{ RangeWindow, TrendWindow, VolumeWindow int }
 
-func DefaultConfig() Config { return Config{RangeWindow: 40, TrendWindow: 20, VolumeWindow: 20} }
+func DefaultConfig() Config { return Config{RangeWindow: EventLookback, TrendWindow: 20, VolumeWindow: 20} }
 
 type Analyzer struct{ cfg Config }
 
 func NewAnalyzer(cfg Config) *Analyzer {
-	if cfg.RangeWindow < 20 {
-		cfg.RangeWindow = 40
+	if cfg.RangeWindow < 30 {
+		cfg.RangeWindow = EventLookback
 	}
 	if cfg.TrendWindow < 5 {
 		cfg.TrendWindow = 20
@@ -84,6 +85,7 @@ func eventIndex(es []Event, kind string) int {
 	return -1
 }
 func abs(v float64) float64 { return math.Abs(v) }
+func zeroTime() time.Time { return time.Time{} }
 
 type rangeCandidate struct {
 	start, end                             int
@@ -144,7 +146,7 @@ func (a *Analyzer) detectTradingRange(cs []Candle, trendChange float64) rangeCan
 		rangeDrift = (window[len(window)-1].Close - window[0].Close) / window[0].Close
 	}
 	valid := width >= 4 && width <= 35 && insideRatio >= 0.35 && lowTouches >= 2 && highTouches >= 2 &&
-		abs(rangeDrift) <= 0.08 && abs(trendChange) <= 0.15
+		abs(trendChange) <= 0.20
 	// If the range is actively expanding into a breakout, don't call it a range.
 	return rangeCandidate{start: start, end: end - 1, support: support, resistance: resistance, widthPct: width, quality: quality, preTrend: preTrend, valid: valid}
 }
@@ -198,15 +200,13 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		result.Events = append(result.Events, Event{Type: kind, Date: cs[idx].Date, Confidence: conf, Evidence: why})
 		result.Evidence = append(result.Evidence, fmt.Sprintf("%s (%s): %s", kind, cs[idx].Date.Format("2006-01-02"), why))
 	}
-	// Event candidates are evaluated only inside the recent cycle. Before a
-	// valid range exists, do not label range-dependent Spring/UTAD/SOS/SOW.
-	rangeStart := rc.start
-	if !rc.valid {
-		rangeStart = recentStart
-	}
+	// Evaluate the entire active-cycle lookback, not only the shorter range-construction window.
+	// This allows a climax near the start of the range to be linked to its later AR/ST events.
+	rangeStart := recentStart
 	if rangeStart < 1 {
 		rangeStart = 1
 	}
+	lastSTIndex := -1000
 	for i := rangeStart; i < n; i++ {
 		historyStart := i - a.cfg.RangeWindow
 		if historyStart < rangeStart {
@@ -260,8 +260,9 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			if c.Close < support && st.closeLocation <= 0.30 && st.relativeVolume >= 1.2 {
 				add("SOW", i, 0.70, "Close broke below established range support with a weak close and expanding volume.")
 			}
-			if ctxChange < -0.05 && abs(c.Low-support)/math.Max(support, 0.00001) < 0.025 && st.relativeVolume < 0.85 && st.spread < rangeWidth*0.65 {
+			if abs(c.Low-support)/math.Max(support, 0.00001) < 0.025 && st.relativeVolume < 0.85 && st.spread < rangeWidth*0.65 && i-lastSTIndex >= 3 {
 				add("ST", i, 0.58, "Secondary test approached established support with reduced volume and a relatively narrow spread.")
+				lastSTIndex = i
 			}
 		}
 	}
@@ -326,6 +327,19 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			}
 		}
 	}
+	// Keep ST labels only when they occur after the SC -> AR stopping action.
+	// A low-volume touch of support before the automatic rally is not a secondary test.
+	scDateForST, arDateForST := zeroTime(), zeroTime()
+	for _, e := range result.Events {
+		if e.Type == "SC" && (scDateForST.IsZero() || e.Date.Before(scDateForST)) { scDateForST = e.Date }
+		if e.Type == "AR" && (arDateForST.IsZero() || e.Date.Before(arDateForST)) { arDateForST = e.Date }
+	}
+	filteredEvents := result.Events[:0]
+	for _, e := range result.Events {
+		if e.Type == "ST" && (scDateForST.IsZero() || arDateForST.IsZero() || !e.Date.After(arDateForST)) { continue }
+		filteredEvents = append(filteredEvents, e)
+	}
+	result.Events = filteredEvents
 	// Sort events chronologically after event candidates have been appended.
 	sort.SliceStable(result.Events, func(i, j int) bool { return result.Events[i].Date.Before(result.Events[j].Date) })
 	// Validate the accumulation stopping sequence PS -> SC -> AR -> ST. These
