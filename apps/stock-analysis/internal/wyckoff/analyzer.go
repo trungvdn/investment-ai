@@ -212,9 +212,18 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		support, resistance = bounds(recent)
 	}
 	widthPct := (resistance - support) / math.Max((resistance+support)/2, 0.00001) * 100
-	result := Analysis{Symbol: symbol, AsOf: last.Date, Structure: StructureUnclear, Phase: PhaseUnknown, Confidence: 0.2,
+	result := Analysis{
+		Symbol:       symbol,
+		AsOf:         last.Date,
+		Structure:    StructureUnclear,
+		Phase:        PhaseUnknown,
+		Confidence:   0.2,
 		TradingRange: &TradingRange{Support: support, Resistance: resistance, WidthPct: widthPct},
-		Events:       []Event{}, Evidence: []string{}, DataPoints: n, DataMode: "real"}
+		Events:       []Event{},
+		Evidence:     []string{},
+		DataPoints:   n,
+		DataMode:     "real",
+	}
 	add := func(kind string, idx int, conf float64, why string) {
 		result.Events = append(result.Events, Event{Type: kind, Date: cs[idx].Date, Confidence: conf, Evidence: why})
 		result.Evidence = append(result.Evidence, fmt.Sprintf("%s (%s): %s", kind, cs[idx].Date.Format("2006-01-02"), why))
