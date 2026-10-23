@@ -53,7 +53,7 @@ func TestTradingRangeDetectorRequiresStableRange(t *testing.T) {
 		cs[i] = Candle{Date: cs[i].Date, Open: v + 0.2, High: v + 1, Low: v - 1, Close: v, Volume: 2000}
 	}
 	for i := 35; i < len(cs); i++ {
-		v := 96 + float64((i%8)-4)*0.25
+		v := 96 + float64((i%8)-4)*0.45
 		cs[i] = Candle{Date: cs[i].Date, Open: v - 0.1, High: v + 1.2, Low: v - 1.2, Close: v, Volume: 1000}
 	}
 	a := NewAnalyzer(DefaultConfig())
