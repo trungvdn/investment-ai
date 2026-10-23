@@ -14,11 +14,17 @@ var ErrInsufficientData = errors.New("insufficient valid candles")
 // EventLookback is the maximum history considered for the active Wyckoff cycle.
 const EventLookback = 70
 
-type Config struct{ RangeWindow, TrendWindow, VolumeWindow int }
+type Config struct {
+	RangeWindow, TrendWindow, VolumeWindow int
+}
 
-func DefaultConfig() Config { return Config{RangeWindow: 40, TrendWindow: 20, VolumeWindow: 20} }
+func DefaultConfig() Config {
+	return Config{RangeWindow: 40, TrendWindow: 20, VolumeWindow: 20}
+}
 
-type Analyzer struct{ cfg Config }
+type Analyzer struct {
+	cfg Config
+}
 
 func NewAnalyzer(cfg Config) *Analyzer {
 	if cfg.RangeWindow < 20 {
@@ -33,7 +39,9 @@ func NewAnalyzer(cfg Config) *Analyzer {
 	return &Analyzer{cfg: cfg}
 }
 
-type candleStats struct{ spread, closeLocation, relativeVolume float64 }
+type candleStats struct {
+	spread, closeLocation, relativeVolume float64
+}
 
 func stats(c Candle, avgVol float64) candleStats {
 	spread := c.High - c.Low
@@ -107,7 +115,9 @@ func eventIndex(es []Event, kind string) int {
 	}
 	return -1
 }
-func abs(v float64) float64 { return math.Abs(v) }
+func abs(v float64) float64 {
+	return math.Abs(v)
+}
 
 type rangeCandidate struct {
 	start, end                             int
