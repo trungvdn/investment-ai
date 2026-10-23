@@ -2484,3 +2484,4 @@ Chúng ta không học Market Cycle để đặt tên cho các giai đoạn củ
 Chúng ta học Market Cycle để hiểu **bối cảnh của chiến dịch đầu tư**, từ đó đưa ra những quyết định có chất lượng cao hơn trong điều kiện luôn tồn tại sự bất định.
 
 Đây sẽ là cầu nối trực tiếp sang các chương tiếp theo về **Accumulation**, **Distribution**, **Price & Volume** và cuối cùng là **Institutional Decision Framework** trong Chapter 9.
+

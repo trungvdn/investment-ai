@@ -27,6 +27,8 @@ type KBSSource struct {
 	BaseURL string
 }
 
+const kbsecUserAgent = "Mozilla/5.0 (compatible; InvestmentAI/1.0; +https://github.com/trungvdn/investment-ai)"
+
 func NewKBSSource() *KBSSource {
 	return &KBSSource{Client: &http.Client{Timeout: 15 * time.Second}, BaseURL: "https://kbbuddywts.kbsec.com.vn/iis-server/investment/stocks"}
 }
@@ -83,6 +85,9 @@ func (p *KBSSource) fetchDailyRange(ctx context.Context, symbol string, from, to
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9,vi;q=0.8")
+	// KB Securities blocks Go's default user agent with HTTP 400. Use an
+	// explicit browser-compatible agent so legitimate API calls are accepted.
+	req.Header.Set("User-Agent", kbsecUserAgent)
 	req.Header.Set("x-lang", "vi")
 	client := p.Client
 	if client == nil {
