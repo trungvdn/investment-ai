@@ -41,16 +41,16 @@ type Event struct {
 }
 
 type Analysis struct {
-	Symbol       string       `json:"symbol"`
-	AsOf         time.Time    `json:"asOf"`
-	Structure    Structure    `json:"structure"`
-	Phase        Phase        `json:"phase"`
-	Confidence   float64      `json:"confidence"`
+	Symbol       string        `json:"symbol"`
+	AsOf         time.Time     `json:"asOf"`
+	Structure    Structure     `json:"structure"`
+	Phase        Phase         `json:"phase"`
+	Confidence   float64       `json:"confidence"`
 	TradingRange *TradingRange `json:"tradingRange,omitempty"`
-	Events       []Event      `json:"events"`
-	Evidence     []string     `json:"evidence"`
-	DataPoints   int          `json:"dataPoints"`
-	DataMode     string       `json:"dataMode"`
+	Events       []Event       `json:"events"`
+	Evidence     []string      `json:"evidence"`
+	DataPoints   int           `json:"dataPoints"`
+	DataMode     string        `json:"dataMode"`
 }
 
 type TradingRange struct {
