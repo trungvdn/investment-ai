@@ -44,3 +44,36 @@ func TestUnclearStructureCannotBeAssignedPhaseDFromEventsAlone(t *testing.T) {
 		t.Fatalf("unclear structure must remain UNKNOWN, got phase %s", got.Phase)
 	}
 }
+
+func TestTradingRangeDetectorRequiresStableRange(t *testing.T) {
+	cs := candles(100)
+	// Establish a decline, followed by a bounded sideways range.
+	for i := 0; i < 35; i++ {
+		v := 130 - float64(i)
+		cs[i] = Candle{Date: cs[i].Date, Open: v + 0.2, High: v + 1, Low: v - 1, Close: v, Volume: 2000}
+	}
+	for i := 35; i < len(cs); i++ {
+		v := 96 + float64((i%8)-4)*0.25
+		cs[i] = Candle{Date: cs[i].Date, Open: v - 0.1, High: v + 1.2, Low: v - 1.2, Close: v, Volume: 1000}
+	}
+	a := NewAnalyzer(DefaultConfig())
+	rc := a.detectTradingRange(cs, -0.1)
+	if !rc.valid {
+		t.Fatalf("expected stable candidate range, got %+v", rc)
+	}
+	if rc.preTrend >= -0.08 {
+		t.Fatalf("expected preceding markdown context, got %.3f", rc.preTrend)
+	}
+}
+
+func TestTradingRangeDetectorRejectsStrongTrend(t *testing.T) {
+	cs := candles(100)
+	for i := range cs {
+		v := 50 + float64(i)*0.8
+		cs[i] = Candle{Date: cs[i].Date, Open: v - 0.1, High: v + 0.3, Low: v - 0.3, Close: v, Volume: 1000}
+	}
+	rc := NewAnalyzer(DefaultConfig()).detectTradingRange(cs, 0.2)
+	if rc.valid {
+		t.Fatalf("strong trend should not be classified as a stable trading range: %+v", rc)
+	}
+}
