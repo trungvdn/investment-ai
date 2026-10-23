@@ -329,6 +329,10 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	// Merge consecutive post-range SOS bars into one breakout event.
 	// Keep the first bar in each contiguous cluster.
 	if len(sosCandidates) > 0 {
+		// Consolidate adjacent breakout bars into one SOS and date it at the
+		// last qualifying breakout bar. For example, if price breaks resistance,
+		// rises for three consecutive sessions, then pulls back to range resistance,
+		// the third up/breakout session is the SOS rather than the first session.
 		clusterStart := findBar(sosCandidates[0].Date)
 		clusterLast := clusterStart
 		for _, candidate := range sosCandidates[1:] {
@@ -337,10 +341,10 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 				clusterLast = idx
 				continue
 			}
-			add("SOS", clusterStart, 0.70, "Post-range sign of strength; consecutive breakout bars are consolidated into one event.")
+			add("SOS", clusterLast, 0.70, "Post-range sign of strength; consecutive breakout bars are consolidated and dated at the final qualifying breakout bar.")
 			clusterStart, clusterLast = idx, idx
 		}
-		add("SOS", clusterStart, 0.70, "Post-range sign of strength; consecutive breakout bars are consolidated into one event.")
+		add("SOS", clusterLast, 0.70, "Post-range sign of strength; consecutive breakout bars are consolidated and dated at the final qualifying breakout bar.")
 	}
 	if len(bcCandidates) > 0 {
 		best := 0
