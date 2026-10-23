@@ -10,3 +10,37 @@ func TestRejectsInsufficientCandles(t *testing.T){_,err:=NewAnalyzer(DefaultConf
 func TestAnalysisIncludesRangeAndEvidence(t *testing.T){got,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",candles(90));if err!=nil{t.Fatal(err)};if got.DataPoints!=90||got.TradingRange==nil||len(got.Evidence)==0{t.Fatalf("incomplete result: %+v",got)}}
 func TestRejectsInvalidCandle(t *testing.T){cs:=candles(90);cs[4].High=1;_,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",cs);if err==nil{t.Fatal("expected invalid candle error")}}
 func TestUnknownPhaseWhenNoEvidence(t *testing.T){cs:=candles(90);got,err:=NewAnalyzer(DefaultConfig()).Analyze("TEST",cs);if err!=nil{t.Fatal(err)};if got.Phase!=PhaseUnknown&&got.Phase!=PhaseB{t.Fatalf("unexpected phase %s",got.Phase)}}
+
+func TestEventsAreScopedToRecentCycle(t *testing.T) {
+	cs := candles(180)
+	// Create an old high-volume breakout/retest pattern that should not be
+	// reported as a current-cycle event once it falls outside EventLookback.
+	for i := 0; i < 45; i++ {
+		cs[i].Close = 100 + float64(i)*0.8
+		cs[i].Open = cs[i].Close - 0.2
+		cs[i].Low = cs[i].Close - 0.5
+		cs[i].High = cs[i].Close + 0.5
+		cs[i].Volume = 1000
+	}
+	got, err := NewAnalyzer(DefaultConfig()).Analyze("TEST", cs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cutoff := cs[len(cs)-EventLookback].Date
+	for _, event := range got.Events {
+		if event.Date.Before(cutoff) {
+			t.Fatalf("stale event escaped recent-cycle filter: %s on %s before %s", event.Type, event.Date.Format("2006-01-02"), cutoff.Format("2006-01-02"))
+		}
+	}
+}
+
+func TestUnclearStructureCannotBeAssignedPhaseDFromEventsAlone(t *testing.T) {
+	cs := candles(90)
+	got, err := NewAnalyzer(DefaultConfig()).Analyze("TEST", cs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Structure == StructureUnclear && got.Phase != PhaseUnknown {
+		t.Fatalf("unclear structure must remain UNKNOWN, got phase %s", got.Phase)
+	}
+}
