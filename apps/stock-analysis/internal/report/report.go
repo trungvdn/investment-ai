@@ -63,7 +63,7 @@ func Build(a wyckoff.Analysis) Report {
 		Confidence:    clamp(a.Confidence, 0, 1),
 		Events:        make([]EventSection, 0, len(a.Events)),
 		Evidence:      append([]string{}, a.Evidence...),
-		Risks:         []string{},
+		Risks:         []string{"Confidence is a heuristic rule-strength score, not a calibrated probability."},
 		Watchlist:     []string{},
 		DataQuality: DataQualitySection{
 			Mode:       a.DataMode,
