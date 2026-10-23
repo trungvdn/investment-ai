@@ -138,6 +138,7 @@ func TestTradingRangeUsesFullActiveCycleAndRetainsSupportTouches(t *testing.T) {
 	cs[82] = Candle{Date: cs[82].Date, Open: 38.8, High: 39.4, Low: 36.5, Close: 38.6, Volume: 3000}
 	cs[95] = Candle{Date: cs[95].Date, Open: 44.0, High: 45.5, Low: 43.8, Close: 45.0, Volume: 1400}
 	cs[110] = Candle{Date: cs[110].Date, Open: 44.0, High: 45.5, Low: 43.8, Close: 45.0, Volume: 1200}
+	cs[120] = Candle{Date: cs[120].Date, Open: 44.0, High: 45.5, Low: 43.8, Close: 45.0, Volume: 1300}
 	cs[130] = Candle{Date: cs[130].Date, Open: 37.0, High: 38.0, Low: 36.5, Close: 37.6, Volume: 500}
 	cs[137] = Candle{Date: cs[137].Date, Open: 37.0, High: 38.0, Low: 36.6, Close: 37.7, Volume: 500}
 
