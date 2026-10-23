@@ -9,6 +9,10 @@ import (
 
 var ErrInsufficientData = errors.New("at least 60 valid candles are required")
 
+// EventLookback limits event reporting to the active/recent market cycle.
+// It is deliberately longer than a few candles but excludes stale events from prior years.
+const EventLookback = 70
+
 type Config struct { RangeWindow, TrendWindow, VolumeWindow int }
 func DefaultConfig() Config { return Config{RangeWindow:40, TrendWindow:20, VolumeWindow:20} }
 type Analyzer struct { cfg Config }
@@ -39,16 +43,18 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis,error) {
 	priorRange:=cs[n-rw-1:n-1]; support,resistance:=bounds(priorRange)
 	widthPct:=(resistance-support)/math.Max(0.00001,(resistance+support)/2)*100
 	vw:=a.cfg.VolumeWindow; if vw>n-1{vw=n-1}; avgVol:=avgVolume(cs[n-vw-1:n-1])
-	lastStats:=stats(last,avgVol)
 	priorClose:=cs[n-tw-1].Close; trendChange:=(last.Close-priorClose)/priorClose
 	preTrendStart:=cs[n-2*tw-1].Close; preTrendChange:=(cs[n-tw-1].Close-preTrendStart)/preTrendStart
 	// Long enough to identify context: accumulation usually follows markdown;
 	// distribution usually follows markup. Range shape alone is not sufficient.
 	result:=Analysis{Symbol:symbol,AsOf:last.Date,Structure:StructureUnclear,Phase:PhaseUnknown,Confidence:0.20,TradingRange:&TradingRange{Support:support,Resistance:resistance,WidthPct:widthPct},Events:[]Event{},Evidence:[]string{},DataPoints:n,DataMode:"real"}
 	add:=func(kind string, idx int, conf float64, why string){result.Events=append(result.Events,Event{Type:kind,Date:cs[idx].Date,Confidence:conf,Evidence:why});result.Evidence=append(result.Evidence,fmt.Sprintf("%s (%s): %s",kind,cs[idx].Date.Format("2006-01-02"),why))}
-	// Detect candidate events over the last 12 candles, with event levels formed
-	// by earlier candles to avoid look-ahead contamination.
-	start:=n-12; if start<tw{start=tw}
+	// Detect events across the recent candidate cycle, not just the last 12
+	// candles. Each event is evaluated against preceding candles only.
+	start := n - EventLookback
+	if start < tw {
+		start = tw
+	}
 	for i:=start;i<n;i++ {
 		windowStart:=i-rw; if windowStart<0{windowStart=0}; if windowStart>=i{continue}
 		lo,hi:=bounds(cs[windowStart:i]); c:=cs[i]; st:=stats(c,avgVolume(cs[maxInt(0,i-vw):i]))
@@ -84,14 +90,42 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis,error) {
 	// climax, only report if the move is large enough to be observable.
 	if hasEvent(result.Events,"SC") && trendChange>0.05 { add("AR",n-1,0.58,"A meaningful rally followed a selling-climax candidate.") }
 	if hasEvent(result.Events,"BC") && trendChange < -0.05 { add("AR",n-1,0.58,"A meaningful reaction followed a buying-climax candidate.") }
-	// Last Point of Support / Supply candidates after confirmed range breaks.
-	for i:=0;i<n-1;i++ {
-		if cs[i].Close>resistance && stats(cs[i],avgVol).relativeVolume>=1.2 {
-			for j:=i+1;j<n;j++ { st:=stats(cs[j],avgVolume(cs[maxInt(0,j-vw):j])); if cs[j].Low>=resistance*0.98 && cs[j].Close>=resistance && st.relativeVolume<0.9 { add("LPS",j,0.62,"Pullback held the former resistance as support with reduced volume after a breakout."); break } }
+	// LPS/LPSY must belong to the recent candidate cycle. Use local
+	// historical levels and volume baselines; never test 2024 candles against
+	// the current 2026 range or current-cycle average volume.
+	lpsStart := n - EventLookback
+	if lpsStart < 1 {
+		lpsStart = 1
+	}
+	for i := lpsStart; i < n-1; i++ {
+		rangeStart := i - rw
+		if rangeStart < 0 {
+			rangeStart = 0
+		}
+		if rangeStart >= i {
+			continue
+		}
+		localSupport, localResistance := bounds(cs[rangeStart:i])
+		breakoutAvg := avgVolume(cs[maxInt(0, i-vw):i])
+		breakoutStats := stats(cs[i], breakoutAvg)
+		if cs[i].Close > localResistance && breakoutStats.relativeVolume >= 1.2 {
+			for j := i + 1; j < n; j++ {
+				st := stats(cs[j], avgVolume(cs[maxInt(0, j-vw):j]))
+				if cs[j].Low >= localResistance*0.98 && cs[j].Close >= localResistance && st.relativeVolume < 0.9 {
+					add("LPS", j, 0.62, "Recent pullback held the breakout level as support with reduced volume.")
+					break
+				}
+			}
 			break
 		}
-		if cs[i].Close<support && stats(cs[i],avgVol).relativeVolume>=1.2 {
-			for j:=i+1;j<n;j++ { st:=stats(cs[j],avgVolume(cs[maxInt(0,j-vw):j])); if cs[j].High<=support*1.02 && cs[j].Close<=support && st.relativeVolume<0.9 { add("LPSY",j,0.62,"Rally failed near former support/resistance with reduced demand after a breakdown."); break } }
+		if cs[i].Close < localSupport && breakoutStats.relativeVolume >= 1.2 {
+			for j := i + 1; j < n; j++ {
+				st := stats(cs[j], avgVolume(cs[maxInt(0, j-vw):j]))
+				if cs[j].High <= localSupport*1.02 && cs[j].Close <= localSupport && st.relativeVolume < 0.9 {
+					add("LPSY", j, 0.62, "Recent rally failed near the breakdown level with reduced demand.")
+					break
+				}
+			}
 			break
 		}
 	}
@@ -117,21 +151,34 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis,error) {
 	case widthPct<=30 && preTrendChange > 0.08:
 		result.Structure=StructureDistribution
 	}
-	if result.Phase==PhaseUnknown {
+	// Phase assignment is gated by the interpreted structure. An old or
+	// context-free LPS/LPSY must never force Phase D while structure is unclear.
+	if result.Structure == StructureAccumulation {
 		switch {
-		case hasEvent(result.Events,"SPRING") || hasEvent(result.Events,"UTAD"): result.Phase=PhaseC
-		case hasEvent(result.Events,"SOS") || hasEvent(result.Events,"SOW") || hasEvent(result.Events,"LPS") || hasEvent(result.Events,"LPSY"): result.Phase=PhaseD
-		case result.Structure==StructureAccumulation || result.Structure==StructureDistribution:
-			if hasEvent(result.Events,"SC")||hasEvent(result.Events,"BC"){result.Phase=PhaseA}else{result.Phase=PhaseB}
+		case hasEvent(result.Events, "SOS") || hasEvent(result.Events, "LPS"):
+			result.Phase = PhaseD
+		case hasEvent(result.Events, "SPRING"):
+			result.Phase = PhaseC
+		case hasEvent(result.Events, "SC"):
+			result.Phase = PhaseA
+		default:
+			result.Phase = PhaseB
 		}
-	}
-	if result.Structure==StructureAccumulation {
-		if hasEvent(result.Events,"SOS") || hasEvent(result.Events,"LPS") {result.Phase=PhaseD}
-		if hasEvent(result.Events,"SPRING") && !hasEvent(result.Events,"SOS") {result.Phase=PhaseC}
-	}
-	if result.Structure==StructureDistribution {
-		if hasEvent(result.Events,"SOW") {result.Phase=PhaseD}
-		if hasEvent(result.Events,"UTAD") && !hasEvent(result.Events,"SOW") {result.Phase=PhaseC}
+	} else if result.Structure == StructureDistribution {
+		switch {
+		case hasEvent(result.Events, "SOW") || hasEvent(result.Events, "LPSY"):
+			result.Phase = PhaseD
+		case hasEvent(result.Events, "UTAD") || hasEvent(result.Events, "UT"):
+			result.Phase = PhaseC
+		case hasEvent(result.Events, "BC"):
+			result.Phase = PhaseA
+		default:
+			result.Phase = PhaseB
+		}
+	} else if result.Structure == StructureMarkup || result.Structure == StructureMarkdown {
+		result.Phase = PhaseE
+	} else {
+		result.Phase = PhaseUnknown
 	}
 	if result.Phase!=PhaseUnknown {result.Confidence=0.42;if len(result.Events)>0{result.Confidence=0.55};if len(result.Events)>=2{result.Confidence=0.68};if hasEvent(result.Events,"TEST")&&(hasEvent(result.Events,"SPRING")||hasEvent(result.Events,"SOS")){result.Confidence=0.76}}
 	result.Evidence=append(result.Evidence,fmt.Sprintf("Prior range support %.2f / resistance %.2f; width %.1f%%. Recent trend change %.1f%%.",support,resistance,widthPct,trendChange*100))
