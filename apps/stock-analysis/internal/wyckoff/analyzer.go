@@ -296,9 +296,9 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		return -1
 	}
 	if len(scCandidates) > 0 {
-		// SC candidates separated by at most three trading bars belong to one
-		// climax cluster. A later, separate volume spike (e.g. a test/retest) must
-		// not replace the original stopping action.
+		// Consolidate nearby SC candidates into the first stopping-action cluster.
+		// Prefer the latest and strongest bearish climax candle in that cluster,
+		// rather than automatically selecting the first detected down-spike.
 		first := findBar(scCandidates[0].Date)
 		lastCluster := first
 		for _, candidate := range scCandidates[1:] {
@@ -310,11 +310,23 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			}
 		}
 		if first >= 0 {
-			// Prefer the final climax candidate in the first contiguous cluster:
-			// the initial high-volume bar can be preliminary pressure, while the
-			// later bar may mark the actual stopping action (e.g. 2026-07-28).
-			best := lastCluster
-			add("SC", best, 0.68, "Selected one selling-climax event from the first adjacent climax cluster; the final qualifying climax bar marks the stopping action.")
+			best := first
+			bestStrength := -1.0
+			for i := first; i <= lastCluster; i++ {
+				candle := cs[i]
+				avgStart := i - vw
+				if avgStart < 0 { avgStart = 0 }
+				st := stats(candle, avgVolume(cs[avgStart:i]))
+				// SC strength combines bearish body/range, elevated relative
+				// volume and a close in the lower part of the candle.
+				bearishBody := math.Max(0, candle.Open-candle.Close) / math.Max(candle.High-candle.Low, 0.00001)
+				lowerClose := 1 - st.closeLocation
+				strength := 0.40*bearishBody + 0.35*math.Min(st.relativeVolume/2.0, 1) + 0.25*lowerClose
+				if strength > bestStrength || (math.Abs(strength-bestStrength) < 0.000001 && candle.Date.After(cs[best].Date)) {
+					best, bestStrength = i, strength
+				}
+			}
+			add("SC", best, 0.68, "Selected one selling-climax event from the first adjacent climax cluster using bearish candle strength, relative volume, and close location; ties favor the latest session.")
 			// Emit at most one PS and only if it precedes the selected SC.
 			bestPS := -1
 			for i, e := range psCandidates {
