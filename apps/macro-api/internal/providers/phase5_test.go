@@ -121,8 +121,8 @@ func TestPMIPDFIngestionAndSourceBoundary(t *testing.T) {
 		t.Fatal("untrusted source accepted")
 	}
 	p.ReleaseURLs = nil
-	if _, err = p.Fetch(context.Background()); err == nil || err.Error() != PMINotConfigured {
-		t.Fatal("missing config not explicit")
+	if _, err = p.Fetch(context.Background()); err == nil {
+		t.Fatal("unrecognized discovery index was accepted")
 	}
 }
 func TestPhase5LiveSmoke(t *testing.T) {

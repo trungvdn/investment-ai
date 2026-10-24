@@ -7,10 +7,16 @@ import { Layout } from "../components/layout";
 import Research from "./research";
 import Macro from "./macro";
 import { fetchStockReport } from "../data/stock-api-client.js";
-import { fetchMacroDashboard } from "../data/macro-api-client";
+import {
+  fetchMacroDashboard,
+  fetchMacroOperations,
+} from "../data/macro-api-client";
 import type { MacroDashboard } from "../lib/types";
 vi.mock("../data/stock-api-client.js", () => ({ fetchStockReport: vi.fn() }));
-vi.mock("../data/macro-api-client", () => ({ fetchMacroDashboard: vi.fn() }));
+vi.mock("../data/macro-api-client", () => ({
+  fetchMacroDashboard: vi.fn(),
+  fetchMacroOperations: vi.fn().mockResolvedValue({ sources: [], alerts: [] }),
+}));
 vi.mock("../components/price-chart", () => ({
   PriceChart: ({ onSelectEvent, report }: any) => (
     <button onClick={() => onSelectEvent(report.events[0])}>
@@ -152,6 +158,11 @@ function renderWorkspace(path = "/") {
   );
 }
 beforeEach(() => {
+  vi.mocked(fetchMacroOperations).mockResolvedValue({
+    generatedAt: "2026-10-24T00:00:00Z",
+    sources: [],
+    alerts: [],
+  });
   vi.mocked(fetchMacroDashboard).mockResolvedValue(macroFixture);
 
   vi.clearAllMocks();
@@ -313,4 +324,35 @@ describe("React workspace", () => {
     ).toBeGreaterThan(0);
     expect(screen.queryByText(/^NOT_COMPARABLE:/)).not.toBeInTheDocument();
   });
+});
+
+it("shows source cooldown, last good check and overdue-worker warning", async () => {
+  vi.mocked(fetchMacroOperations).mockResolvedValue({
+    generatedAt: "2026-10-24T00:00:00Z",
+    sources: [
+      {
+        provider: "sbv:statistics:credit",
+        nextDue: "2026-10-24T12:00:00Z",
+        leaseUntil: null,
+        lastChecked: "2026-10-24T06:00:00Z",
+        lastSuccess: "2026-10-23T06:00:00Z",
+        consecutiveFailures: 2,
+        errorKind: "ACCESS_DENIED",
+        message: "source SBV returned HTTP 403",
+      },
+    ],
+    alerts: [
+      {
+        provider: "sbv:statistics:credit",
+        status: "SCHEDULER_OVERDUE",
+        message: "overdue",
+      },
+    ],
+  });
+  renderWorkspace("/macro");
+  expect(
+    await screen.findByText(/Nguồn từ chối truy cập · 2 lần lỗi/),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/source SBV returned HTTP 403/)).toBeInTheDocument();
+  expect(screen.getByText(/Có nguồn đã quá lịch thu thập/)).toBeInTheDocument();
 });

@@ -1,6 +1,7 @@
-import { it, expect } from "vitest";
+import { it, expect, vi } from "vitest";
 import {
   fetchMacroDashboard,
+  fetchMacroOperations,
   validateMacroDashboard,
 } from "./macro-api-client";
 const empty = {
@@ -125,4 +126,65 @@ it("accepts S&P provenance and rejects lookalike domains", () => {
       indicators: [{ ...indicator, latest: bad, history: [bad] }],
     }),
   ).toThrow();
+});
+
+it("keeps ICE DXY and FRED Broad USD as distinct series", () => {
+  const latest = {
+    indicatorCode: "US_DXY",
+    value: 101.2,
+    unit: "index Mar 1973=100",
+    period: "2026-10-23",
+    periodEnd: "2026-10-23",
+    sourceUrl:
+      "https://www.ice.com/fixed-income-data-services/index-solutions/currency-indices",
+  };
+  const indicator = {
+    code: "US_DXY",
+    name: "ICE DXY",
+    enabled: true,
+    unit: latest.unit,
+    latest,
+    history: [latest],
+  };
+  expect(
+    validateMacroDashboard({ ...empty, indicators: [indicator] }).indicators[0]
+      .code,
+  ).toBe("US_DXY");
+  expect(() =>
+    validateMacroDashboard({
+      ...empty,
+      indicators: [
+        { ...indicator, latest: { ...latest, indicatorCode: "US_BROAD_USD" } },
+      ],
+    }),
+  ).toThrow();
+});
+
+it("rejects malformed operations payloads without treating them as healthy sources", async () => {
+  try {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ sources: [null], alerts: [] }), {
+            headers: { "Content-Type": "application/json" },
+          }),
+        ),
+    );
+    await expect(fetchMacroOperations()).rejects.toThrow("không hợp lệ");
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ sources: [], alerts: [null] }), {
+            headers: { "Content-Type": "application/json" },
+          }),
+        ),
+    );
+    await expect(fetchMacroOperations()).rejects.toThrow("không hợp lệ");
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

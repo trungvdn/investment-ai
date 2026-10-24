@@ -96,3 +96,24 @@ export type MacroDashboard = {
   score: null;
   scoreStatus: string;
 };
+
+export type MacroSourceState = {
+  provider: string;
+  nextDue: string;
+  leaseUntil: string | null;
+  lastChecked: string | null;
+  lastSuccess: string | null;
+  consecutiveFailures: number;
+  errorKind: string;
+  message: string;
+};
+export type MacroOperations = {
+  generatedAt: string;
+  sources: MacroSourceState[];
+  alerts: {
+    code?: string;
+    provider?: string;
+    status: string;
+    message: string;
+  }[];
+};

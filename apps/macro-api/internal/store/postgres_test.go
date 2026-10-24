@@ -130,4 +130,85 @@ func TestPostgresPersistenceRevisionsAndSourcePriority(t *testing.T) {
 	if err != nil || !attempts[o.IndicatorCode].Success {
 		t.Fatal("attempt status not durable")
 	}
+	// Atomic leases, stale-owner fencing and persistent recovery schedule.
+	now := time.Now().UTC()
+	tokens := make(chan string, 8)
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			token, e := p.ClaimSource(ctx, "sbv:fx", now)
+			if e != nil {
+				t.Error(e)
+			}
+			tokens <- token
+		}()
+	}
+	wg.Wait()
+	close(tokens)
+	winner := ""
+	owners := 0
+	for token := range tokens {
+		if token != "" {
+			owners++
+			winner = token
+		}
+	}
+	if owners != 1 {
+		t.Fatalf("multiple source owners: %d", owners)
+	}
+	next := now.Add(6 * time.Hour)
+	if err = p.FinishSource(ctx, "sbv:fx", "stale-owner", now, next, "ACCESS_DENIED", "403"); err == nil {
+		t.Fatal("stale owner changed schedule")
+	}
+	if err = p.FinishSource(ctx, "sbv:fx", winner, now, next, "ACCESS_DENIED", "403"); err != nil {
+		t.Fatal(err)
+	}
+	p.Close()
+	p = reopen()
+	states, e := p.SourceStates(ctx)
+	if e != nil || len(states) != 1 || states[0].Failures != 1 || states[0].Kind != "ACCESS_DENIED" || states[0].NextDue.Sub(next).Abs() > time.Second {
+		t.Fatalf("source schedule not durable %+v %v", states, e)
+	}
+	if token, e := p.ClaimSource(ctx, "sbv:fx", now); e != nil || token != "" {
+		t.Fatal("future schedule ignored")
+	}
+	token, e := p.ClaimSource(ctx, "sbv:fx", next)
+	if e != nil || token == "" {
+		t.Fatal("due source not claimed")
+	}
+	if err = p.FinishSource(ctx, "sbv:fx", token, next, next.Add(time.Hour), "", "recovered"); err != nil {
+		t.Fatal(err)
+	}
+	states, e = p.SourceStates(ctx)
+	if e != nil || states[0].Failures != 0 || states[0].LastSuccess == nil {
+		t.Fatal("source recovery not persisted")
+	}
+	// A crashed owner expires; the old token cannot finish after reassignment.
+	token, e = p.ClaimSource(ctx, "sbv:bills", now)
+	if e != nil || token == "" {
+		t.Fatal("lease missing")
+	}
+	replacement, e := p.ClaimSource(ctx, "sbv:bills", now.Add(11*time.Minute))
+	if e != nil || replacement == "" || replacement == token {
+		t.Fatal("crashed source lease not reclaimed")
+	}
+	if e = p.FinishSource(ctx, "sbv:bills", token, now.Add(11*time.Minute), next, "", "late"); e == nil {
+		t.Fatal("expired owner not fenced")
+	}
+
+	if e = p.MakeSourceDue(ctx, "sbv:bills"); e == nil {
+		t.Fatal("operator override stole an active lease")
+	}
+	if e = p.FinishSource(ctx, "sbv:bills", replacement, now.Add(11*time.Minute), next, "", "done"); e != nil {
+		t.Fatal(e)
+	}
+	if e = p.MakeSourceDue(ctx, "sbv:bills"); e != nil {
+		t.Fatal(e)
+	}
+	token, e = p.ClaimSource(ctx, "sbv:bills", time.Now().Add(time.Second))
+	if e != nil || token == "" {
+		t.Fatal("operator requeue did not become due")
+	}
+
 }

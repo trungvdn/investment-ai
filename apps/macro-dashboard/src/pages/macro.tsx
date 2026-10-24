@@ -30,7 +30,10 @@ import {
   Wallet,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { fetchMacroDashboard } from "../data/macro-api-client";
+import {
+  fetchMacroDashboard,
+  fetchMacroOperations,
+} from "../data/macro-api-client";
 import {
   groupLabels,
   historyPoints,
@@ -38,6 +41,7 @@ import {
   statusLabels,
   changeUnit,
   sourceMessage,
+  sourceErrorLabels,
 } from "../domain/macro-live";
 import { cn, formatDate, formatNumber } from "../lib/utils";
 import type { MacroIndicator } from "../lib/types";
@@ -83,6 +87,15 @@ export default function Macro() {
     },
     staleTime: 60000,
     refetchInterval: 300000,
+  });
+  const operations = useQuery({
+    queryKey: ["macro-operations"],
+    queryFn: ({ signal }) =>
+      fetchMacroOperations({
+        signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]),
+      }),
+    refetchInterval: 60000,
+    staleTime: 30000,
   });
   const [group, setGroup] = useState("all"),
     [search, setSearch] = useState(""),
@@ -187,7 +200,9 @@ export default function Macro() {
           <div className="live-source-banner">
             <span>
               <Database size={14} />
-              <strong>Nguồn thực tế: FRED + NSO + NHNN + S&P Global</strong>
+              <strong>
+                Nguồn thực tế: FRED + NSO + NHNN + S&P Global + ICE
+              </strong>
             </span>
             <span>
               API cập nhật lúc{" "}
@@ -399,64 +414,7 @@ export default function Macro() {
                     </span>
                     <Status indicator={selected} />
                   </div>
-                </>
-              ) : (
-                <div className="tab-empty">
-                  <Database size={26} />
-                  <h3>Chưa có quan sát cho chỉ báo này</h3>
-                  <p>
-                    {selected
-                      ? sourceMessage(selected)
-                      : "Chờ thu thập từ nguồn chính thức."}
-                  </p>
-                </div>
-              )}
-            </section>
-            <section className="card alerts-card">
-              <div className="card-heading">
-                <div>
-                  <span className="section-kicker">
-                    CHẤT LƯỢNG & KHẢ NĂNG TRUY CẬP
-                  </span>
-                  <h2>Nguồn cần chú ý</h2>
-                </div>
-                <span className="alert-counter">{alerts.length}</span>
-              </div>
-              {alerts.length ? (
-                <div className="macro-alerts">
-                  {alerts.map((i) => (
-                    <button
-                      key={i.code}
-                      className="macro-alert"
-                      onClick={() => setSelectedCode(i.code)}
-                    >
-                      <span className="alert-dot" />
-                      <div>
-                        <strong>{i.name}</strong>
-                        <p>{statusLabels[i.status]}</p>
-                        {i.latest && <p>Kỳ gần nhất: {i.latest.period}</p>}
-                      </div>
-                      <Info size={14} />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="detail-assessment">
-                  Các chỉ báo đang tích hợp đều có dữ liệu trong ngưỡng độ mới
-                  đã cấu hình.
-                </p>
-              )}
-              <p className="alert-note">
-                <Info size={13} /> Độ mới dựa trên kỳ thống kê, không dựa vào
-                việc vừa tải lại. Chỉ báo chưa sẵn sàng được giữ trống, không
-                thay bằng dữ liệu mẫu.
-              </p>
-            </section>
-          </div>
-          <section className="card indicator-section">
-            <div className="card-heading">
-              <div>
-                <span className="section-kicker">INDICATOR MONITOR</span>
+                </>…1430 tokens truncated…          <span className="section-kicker">INDICATOR MONITOR</span>
                 <h2>
                   Bảng theo dõi chỉ báo{" "}
                   <span className="tab-count">

@@ -16,6 +16,7 @@ func Catalog() []Indicator {
 		{"VN_IIP_YOY", "Sản xuất công nghiệp", "Growth", "VN", "% YoY", "MONTHLY", "YoY", true, 60, "SDMX AIP_ISIC4_IX; tính YoY từ cùng chuỗi tổng toàn ngành."},
 		{"VN_RETAIL_YOY", "Bán lẻ & dịch vụ tiêu dùng", "Growth", "VN", "% YoY", "MONTHLY", "YoY", true, 60, "Tăng trưởng tháng theo giá hiện hành; không phải mức tăng thực đã loại trừ giá."},
 		{"VN_EXPORT_YOY", "Xuất khẩu hàng hóa", "External", "VN", "% YoY", "MONTHLY", "YoY", true, 60, "SDMX TXG_FOB_USD, tổng xuất khẩu hàng hóa tháng; tính YoY."},
+		{"US_DXY", "ICE US Dollar Index (DXY)", "External", "US", "index Mar 1973=100", "DAILY", "LEVEL", true, 7, "ICE DXY giao ngay; cần cấu hình nguồn xuất dữ liệu DXY_FEED_URL. Không dùng futures DX hoặc FRED Broad USD thay thế."},
 		{"US_EFFR", "Lãi suất Fed hiệu dụng", "External", "US", "%", "DAILY", "LEVEL", true, 7, "FRED DFF; không phải trần hoặc sàn lãi suất mục tiêu Fed."},
 		{"US_BROAD_USD", "Broad USD Index", "External", "US", "index Jan 2006=100", "DAILY", "LEVEL", true, 14, "FRED DTWEXBGS; chỉ số USD rộng, KHÔNG phải ICE DXY."},
 		{"US_10Y", "Lợi suất US Treasury 10Y", "External", "US", "%", "DAILY", "LEVEL", true, 7, "FRED DGS10; lợi suất constant maturity 10 năm."},

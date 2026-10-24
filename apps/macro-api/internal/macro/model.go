@@ -91,6 +91,9 @@ func Validate(o Observation, now time.Time) error {
 	if o.Unit != ind.Unit || o.PeriodEnd.IsZero() || o.Source == "" || o.SourceURL == "" || o.SeriesID == "" || o.Method == "" {
 		return fmt.Errorf("missing or inconsistent observation metadata")
 	}
+	if (o.IndicatorCode == "VN_PMI" && (o.Value < 0 || o.Value > 100)) || ((o.IndicatorCode == "US_DXY" || o.IndicatorCode == "US_BROAD_USD" || o.IndicatorCode == "VN_USD_VND" || o.IndicatorCode == "VN_M2_LEVEL") && o.Value <= 0) || ((ind.Basis == "YoY" || ind.Basis == "YTD") && o.Value < -100) {
+		return fmt.Errorf("observation outside definition bounds")
+	}
 	var end time.Time
 	var err error
 	if ind.Frequency == "MONTHLY" {
@@ -126,7 +129,7 @@ func Status(ind Indicator, latest *Observation, attempt *Attempt, now time.Time)
 	}
 	if latest == nil {
 		if attempt != nil {
-			if attempt.Message == "FRED_API_KEY is not configured" || attempt.Message == "PMI_RELEASE_URLS is not configured" {
+			if attempt.Message == "FRED_API_KEY is not configured" || attempt.Message == "PMI_RELEASE_URLS is not configured" || attempt.Message == "DXY_FEED_URL is not configured" {
 				return "NOT_CONFIGURED"
 			}
 			if !attempt.Success {

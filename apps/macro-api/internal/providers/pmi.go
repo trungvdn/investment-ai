@@ -17,10 +17,11 @@ import (
 )
 
 // PMI consumes public releases, not S&P's licensed historical database.
-// URLs are explicit so a new release or revision cannot silently change periods.
+// Explicit URLs override discovery from the public release index.
 type PMI struct {
 	HTTP
 	ReleaseURLs []string
+	IndexURL    string
 }
 
 func (p *PMI) ID() string      { return "spglobal:pmi:vn" }
@@ -30,14 +31,34 @@ const PMINotConfigured = "PMI_RELEASE_URLS is not configured"
 
 func (p *PMI) Fetch(ctx context.Context) (macro.Batch, error) {
 	b := macro.Batch{}
-	if len(p.ReleaseURLs) == 0 {
-		return b, fmt.Errorf(PMINotConfigured)
+	urls := p.ReleaseURLs
+	offset := 0
+	if len(urls) == 0 {
+		index := p.IndexURL
+		if index == "" {
+			index = "https://www.pmi.spglobal.com/Public/Release/PressReleases?language=en"
+		}
+		u, e := url.Parse(index)
+		if e != nil || u.Scheme != "https" || u.User != nil || (u.Host != "www.pmi.spglobal.com" && u.Host != "pmi.spglobal.com") || u.Path != "/Public/Release/PressReleases" {
+			return b, fmt.Errorf("invalid PMI official release index URL")
+		}
+		doc, e := p.Get(ctx, index, index, "S&P Global")
+		if e != nil {
+			return b, e
+		}
+		b.Document = doc
+		urls, e = DiscoverPMI(doc.Body, index)
+		if e != nil {
+			return b, e
+		}
+		offset = 1
 	}
-	if len(p.ReleaseURLs) > 36 {
+
+	if len(urls) > 36 {
 		return b, fmt.Errorf("PMI supports at most 36 release URLs per run")
 	}
-	seen := map[string]bool{}
-	for i, u := range p.ReleaseURLs {
+	seen := map[string]int{}
+	for i, u := range urls {
 		parsed, err := url.Parse(u)
 		if err != nil || parsed.Scheme != "https" || parsed.User != nil || parsed.Port() != "" || (parsed.Hostname() != "www.pmi.spglobal.com" && parsed.Hostname() != "pmi.spglobal.com") || !regexp.MustCompile(`^/Public/Home/PressRelease/[a-fA-F0-9]{32}$`).MatchString(parsed.Path) || parsed.RawQuery != "" || parsed.Fragment != "" {
 			return b, fmt.Errorf("PMI requires official S&P Global public release URLs")
@@ -46,7 +67,7 @@ func (p *PMI) Fetch(ctx context.Context) (macro.Batch, error) {
 		if err != nil {
 			return b, err
 		}
-		if i == 0 {
+		if i == 0 && offset == 0 {
 			b.Document = d
 		} else {
 			b.Documents = append(b.Documents, d)
@@ -59,11 +80,22 @@ func (p *PMI) Fetch(ctx context.Context) (macro.Batch, error) {
 		if err != nil {
 			return b, err
 		}
-		if seen[o.Period] {
-			return b, fmt.Errorf("duplicate PMI release month; select one vintage per period")
+
+		o.RawIndex = i + offset
+		if j, exists := seen[o.Period]; exists {
+			if offset == 0 {
+				return b, fmt.Errorf("duplicate PMI release month; select one vintage per period")
+			}
+			previous := b.Observations[j]
+			if o.PublishedAt.Equal(*previous.PublishedAt) && o.Value != previous.Value {
+				return b, fmt.Errorf("conflicting PMI releases for the same embargo time; select an explicit vintage")
+			}
+			if o.PublishedAt.After(*previous.PublishedAt) {
+				b.Observations[j] = o
+			}
+			continue
 		}
-		seen[o.Period] = true
-		o.RawIndex = i
+		seen[o.Period] = len(b.Observations)
 		b.Observations = append(b.Observations, o)
 	}
 	return b, nil
@@ -146,4 +178,54 @@ func ParsePMIText(text, sourceURL string, now time.Time) (macro.Observation, err
 		return empty, err
 	}
 	return o, nil
+}
+
+// Discover only explicitly titled Vietnam manufacturing releases; never guesses IDs.
+func DiscoverPMI(body []byte, index string) ([]string, error) {
+	root, err := htmlparse.Parse(bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("invalid PMI release index")
+	}
+	base, _ := url.Parse(index)
+	out := []string{}
+	seen := map[string]bool{}
+	for _, a := range nodes(root, "a") {
+		title := nodeText(a)
+		href := ""
+		for _, v := range a.Attr {
+			if v.Key == "href" {
+				href = v.Val
+			}
+			if v.Key == "title" {
+				title += " " + v.Val
+			}
+		}
+		text := fold(title)
+		if !(strings.Contains(text, "vietnam") || strings.Contains(text, "viet nam")) || !strings.Contains(text, "manufacturing") {
+			continue
+		}
+		link, e := url.Parse(href)
+		if e != nil {
+			continue
+		}
+		u := base.ResolveReference(link)
+		if u.Scheme != "https" || u.User != nil || (u.Host != "www.pmi.spglobal.com" && u.Host != "pmi.spglobal.com") || !regexp.MustCompile(`^/Public/Home/PressRelease/[a-fA-F0-9]{32}$`).MatchString(u.Path) {
+			continue
+		}
+		u.RawQuery = ""
+		u.Fragment = ""
+		value := u.String()
+		if seen[value] {
+			continue
+		}
+		seen[value] = true
+		out = append(out, value)
+		if len(out) == 6 {
+			break
+		}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no explicitly titled Vietnam manufacturing releases in official PMI index; configure PMI_RELEASE_URLS if index layout changes")
+	}
+	return out, nil
 }

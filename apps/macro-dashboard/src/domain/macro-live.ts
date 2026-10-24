@@ -90,3 +90,18 @@ export function sourceMessage(i: MacroIndicator) {
     ) || "Chờ thu thập từ nguồn chính thức."
   );
 }
+
+export const sourceErrorLabels: Record<string, string> = {
+  ACCESS_DENIED: "Nguồn từ chối truy cập",
+  RATE_LIMIT: "Nguồn giới hạn tần suất",
+  UPSTREAM: "Nguồn tạm thời lỗi",
+  DNS: "Không phân giải được tên miền",
+  TLS: "Lỗi chứng chỉ kết nối",
+  TIMEOUT: "Hết thời gian chờ",
+  BODY_READ: "Không đọc hết phản hồi",
+  TRANSPORT: "Lỗi kết nối",
+  HTTP: "Nguồn trả lỗi HTTP",
+  DATA_QUALITY: "Dữ liệu không đạt kiểm tra",
+  NOT_CONFIGURED: "Chưa cấu hình nguồn",
+  STORAGE: "Lỗi kho dữ liệu",
+};

@@ -22,9 +22,16 @@ type Service struct {
 	Providers []providers.Provider
 	Logger    *slog.Logger
 }
+type Failure struct {
+	RetryAt  *time.Time `json:"retryAt,omitempty"`
+	Provider string     `json:"provider"`
+	Kind     string     `json:"kind"`
+	Message  string     `json:"message"`
+}
 type RunResult struct {
-	Saved  int `json:"saved"`
-	Failed int `json:"failedSources"`
+	Failures []Failure `json:"failures"`
+	Saved    int       `json:"saved"`
+	Failed   int       `json:"failedSources"`
 }
 
 func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
@@ -48,7 +55,14 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		counts := map[string]int{}
 		if fetchErr == nil {
+			seen := map[string]bool{}
 			for _, o := range batch.Observations {
+				key := o.IndicatorCode + "|" + o.Period + "|" + o.SeriesID
+				if seen[key] {
+					fetchErr = fmt.Errorf("duplicate source observation for %s in %s", o.IndicatorCode, o.Period)
+					break
+				}
+				seen[key] = true
 				if err := macro.Validate(o, time.Now()); err != nil || o.RawIndex < 0 || o.RawIndex >= len(ids) || ids[o.RawIndex] == 0 {
 					fetchErr = fmt.Errorf("invalid normalized data")
 					break
@@ -74,9 +88,11 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		if fetchErr == nil && missing {
 			result.Failed++
+			result.Failures = append(result.Failures, Failure{Provider: p.ID(), Kind: "DATA_QUALITY", Message: "No unambiguous observations for source indicators"})
 		}
 		if fetchErr != nil {
 			result.Failed++
+			result.Failures = append(result.Failures, Failure{Provider: p.ID(), Kind: providers.ErrorKind(fetchErr), Message: fetchErr.Error(), RetryAt: providers.RetryAt(fetchErr)})
 			if s.Logger != nil {
 				s.Logger.Warn("macro source unavailable", "provider", p.ID(), "reason", fetchErr.Error())
 			}

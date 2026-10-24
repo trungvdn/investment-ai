@@ -17,6 +17,8 @@ const safeURL = (value: unknown) => {
         "www.sbv.gov.vn",
         "www.pmi.spglobal.com",
         "pmi.spglobal.com",
+        "www.ice.com",
+        "indices.ice.com",
       ].includes(u.hostname)
     );
   } catch {
@@ -85,4 +87,42 @@ export async function fetchMacroDashboard({
   if (!response.headers.get("content-type")?.includes("application/json"))
     throw new Error("Macro API chưa được cấu hình tại /api/macro.");
   return validateMacroDashboard(await response.json());
+}
+
+export async function fetchMacroOperations({
+  signal,
+}: { signal?: AbortSignal } = {}): Promise<
+  import("../lib/types").MacroOperations
+> {
+  const response = await fetch("/api/macro/operations", {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+  if (
+    !response.ok ||
+    !response.headers.get("content-type")?.includes("application/json")
+  )
+    throw new Error("Không tải được trạng thái vận hành nguồn.");
+  const value = await response.json();
+  if (
+    !value ||
+    !Array.isArray(value.sources) ||
+    !Array.isArray(value.alerts) ||
+    value.alerts.some(
+      (a: any) =>
+        !a || typeof a.status !== "string" || typeof a.message !== "string",
+    ) ||
+    value.sources.some(
+      (s: any) =>
+        !s ||
+        typeof s.provider !== "string" ||
+        !Number.isFinite(Date.parse(s.nextDue)) ||
+        !Number.isInteger(s.consecutiveFailures) ||
+        s.consecutiveFailures < 0 ||
+        typeof s.errorKind !== "string" ||
+        typeof s.message !== "string",
+    )
+  )
+    throw new Error("Trạng thái vận hành nguồn không hợp lệ.");
+  return value;
 }
