@@ -26,15 +26,15 @@ function renderReport(report) {
   const metrics = [
     ["Structure", pretty(report.structure)],
     ["Wyckoff phase", pretty(report.phase)],
-    ["Confidence", report.confidence == null ? "—" : `${report.confidence}%`],
+    ["Confidence", report.confidence == null ? "—" : `${Math.round(report.confidence * 100)}%`],
     ["Trading range", pretty(range.status)],
   ];
   const events = (report.events || []).map((event) => ({
     title: event.type || event.name || event.event || "Event",
-    description: [event.date, event.confidence == null ? "" : `Confidence: ${event.confidence}%`, event.evidence].filter(Boolean).join(" · "),
+    description: [event.date, event.confidence == null ? "" : `Confidence: ${Math.round(event.confidence * 100)}%`, event.evidence].filter(Boolean).join(" · "),
   }));
   const dataMode = report.dataQuality?.mode || report.dataQuality?.dataMode || "unknown";
-  const pointCount = report.dataQuality?.pointCount ?? report.dataQuality?.historyCount;
+  const pointCount = report.dataQuality?.dataPoints;
   const warnings = [];
   if (String(dataMode).toLowerCase() === "demo") warnings.push("This report uses demo data. Do not use it to make investment decisions.");
   if (range.status === "PROVISIONAL") warnings.push("The trading range is provisional, not a confirmed structure.");
@@ -51,12 +51,12 @@ function renderReport(report) {
     </div>
     ${warnings.length ? `<div class="report-warning">${warnings.map(escapeHTML).join("<br>")}</div>` : ""}
     <div class="stock-report-grid">
-      ${panel("Trading range", `<p><strong>Status:</strong> ${escapeHTML(pretty(range.status))}</p><p style="margin-top:8px"><strong>Range:</strong> ${escapeHTML(range.low ?? "—")} – ${escapeHTML(range.high ?? "—")}</p>${range.description ? `<p class="stock-summary" style="margin-top:8px">${escapeHTML(range.description)}</p>` : ""}`)}
+      ${panel("Trading range", `<p><strong>Status:</strong> ${escapeHTML(pretty(range.status))}</p><p style="margin-top:8px"><strong>Range:</strong> ${escapeHTML(range.support ?? "—")} – ${escapeHTML(range.resistance ?? "—")}</p>${range.description ? `<p class="stock-summary" style="margin-top:8px">${escapeHTML(range.description)}</p>` : ""}`)}
       ${panel("Wyckoff events", listItems(events, "No events were reported."))}
       ${panel("Evidence", listItems(report.evidence, "No evidence details were reported."))}
       ${panel("Risks", listItems(report.risks, "No explicit risks were reported."))}
       ${panel("Watchlist", listItems(report.watchlist, "No follow-up conditions were reported."))}
-      ${panel("Data quality", `${quality}${listItems(report.dataQuality?.warnings || report.dataQuality?.issues, "No additional data-quality warnings.")}`)}
+      ${panel("Data quality", `${quality}${listItems(report.dataQuality?.notes, "No additional data-quality warnings.")}`)}
     </div>
     <p class="report-disclaimer">${escapeHTML(report.disclaimer || "For research purposes only; not investment advice.")}</p>`;
 }
