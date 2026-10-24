@@ -261,4 +261,55 @@ describe("React workspace", () => {
     await screen.findByText("Macro API offline");
     expect(screen.queryByText("62")).not.toBeInTheDocument();
   });
+  it("shows quarterly PPI and explains incomparable M2 without a fabricated value", async () => {
+    const ppiLatest = {
+      ...latest,
+      indicatorCode: "VN_PPI_YOY",
+      period: "2026-Q3",
+      periodEnd: "2026-09-30T00:00:00Z",
+      value: 4.75,
+      sourceSeriesId: "PPI_QUARTERLY",
+    };
+    const ppi = {
+      ...macroFixture.indicators[0],
+      code: "VN_PPI_YOY",
+      name: "PPI công nghiệp",
+      frequency: "QUARTERLY",
+      latest: ppiLatest,
+      history: [ppiLatest],
+    };
+    const m2 = {
+      ...macroFixture.indicators[0],
+      code: "VN_M2_GROWTH",
+      name: "Tăng trưởng M2 YoY",
+      group: "Liquidity",
+      status: "NOT_COMPARABLE",
+      latest: null,
+      history: [],
+      lastAttempt: {
+        indicatorCode: "VN_M2_GROWTH",
+        checkedAt: "2026-10-24T00:00:00Z",
+        success: false,
+        message:
+          "NOT_COMPARABLE: Không so sánh qua mốc đổi phương pháp 10/2025.",
+      },
+    };
+    vi.mocked(fetchMacroDashboard).mockResolvedValue({
+      ...macroFixture,
+      indicators: [ppi, m2],
+    });
+    const user = userEvent.setup();
+    renderWorkspace("/macro");
+    await screen.findByText("Chuỗi theo quý · giữ nguyên khoảng thiếu");
+    expect(screen.getByText("Quý")).toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Chỉ báo trên biểu đồ" }),
+      "VN_M2_GROWTH",
+    );
+    expect(
+      screen.getAllByText("Không so sánh qua mốc đổi phương pháp 10/2025.")
+        .length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText(/^NOT_COMPARABLE:/)).not.toBeInTheDocument();
+  });
 });

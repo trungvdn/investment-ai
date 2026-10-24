@@ -37,3 +37,59 @@ it("does not replace an API outage with mock observations", async () => {
     }),
   ).rejects.toThrow("không được dùng thay thế");
 });
+
+it("accepts official NHNN provenance and quarterly PPI periods", () => {
+  const latest = {
+    indicatorCode: "VN_PPI_YOY",
+    value: 4.75,
+    unit: "% YoY",
+    period: "2026-Q3",
+    periodEnd: "2026-09-30",
+    sourceUrl: "https://nsdp.nso.gov.vn/GSO-chung/SDMXFiles/GSO/PPIVNM.xml",
+  };
+  const indicator = {
+    code: "VN_PPI_YOY",
+    name: "PPI công nghiệp",
+    enabled: true,
+    unit: "% YoY",
+    latest,
+    history: [latest],
+  };
+  expect(
+    validateMacroDashboard({ ...empty, indicators: [indicator] }).indicators[0]
+      .latest?.period,
+  ).toBe("2026-Q3");
+  const sbv = {
+    ...latest,
+    indicatorCode: "VN_USD_VND",
+    unit: "VND/USD",
+    period: "2026-10-23",
+    periodEnd: "2026-10-23",
+    sourceUrl: "https://sbv.gov.vn/vi/tỷ-giá",
+  };
+  expect(
+    validateMacroDashboard({
+      ...empty,
+      indicators: [
+        {
+          ...indicator,
+          code: "VN_USD_VND",
+          unit: "VND/USD",
+          latest: sbv,
+          history: [sbv],
+        },
+      ],
+    }).indicators[0].latest?.sourceUrl,
+  ).toContain("sbv.gov.vn");
+  expect(() =>
+    validateMacroDashboard({
+      ...empty,
+      indicators: [
+        {
+          ...indicator,
+          latest: { ...latest, sourceUrl: "https://sbv.gov.vn.evil.example/" },
+        },
+      ],
+    }),
+  ).toThrow();
+});

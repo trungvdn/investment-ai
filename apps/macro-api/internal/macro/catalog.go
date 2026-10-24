@@ -2,14 +2,16 @@ package macro
 
 func Catalog() []Indicator {
 	return []Indicator{
-		{"VN_M2_GROWTH", "Tăng trưởng M2", "Liquidity", "VN", "% YoY", "MONTHLY", "YoY", false, 75, "Chưa tích hợp NHNN; không thay bằng dữ liệu mẫu."},
-		{"VN_CREDIT_GROWTH", "Tăng trưởng tín dụng", "Credit", "VN", "% YTD", "MONTHLY", "YTD", false, 75, "Chưa tích hợp NHNN."},
-		{"VN_INTERBANK_ON", "Lãi suất liên ngân hàng O/N", "Liquidity", "VN", "%", "DAILY", "LEVEL", false, 7, "Chưa tích hợp NHNN."},
+		{"VN_M2_GROWTH", "Tăng trưởng M2", "Liquidity", "VN", "% YoY", "MONTHLY", "YoY", true, 75, "NHNN: YoY chỉ khi có cùng tháng năm trước theo phương pháp từ 10/2025; không so qua mốc đổi phương pháp."},
+		{"VN_M2_LEVEL", "Tổng phương tiện thanh toán M2", "Liquidity", "VN", "tỷ đồng", "MONTHLY", "LEVEL", true, 75, "NHNN: số dư tổng phương tiện thanh toán theo phương pháp từ 10/2025. Không nối với chuỗi cũ."},
+		{"VN_M2_YTD", "Tăng trưởng M2 từ đầu năm", "Liquidity", "VN", "% YTD", "MONTHLY", "YTD", true, 75, "NHNN: mức tăng được công bố so cuối năm trước; không gán nhãn YoY."},
+		{"VN_CREDIT_GROWTH", "Tăng trưởng tín dụng", "Credit", "VN", "% YTD", "MONTHLY", "YTD", true, 75, "NHNN: tăng trưởng tổng dư nợ so với cuối năm trước, không phải YoY."},
+		{"VN_INTERBANK_ON", "Lãi suất liên ngân hàng O/N", "Liquidity", "VN", "%", "DAILY", "LEVEL", true, 7, "NHNN: lãi suất VND qua đêm, lấy đúng ngày giao dịch của dòng O/N."},
 		{"VN_SBV_TBILL", "Tín phiếu NHNN", "Liquidity", "VN", "%", "DAILY", "LEVEL", false, 7, "Chưa xác minh nguồn tín phiếu NHNN; không dùng tín phiếu Kho bạc thay thế."},
-		{"VN_USD_VND", "Tỷ giá trung tâm USD/VND", "External", "VN", "VND/USD", "DAILY", "LEVEL", false, 7, "Chưa tích hợp NHNN; tỷ giá trung tâm khác giá giao dịch ngân hàng."},
+		{"VN_USD_VND", "Tỷ giá trung tâm USD/VND", "External", "VN", "VND/USD", "DAILY", "LEVEL", true, 7, "NHNN: tỷ giá trung tâm, khác tỷ giá mua/bán và tỷ giá tính thuế; ngày áp dụng khác ngày ban hành."},
 		{"VN_CPI_YOY", "CPI Việt Nam", "Inflation", "VN", "% YoY", "MONTHLY", "YoY", true, 60, "CPI cả nước tháng so cùng kỳ; SDMX được tính từ cùng chuỗi chỉ số gốc."},
 		{"VN_CORE_CPI_YOY", "Lạm phát cơ bản", "Inflation", "VN", "% YoY", "MONTHLY", "YoY", true, 60, "Chỉ nhận số tháng so cùng kỳ, không nhận số bình quân lũy kế."},
-		{"VN_PPI_YOY", "PPI công nghiệp", "Inflation", "VN", "% YoY", "QUARTERLY", "YoY", false, 120, "Để giai đoạn tiếp theo; không giả lập số tháng từ số quý."},
+		{"VN_PPI_YOY", "PPI công nghiệp", "Inflation", "VN", "% YoY", "QUARTERLY", "YoY", true, 120, "NSO: PPI tổng sản phẩm công nghiệp B–E, cùng quý năm trước = 100; lấy chỉ số trừ 100, không chia tiếp cho năm trước."},
 		{"VN_PMI", "PMI sản xuất", "Growth", "VN", "index", "MONTHLY", "LEVEL", false, 60, "Chưa tích hợp S&P Global; cần kiểm tra quyền sử dụng."},
 		{"VN_IIP_YOY", "Sản xuất công nghiệp", "Growth", "VN", "% YoY", "MONTHLY", "YoY", true, 60, "SDMX AIP_ISIC4_IX; tính YoY từ cùng chuỗi tổng toàn ngành."},
 		{"VN_RETAIL_YOY", "Bán lẻ & dịch vụ tiêu dùng", "Growth", "VN", "% YoY", "MONTHLY", "YoY", true, 60, "Tăng trưởng tháng theo giá hiện hành; không phải mức tăng thực đã loại trừ giá."},

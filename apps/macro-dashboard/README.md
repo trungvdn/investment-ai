@@ -54,6 +54,9 @@ Root tests run the existing Node domain/API tests followed by React component te
 
 ## Live macro data (FRED + NSO)
 
-The macro page now reads `/api/macro/dashboard` through TanStack Query, without mock fallback. It shows per-series periods, source links, collection/publication times, status and revision provenance; coverage replaces Macro Score. Eight connectors are enabled initially, while all 15 catalog items remain visible. Broad USD is explicitly different from ICE DXY. Missing monthly values remain gaps in the chart.
+The macro page now reads `/api/macro/dashboard` through TanStack Query, without mock fallback. It shows per-series periods, source links, collection/publication times, status and revision provenance; coverage replaces Macro Score. The initial eight series have been extended with NHNN/PPI; the current catalog and availability policies come from the API. Broad USD is explicitly different from ICE DXY. Missing monthly values remain gaps in the chart.
 
 Run PostgreSQL + macro-api with `docker compose -f docker-compose.macro.yml up --build -d` after setting `MACRO_DB_PASSWORD` and optionally `FRED_API_KEY`. Vite proxies `/api/macro` to `MACRO_API_URL` (default :3000); stock API requests still go to :8081. See `apps/macro-api/README.md` for exact source series, refresh policies and operational commands. Production stock-analysis also forwards `/api/macro/` to the Macro API.
+
+
+The NHNN/PPI extension adds central FX, VND overnight interbank rates, aggregate credit YTD, separate M2 level/YTD/YoY, and quarterly industrial PPI. The catalog expands to 17 entries (15 enabled), while PMI/NHNN bills remain unimplemented. The page shows three source families (FRED, NSO, NHNN), explicit M2 comparability status, true quarterly gaps and YTD year-reset handling. See the Macro API README for the October 2025 M2 methodology boundary and exact primary-source definitions.

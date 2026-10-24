@@ -40,3 +40,26 @@ func TestValidationRejectsNonFiniteAndMismatchedPeriods(t *testing.T) {
 		t.Fatal("period-end mismatch accepted")
 	}
 }
+
+func TestQuarterEndAndNotComparableStatus(t *testing.T) {
+	end, err := QuarterEnd("2026-Q1")
+	if err != nil || end.Format("2006-01-02") != "2026-03-31" {
+		t.Fatal("quarter end incorrect")
+	}
+	for _, period := range []string{"2026-Q0", "2026-Q5", "2026-Q11", "bad"} {
+		if _, err := QuarterEnd(period); err == nil {
+			t.Fatal("invalid quarter accepted")
+		}
+	}
+	ind, _ := Find("VN_M2_GROWTH")
+	a := &Attempt{Success: false, Message: "NOT_COMPARABLE: methodology break"}
+	if Status(ind, nil, a, time.Now()) != "NOT_COMPARABLE" {
+		t.Fatal("methodology gap treated as normal missing data")
+	}
+	ppi, _ := Find("VN_PPI_YOY")
+	end, _ = QuarterEnd("2026-Q3")
+	obs := Observation{IndicatorCode: ppi.Code, Period: "2026-Q3", PeriodEnd: end, Value: 4.75, Unit: ppi.Unit, Source: "NSO", SourceURL: "https://nsdp.nso.gov.vn/ppi.xml", SeriesID: "PPI", Method: "INDEX_MINUS_100"}
+	if err := Validate(obs, time.Date(2026, 10, 24, 0, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatal(err)
+	}
+}

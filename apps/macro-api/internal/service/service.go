@@ -6,6 +6,7 @@ import (
 	"github.com/trungvdn/investment-ai/apps/macro-api/internal/macro"
 	"github.com/trungvdn/investment-ai/apps/macro-api/internal/providers"
 	"log/slog"
+	"strings"
 	"time"
 )
 
@@ -33,26 +34,30 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 			return result, ctx.Err()
 		}
 		batch, fetchErr := p.Fetch(ctx)
-		rawID := int64(0)
-		if len(batch.Document.Body) > 0 {
-			var err error
-			rawID, err = s.Repo.SaveDocument(ctx, batch.Document)
+		docs := append([]macro.RawDocument{batch.Document}, batch.Documents...)
+		ids := make([]int64, len(docs))
+		for i, doc := range docs {
+			if len(doc.Body) == 0 {
+				continue
+			}
+			id, err := s.Repo.SaveDocument(ctx, doc)
 			if err != nil {
 				return result, fmt.Errorf("persist raw document: %w", err)
 			}
+			ids[i] = id
 		}
 		counts := map[string]int{}
 		if fetchErr == nil {
 			for _, o := range batch.Observations {
-				if err := macro.Validate(o, time.Now()); err != nil {
+				if err := macro.Validate(o, time.Now()); err != nil || o.RawIndex < 0 || o.RawIndex >= len(ids) || ids[o.RawIndex] == 0 {
 					fetchErr = fmt.Errorf("invalid normalized data")
 					break
 				}
 			}
 			if fetchErr == nil {
 				for _, o := range batch.Observations {
-					o.RawID = rawID
-					o.CollectedAt = batch.Document.FetchedAt
+					o.RawID = ids[o.RawIndex]
+					o.CollectedAt = docs[o.RawIndex].FetchedAt
 					if err := s.Repo.Save(ctx, o); err != nil {
 						return result, fmt.Errorf("persist normalized observation: %w", err)
 					}
@@ -63,7 +68,7 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		missing := false
 		for _, code := range p.Codes() {
-			if counts[code] == 0 {
+			if counts[code] == 0 && !strings.HasPrefix(batch.Unavailable[code], "NOT_COMPARABLE:") {
 				missing = true
 			}
 		}
@@ -81,7 +86,10 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 			if fetchErr != nil {
 				a.Message = fetchErr.Error()
 			} else if !a.Success {
-				a.Message = "No unambiguous observations for this indicator in source response"
+				a.Message = batch.Unavailable[code]
+				if a.Message == "" {
+					a.Message = "No unambiguous observations for this indicator in source response"
+				}
 			} else {
 				a.Message = fmt.Sprintf("Processed %d observations; %d parser warnings", counts[code], len(batch.Warnings))
 			}

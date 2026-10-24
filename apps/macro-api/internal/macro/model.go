@@ -3,6 +3,7 @@ package macro
 import (
 	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -33,6 +34,7 @@ type Observation struct {
 	FirstSeenAt   time.Time  `json:"firstSeenAt"`
 	CollectedAt   time.Time  `json:"collectedAt"`
 	Revision      int        `json:"revision"`
+	RawIndex      int        `json:"-"`
 	RawID         int64      `json:"rawId"`
 }
 type RawDocument struct {
@@ -42,8 +44,10 @@ type RawDocument struct {
 }
 type Batch struct {
 	Document     RawDocument
+	Documents    []RawDocument
 	Observations []Observation
 	Warnings     []string
+	Unavailable  map[string]string
 }
 type Attempt struct {
 	Code      string    `json:"indicatorCode"`
@@ -66,6 +70,16 @@ func MonthEnd(period string) (time.Time, error) {
 	}
 	return t.AddDate(0, 1, -1), nil
 }
+func QuarterEnd(period string) (time.Time, error) {
+	if len(period) != 7 || period[4:6] != "-Q" || period[6] < '1' || period[6] > '4' {
+		return time.Time{}, fmt.Errorf("invalid quarter")
+	}
+	year, err := time.Parse("2006", period[:4])
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Date(year.Year(), time.Month(int(period[6]-'0')*3)+1, 0, 0, 0, 0, 0, time.UTC), nil
+}
 func Validate(o Observation, now time.Time) error {
 	ind, ok := Find(o.IndicatorCode)
 	if !ok || !ind.Enabled {
@@ -81,13 +95,21 @@ func Validate(o Observation, now time.Time) error {
 	var err error
 	if ind.Frequency == "MONTHLY" {
 		end, err = MonthEnd(o.Period)
+	} else if ind.Frequency == "QUARTERLY" {
+		end, err = QuarterEnd(o.Period)
 	} else {
 		end, err = time.Parse("2006-01-02", o.Period)
 	}
 	if err != nil || !end.Equal(o.PeriodEnd) {
 		return fmt.Errorf("invalid period")
 	}
-	if end.After(now) || o.PublishedAt != nil && o.PublishedAt.After(now) {
+	location := time.UTC
+	if ind.Country == "VN" {
+		location = time.FixedZone("ICT", 7*3600)
+	}
+	localNow := now.In(location)
+	today := time.Date(localNow.Year(), localNow.Month(), localNow.Day(), 0, 0, 0, 0, time.UTC)
+	if end.After(today) || o.PublishedAt != nil && o.PublishedAt.After(now) {
 		return fmt.Errorf("future observation")
 	}
 	return nil
@@ -95,6 +117,9 @@ func Validate(o Observation, now time.Time) error {
 func Status(ind Indicator, latest *Observation, attempt *Attempt, now time.Time) string {
 	if !ind.Enabled {
 		return "NOT_IMPLEMENTED"
+	}
+	if attempt != nil && !attempt.Success && strings.HasPrefix(attempt.Message, "NOT_COMPARABLE:") {
+		return "NOT_COMPARABLE"
 	}
 	if latest == nil {
 		if attempt != nil {
