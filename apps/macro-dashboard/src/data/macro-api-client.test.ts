@@ -93,3 +93,36 @@ it("accepts official NHNN provenance and quarterly PPI periods", () => {
     }),
   ).toThrow();
 });
+
+it("accepts S&P provenance and rejects lookalike domains", () => {
+  const latest = {
+    indicatorCode: "VN_PMI",
+    value: 51.9,
+    unit: "index",
+    period: "2026-09",
+    periodEnd: "2026-09-30",
+    sourceUrl:
+      "https://www.pmi.spglobal.com/Public/Home/PressRelease/dba8ca68ce13403591b68cb3e07175d9",
+  };
+  const indicator = {
+    code: "VN_PMI",
+    name: "PMI",
+    enabled: true,
+    unit: "index",
+    latest,
+    history: [latest],
+  };
+  expect(
+    validateMacroDashboard({ ...empty, indicators: [indicator] }).indicators,
+  ).toHaveLength(1);
+  const bad = {
+    ...latest,
+    sourceUrl: "https://www.pmi.spglobal.com.evil.test/release",
+  };
+  expect(() =>
+    validateMacroDashboard({
+      ...empty,
+      indicators: [{ ...indicator, latest: bad, history: [bad] }],
+    }),
+  ).toThrow();
+});

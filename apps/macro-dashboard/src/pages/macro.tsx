@@ -5,6 +5,7 @@ import {
   AreaChart,
   CartesianGrid,
   ResponsiveContainer,
+  ReferenceLine,
   Tooltip,
   XAxis,
   YAxis,
@@ -186,7 +187,7 @@ export default function Macro() {
           <div className="live-source-banner">
             <span>
               <Database size={14} />
-              <strong>Nguồn thực tế: FRED + NSO + NHNN</strong>
+              <strong>Nguồn thực tế: FRED + NSO + NHNN + S&P Global</strong>
             </span>
             <span>
               API cập nhật lúc{" "}
@@ -366,6 +367,15 @@ export default function Macro() {
                             fontSize: 11,
                           }}
                         />
+                        {selected.code === "VN_PMI" && (
+                          <ReferenceLine
+                            ifOverflow="extendDomain"
+                            y={50}
+                            stroke="#94a3b8"
+                            strokeDasharray="4 4"
+                            label="50 · Không thay đổi"
+                          />
+                        )}
                         <Area
                           type="linear"
                           connectNulls={false}
@@ -604,6 +614,12 @@ export default function Macro() {
                 <Status indicator={selected} />
               </div>
               <p className="detail-assessment">{selected.description}</p>
+              {selected.latest && selected.status !== "AVAILABLE" && (
+                <p className="detail-assessment" role="status">
+                  {sourceMessage(selected)} Giá trị bên dưới thuộc kỳ{" "}
+                  {selected.latest.period}.
+                </p>
+              )}
               {selected.latest ? (
                 <dl className="data-list provenance-list">
                   <div>

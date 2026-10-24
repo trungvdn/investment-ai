@@ -68,7 +68,7 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		missing := false
 		for _, code := range p.Codes() {
-			if counts[code] == 0 && !strings.HasPrefix(batch.Unavailable[code], "NOT_COMPARABLE:") {
+			if counts[code] == 0 && !strings.HasPrefix(batch.Unavailable[code], "NOT_COMPARABLE:") && !strings.HasPrefix(batch.Unavailable[code], "NO_PUBLISHED_RATE:") {
 				missing = true
 			}
 		}

@@ -1,6 +1,6 @@
-# Live macro data — FRED + NSO
+# Live macro data — FRED + NSO + NHNN + S&P Global
 
-Go API and ingestion worker backed by PostgreSQL. No mock or in-memory production mode. The catalog now contains **17 indicators**, with **15 connectors/definitions enabled**. PMI and NHNN bills remain unimplemented. M2 YoY may intentionally have no observation until a comparable prior-year month exists.
+Go API and ingestion worker backed by PostgreSQL. No mock or in-memory production mode. The catalog now contains **17 indicators**, with **17 definitions enabled**. PMI requires public release URLs; enabled does not mean data is available. M2 YoY may intentionally have no observation until a comparable prior-year month exists.
 
 ## Sources and exact definitions
 
@@ -58,7 +58,7 @@ An explicit one-off run or backfill (same credentials):
 go run ./cmd/ingest
 ```
 
-Exit 0: all connectors produced observations; exit 2: some sources failed or lacked configuration; exit 1: run/storage failure. The worker processes each connector independently and preserves the last successful observations. A partial write caused by a database failure can be safely replayed; an entire multi-source run is not one transaction.
+Exit 0: connectors produced observations or explicitly reported an expected methodology/publication gap; exit 2: some sources failed or lacked configuration; exit 1: run/storage failure. The worker processes each connector independently and preserves the last successful observations. A partial write caused by a database failure can be safely replayed; an entire multi-source run is not one transaction.
 
 Optional backend-only `NSO_ECONOMIC_FEED_URL` / `NSO_PRICES_FEED_URL` overrides must return the same WordPress JSON shape and are intended for controlled source migrations. They are not public API parameters.
 
@@ -148,3 +148,27 @@ SBV_PPI_LIVE_SMOKE=1 go test ./internal/providers -run TestSBVPPILiveSmoke -v
 ```
 
 Deterministic tests cover central FX versus buy/sell rates, effective versus issue dates, O/N versus policy/other-tenor rates, aggregate versus sector credit, M2 definition breaks/blank YTD/revisions, multi-page raw provenance, quarterly PPI transformations and truncated HTTP responses. PostgreSQL CI also round-trips quarterly observations across a connection restart.
+
+## Phase 5 — PMI and NHNN bills
+
+**PMI:** original S&P Global Vietnam Manufacturing PMI headline, seasonally adjusted, index points, monthly; 50 means unchanged business conditions, not 50% growth. Configure `PMI_RELEASE_URLS` with one or more official public releases selected from https://www.pmi.spglobal.com/ (comma separated; maximum 36, exactly one vintage per month). This is a public-release reader, not access to the licensed historical database.
+
+Example release URL verified in the S&P public index for September 2026:
+
+```sh
+export PMI_RELEASE_URLS='https://www.pmi.spglobal.com/Public/Home/PressRelease/dba8ca68ce13403591b68cb3e07175d9'
+```
+
+Add the new release URL monthly and retain older URLs for backfill. Automatic release discovery is not implemented. Missing configuration is `NOT_CONFIGURED`; failed download/parsing retains previous observations. No numbers are embedded in production code. The parser reads page one of PDF releases with `pdftotext` (install `poppler-utils`; included in the Docker image), or text from HTML releases. It requires the Vietnam manufacturing headline, explicit report month/year and publication embargo time; it rejects other countries, subindices, duplicate months, ambiguous values and future releases. Each release has its own exact raw-document link. Publication time is the stated embargo, distinct from month-end and collection time. A revision must replace the URL for that month, rather than providing two vintages in one ingestion batch.
+
+**NHNN bills:** https://sbv.gov.vn/vi/nghiệp-vụ-thị-trường-mở — the official OMO result table, scoped to `ls01-wrap`, exact result date and explicit **Bán tín phiếu NHNN** sections. `VN_SBV_TBILL` is `sum(awarded volume × awarded annual rate) / sum(awarded volume)`, across bill tenors in that result. Units are %/year and billion VND. Tenors and awarded total are recorded in the method metadata. The tenor basket may change, so the UI suppresses a misleading day-to-day yield change. This series is neither Treasury bills, repo rates, outstanding stock nor net liquidity injection. History accumulates from observed result snapshots; no fabricated backfill.
+
+On a valid result table without bill awards or a published bill rate, the connector returns `NO_PUBLISHED_RATE`, stores the raw result, does not fabricate a zero yield and does not count the source as a failed ingestion. Previous awards retain their own dates and are not current quotes. An award with positive volume but missing/invalid rate is a parsing failure; HTTP 403/429, missing result blocks or changed table schemas are source failures, not evidence of no auction. `SBV_BILLS_URL` optionally overrides the result-page location.
+
+Live access is environment-dependent: SBV has returned HTTP 403 on the deployment host in an earlier run, and S&P returned HTTP 403 during phase-5 validation. No access-control bypass or substitute market series is used. Verify from the deployment host after configuring URLs:
+
+```sh
+PHASE5_LIVE_SMOKE=1 go test ./internal/providers -run TestPhase5LiveSmoke -v -count=1
+```
+
+Deterministic tests include actual PDF extraction, headline vs prior/subindex selection, December rollover, publication embargo, URL boundaries, volume-weighted bill rates, repo/Treasury exclusion, zero awards, malformed tables and persistence of expected missing-rate status. CI installs the same PDF reader used in production.

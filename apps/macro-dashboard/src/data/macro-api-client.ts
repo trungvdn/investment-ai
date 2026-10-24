@@ -15,6 +15,8 @@ const safeURL = (value: unknown) => {
         "www.nso.gov.vn",
         "sbv.gov.vn",
         "www.sbv.gov.vn",
+        "www.pmi.spglobal.com",
+        "pmi.spglobal.com",
       ].includes(u.hostname)
     );
   } catch {

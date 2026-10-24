@@ -23,6 +23,7 @@ vi.mock("recharts", () => ({
   AreaChart: () => <div>Biểu đồ vĩ mô</div>,
   LineChart: () => <div>Lịch sử chỉ báo</div>,
   Area: () => null,
+  ReferenceLine: () => null,
   Line: () => null,
   CartesianGrid: () => null,
   Tooltip: () => null,

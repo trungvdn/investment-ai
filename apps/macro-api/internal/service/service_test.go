@@ -36,7 +36,7 @@ func TestPartialIngestionPreservesRawAndDoesNotFabricateMissingValues(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if dashboard.Mode != "live" || dashboard.Score != nil || dashboard.Enabled != 15 || len(dashboard.Indicators) != 17 || dashboard.Available != 1 {
+	if dashboard.Mode != "live" || dashboard.Score != nil || dashboard.Enabled != 17 || len(dashboard.Indicators) != 17 || dashboard.Available != 1 {
 		t.Fatalf("invalid partial dashboard %+v", dashboard)
 	}
 	for _, c := range dashboard.Indicators {
@@ -68,6 +68,24 @@ func TestPagedProvenanceAndExpectedMethodologyGap(t *testing.T) {
 	for _, card := range dashboard.Indicators {
 		if card.Code == "VN_M2_GROWTH" && card.Status != "NOT_COMPARABLE" {
 			t.Fatal("gap status lost")
+		}
+	}
+}
+
+func TestBillsNoPublishedRateIsNotFailedIngestion(t *testing.T) {
+	repo := &testutil.Memory{}
+	s := Service{Repo: repo, Providers: []providers.Provider{fakeProvider{code: "VN_SBV_TBILL", batch: macro.Batch{Document: macro.RawDocument{Source: "SBV", URL: providers.SBVOMOURL, Body: []byte("official repo-only results"), FetchedAt: time.Now()}, Unavailable: map[string]string{"VN_SBV_TBILL": "NO_PUBLISHED_RATE: no bill rate in today's results"}}}}}
+	result, err := s.Ingest(context.Background())
+	if err != nil || result.Failed != 0 || result.Saved != 0 || len(repo.Raw) != 1 {
+		t.Fatalf("normal absence failed or fabricated %+v %v", result, err)
+	}
+	dashboard, err := s.Dashboard(context.Background(), time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range dashboard.Indicators {
+		if c.Code == "VN_SBV_TBILL" && (c.Status != "NO_PUBLISHED_RATE" || c.Latest != nil) {
+			t.Fatal("zero yield fabricated")
 		}
 	}
 }

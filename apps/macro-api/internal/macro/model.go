@@ -118,12 +118,15 @@ func Status(ind Indicator, latest *Observation, attempt *Attempt, now time.Time)
 	if !ind.Enabled {
 		return "NOT_IMPLEMENTED"
 	}
+	if attempt != nil && !attempt.Success && strings.HasPrefix(attempt.Message, "NO_PUBLISHED_RATE:") {
+		return "NO_PUBLISHED_RATE"
+	}
 	if attempt != nil && !attempt.Success && strings.HasPrefix(attempt.Message, "NOT_COMPARABLE:") {
 		return "NOT_COMPARABLE"
 	}
 	if latest == nil {
 		if attempt != nil {
-			if attempt.Message == "FRED_API_KEY is not configured" {
+			if attempt.Message == "FRED_API_KEY is not configured" || attempt.Message == "PMI_RELEASE_URLS is not configured" {
 				return "NOT_CONFIGURED"
 			}
 			if !attempt.Success {

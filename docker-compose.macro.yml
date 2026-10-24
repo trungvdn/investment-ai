@@ -24,6 +24,8 @@ services:
       PGDATABASE: macro
       PGSSLMODE: disable
       FRED_API_KEY: ${FRED_API_KEY:-}
+      PMI_RELEASE_URLS: ${PMI_RELEASE_URLS:-}
+      SBV_BILLS_URL: ${SBV_BILLS_URL:-}
       INGEST_INTERVAL: 6h
     ports:
       - "127.0.0.1:3000:3000"
