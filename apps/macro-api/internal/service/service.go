@@ -82,7 +82,7 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 			}
 		}
 		for _, code := range p.Codes() {
-			a := macro.Attempt{Code: code, CheckedAt: time.Now().UTC(), Success: fetchErr == nil && counts[code] > 0}
+			a := macro.Attempt{Code: code, CheckedAt: time.Now().UTC(), Success: fetchErr == nil && counts[code] > 0 && batch.Unavailable[code] == ""}
 			if fetchErr != nil {
 				a.Message = fetchErr.Error()
 			} else if !a.Success {
