@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -13,9 +14,8 @@ import (
 	"github.com/trungvdn/investment-ai/apps/stock-analysis/internal/wyckoff"
 )
 
-func main() {
+func newHandler(provider marketdata.Provider, demo bool, uiDir string) http.Handler {
 	analyzer := wyckoff.NewAnalyzer(wyckoff.DefaultConfig())
-	provider := marketdata.NewKBSSource()
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -37,11 +37,19 @@ func main() {
 		}
 
 		symbol := strings.ToUpper(parts[2])
-		if symbol == "" {
-			http.Error(w, "symbol is required", http.StatusBadRequest)
+		if !regexp.MustCompile(`^[A-Z][A-Z0-9]{1,9}$`).MatchString(symbol) {
+			http.Error(w, "invalid stock symbol", http.StatusBadRequest)
 			return
 		}
 
+		timeframe := r.URL.Query().Get("timeframe")
+		if timeframe == "" {
+			timeframe = "1D"
+		}
+		if timeframe != "1D" && timeframe != "1W" {
+			http.Error(w, "timeframe must be 1D or 1W", http.StatusBadRequest)
+			return
+		}
 		to := time.Now()
 		from := to.AddDate(-2, 0, 0)
 		if v := r.URL.Query().Get("from"); v != "" {
@@ -68,7 +76,7 @@ func main() {
 		var candles []wyckoff.Candle
 		var err error
 		mode := "kbsec"
-		if strings.EqualFold(os.Getenv("MARKET_DATA_PROVIDER"), "demo") {
+		if demo {
 			candles = demoCandles()
 			mode = "demo"
 		} else {
@@ -84,6 +92,7 @@ func main() {
 			return
 		}
 
+		candles = prepareCandles(candles, from, to, timeframe)
 		result, err := analyzer.Analyze(symbol, candles)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -98,12 +107,40 @@ func main() {
 		result.DataMode = mode
 		w.Header().Set("Content-Type", "application/json")
 		if parts[3] == "report" {
-			_ = json.NewEncoder(w).Encode(report.Build(result))
+			payload := report.Build(result)
+			_ = json.NewEncoder(w).Encode(struct {
+				report.Report
+				Candles   []wyckoff.Candle `json:"candles"`
+				Timeframe string           `json:"timeframe"`
+			}{payload, candles, timeframe})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(result)
 	})
 
+	if uiDir != "" {
+		files := http.FileServer(http.Dir(uiDir))
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			// BrowserRouter routes must resolve to the built React entry point.
+			// Asset and API misses retain 404 responses rather than HTML fallbacks.
+			if r.URL.Path == "/macro" || r.URL.Path == "/macro.html" {
+				cloned := r.Clone(r.Context())
+				cloned.URL.Path = "/"
+				files.ServeHTTP(w, cloned)
+				return
+			}
+			files.ServeHTTP(w, r)
+		})
+	}
+	return mux
+}
+
+func main() {
+	uiDir := os.Getenv("DASHBOARD_DIR")
+	if uiDir == "" {
+		uiDir = "../macro-dashboard/dist"
+	}
+	mux := newHandler(marketdata.NewKBSSource(), strings.EqualFold(os.Getenv("MARKET_DATA_PROVIDER"), "demo"), uiDir)
 	addr := os.Getenv("PORT")
 	if addr == "" {
 		addr = "8081"
@@ -113,18 +150,16 @@ func main() {
 }
 
 func demoCandles() []wyckoff.Candle {
-	out := make([]wyckoff.Candle, 90)
-	base := time.Now().AddDate(0, 0, -90)
-	for i := range out {
-		close := 100 + float64((i%9)-4)*0.45
-		out[i] = wyckoff.Candle{
-			Date:   base.AddDate(0, 0, i),
-			Open:   close - 0.15,
-			High:   close + 0.65,
-			Low:    close - 0.65,
-			Close:  close,
-			Volume: 100000 + float64(i%4)*5000,
+	out := make([]wyckoff.Candle, 0, 550)
+	now := time.Now().UTC()
+	base := time.Date(now.Year()-2, now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	for day, i := base, 0; !day.After(now); day = day.AddDate(0, 0, 1) {
+		if day.Weekday() == time.Saturday || day.Weekday() == time.Sunday {
+			continue
 		}
+		close := 100 + float64((i%9)-4)*0.45
+		out = append(out, wyckoff.Candle{Date: day, Open: close - .15, High: close + .65, Low: close - .65, Close: close, Volume: 100000 + float64(i%4)*5000})
+		i++
 	}
 	return out
 }
