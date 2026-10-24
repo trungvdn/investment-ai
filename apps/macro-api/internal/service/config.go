@@ -14,6 +14,11 @@ func ProvidersFromEnv() []providers.Provider {
 		&providers.SDMX{Code: "VN_CPI_YOY", File: "CPIVNM", Series: "PCPI_IX"},
 		&providers.SDMX{Code: "VN_IIP_YOY", File: "IIPVNM", Series: "AIP_ISIC4_IX"},
 		&providers.SDMX{Code: "VN_EXPORT_YOY", File: "METVNM", Series: "TXG_FOB_USD"},
+		&providers.SBVPage{Kind: "fx", URL: os.Getenv("SBV_FX_URL")},
+		&providers.SBVPage{Kind: "interbank", URL: os.Getenv("SBV_INTERBANK_URL")},
+		&providers.SBVStatistics{Kind: "m2", Endpoint: os.Getenv("SBV_ARTICLES_URL")},
+		&providers.SBVStatistics{Kind: "credit", Endpoint: os.Getenv("SBV_ARTICLES_URL")},
+		&providers.PPI{},
 		&providers.Reports{Kind: "economic", URL: os.Getenv("NSO_ECONOMIC_FEED_URL")},
 		&providers.Reports{Kind: "prices", URL: os.Getenv("NSO_PRICES_FEED_URL")},
 	}

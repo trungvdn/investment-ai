@@ -16,7 +16,7 @@ func TestReadOnlyDashboardAndDateValidation(t *testing.T) {
 		t.Fatal("JSON dashboard unavailable")
 	}
 	var d service.Dashboard
-	if err := json.Unmarshal(r.Body.Bytes(), &d); err != nil || d.Score != nil || len(d.Indicators) != 15 {
+	if err := json.Unmarshal(r.Body.Bytes(), &d); err != nil || d.Score != nil || len(d.Indicators) != 17 {
 		t.Fatal("empty live dashboard must be explicit")
 	}
 	for _, path := range []string{"/api/macro/observations/VN_CPI_YOY?from=no", "/api/macro/observations/VN_CPI_YOY?from=2026-12-01&to=2026-01-01", "/api/macro/observations/VN_CPI_YOY?revisions=garbage"} {

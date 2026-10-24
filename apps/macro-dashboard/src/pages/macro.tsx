@@ -35,6 +35,8 @@ import {
   historyPoints,
   previousChange,
   statusLabels,
+  changeUnit,
+  sourceMessage,
 } from "../domain/macro-live";
 import { cn, formatDate, formatNumber } from "../lib/utils";
 import type { MacroIndicator } from "../lib/types";
@@ -184,7 +186,7 @@ export default function Macro() {
           <div className="live-source-banner">
             <span>
               <Database size={14} />
-              <strong>Nguồn thực tế: FRED + NSO</strong>
+              <strong>Nguồn thực tế: FRED + NSO + NHNN</strong>
             </span>
             <span>
               API cập nhật lúc{" "}
@@ -198,7 +200,7 @@ export default function Macro() {
                 <span className="section-kicker">ĐỘ PHỦ DỮ LIỆU</span>
                 <div className="macro-score">
                   <strong>{dashboard.available}</strong>
-                  <span>/ {dashboard.enabled} chỉ báo giai đoạn 1</span>
+                  <span>/ {dashboard.enabled} chỉ báo đang tích hợp</span>
                 </div>
                 <p>
                   Có quan sát được lưu · Độ mới hiển thị riêng theo từng kỳ.
@@ -381,7 +383,9 @@ export default function Macro() {
                     <span>
                       {selected.frequency === "MONTHLY"
                         ? "Chuỗi theo tháng · giữ nguyên khoảng thiếu"
-                        : "Chuỗi theo ngày công bố dữ liệu"}
+                        : selected.frequency === "QUARTERLY"
+                          ? "Chuỗi theo quý · giữ nguyên khoảng thiếu"
+                          : "Chuỗi theo ngày áp dụng/giao dịch"}
                     </span>
                     <Status indicator={selected} />
                   </div>
@@ -391,8 +395,9 @@ export default function Macro() {
                   <Database size={26} />
                   <h3>Chưa có quan sát cho chỉ báo này</h3>
                   <p>
-                    {selected?.lastAttempt?.message ||
-                      "Chờ lần thu thập đầu tiên từ nguồn chính thức."}
+                    {selected
+                      ? sourceMessage(selected)
+                      : "Chờ thu thập từ nguồn chính thức."}
                   </p>
                 </div>
               )}
@@ -433,7 +438,8 @@ export default function Macro() {
               )}
               <p className="alert-note">
                 <Info size={13} /> Độ mới dựa trên kỳ thống kê, không dựa vào
-                việc vừa tải lại. API key FRED được cấu hình tại backend.
+                việc vừa tải lại. Chỉ báo chưa sẵn sàng được giữ trống, không
+                thay bằng dữ liệu mẫu.
               </p>
             </section>
           </div>
@@ -553,11 +559,7 @@ export default function Macro() {
                               )}{" "}
                               {change > 0 ? "+" : ""}
                               {formatNumber(change)}
-                              <small>
-                                {i.comparisonBasis === "YoY" || i.unit === "%"
-                                  ? "điểm %"
-                                  : "đơn vị"}
-                              </small>
+                              <small>{changeUnit(i)}</small>
                             </span>
                           )}
                         </td>
@@ -608,6 +610,18 @@ export default function Macro() {
                     <dt>Kỳ thống kê / Cơ sở so sánh</dt>
                     <dd>
                       {selected.latest.period} / {selected.comparisonBasis}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Tần suất dữ liệu</dt>
+                    <dd>
+                      {(
+                        {
+                          DAILY: "Ngày",
+                          MONTHLY: "Tháng",
+                          QUARTERLY: "Quý",
+                        } as Record<string, string>
+                      )[selected.frequency] || selected.frequency}
                     </dd>
                   </div>
                   <div>
@@ -662,10 +676,7 @@ export default function Macro() {
                   </div>
                 </dl>
               ) : (
-                <p className="detail-assessment">
-                  {selected.lastAttempt?.message ||
-                    "Chưa có quan sát. Không hiển thị số thay thế."}
-                </p>
+                <p className="detail-assessment">{sourceMessage(selected)}</p>
               )}
             </section>
           )}

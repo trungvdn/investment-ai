@@ -36,12 +36,38 @@ func TestPartialIngestionPreservesRawAndDoesNotFabricateMissingValues(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if dashboard.Mode != "live" || dashboard.Score != nil || dashboard.Enabled != 8 || len(dashboard.Indicators) != 15 || dashboard.Available != 1 {
+	if dashboard.Mode != "live" || dashboard.Score != nil || dashboard.Enabled != 15 || len(dashboard.Indicators) != 17 || dashboard.Available != 1 {
 		t.Fatalf("invalid partial dashboard %+v", dashboard)
 	}
 	for _, c := range dashboard.Indicators {
 		if c.Code == "US_EFFR" && (c.Status != "NOT_CONFIGURED" || c.Latest != nil) {
 			t.Fatal("missing source was fabricated")
+		}
+	}
+}
+
+func TestPagedProvenanceAndExpectedMethodologyGap(t *testing.T) {
+	repo := &testutil.Memory{}
+	end, _ := macro.MonthEnd("2026-08")
+	o := macro.Observation{IndicatorCode: "VN_M2_LEVEL", Period: "2026-08", PeriodEnd: end, Value: 20774696, Unit: "tỷ đồng", Source: "SBV", SourceURL: providers.SBVM2URL, SeriesID: "SBV_M2", Method: "SOURCE_LEVEL", RawIndex: 1}
+	historical := o
+	historical.IndicatorCode = "VN_M2_GROWTH"
+	historical.Value = 8
+	historical.Unit = "% YoY"
+	first := macro.RawDocument{Source: "SBV", URL: "https://sbv.gov.vn/page1", Body: []byte("first"), FetchedAt: time.Now()}
+	second := macro.RawDocument{Source: "SBV", URL: "https://sbv.gov.vn/page2", Body: []byte("second"), FetchedAt: time.Now()}
+	s := Service{Repo: repo, Providers: []providers.Provider{fakeProvider{code: "VN_M2_GROWTH", batch: macro.Batch{Document: first, Documents: []macro.RawDocument{second}, Observations: []macro.Observation{o, historical}, Unavailable: map[string]string{"VN_M2_GROWTH": "NOT_COMPARABLE: methodology break"}}}}}
+	result, err := s.Ingest(context.Background())
+	if err != nil || result.Failed != 0 || len(repo.Raw) != 2 || repo.Rows[0].RawID != 2 {
+		t.Fatalf("raw page binding or policy gap failed %+v %v", result, err)
+	}
+	dashboard, err := s.Dashboard(context.Background(), time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, card := range dashboard.Indicators {
+		if card.Code == "VN_M2_GROWTH" && card.Status != "NOT_COMPARABLE" {
+			t.Fatal("gap status lost")
 		}
 	}
 }

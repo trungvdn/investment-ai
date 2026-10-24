@@ -1,6 +1,6 @@
 # Live macro data — FRED + NSO
 
-Go API and ingestion worker backed by PostgreSQL. No mock or in-memory production mode. First release enables **8 indicators**; the full 15-item catalog keeps the remaining NHNN/PMI/PPI items explicitly unimplemented.
+Go API and ingestion worker backed by PostgreSQL. No mock or in-memory production mode. The catalog now contains **17 indicators**, with **15 connectors/definitions enabled**. PMI and NHNN bills remain unimplemented. M2 YoY may intentionally have no observation until a comparable prior-year month exists.
 
 ## Sources and exact definitions
 
@@ -106,3 +106,45 @@ MACRO_TEST_DATABASE_URL='postgres://...' go test -race ./internal/store
 ```
 
 CI runs deterministic parser/service/API tests plus PostgreSQL 17 integration tests for idempotency, revision preservation, concurrent writes, source precedence and survival across repository restarts. Live network smoke tests are opt-in and do not make CI depend on upstream availability. FRED requests are tested with fixtures until a real key is supplied.
+
+
+## NHNN + quarterly PPI extension
+
+Additional official inputs:
+
+| Code | Input and meaning |
+| --- | --- |
+| VN_USD_VND | NHNN central USD/VND rate from https://sbv.gov.vn/vi/tỷ-giá ; exact central-rate table, not the commercial reference buy/sell or tax table. Effective date is the economic date, and the issue date is recorded separately (date precision only). |
+| VN_INTERBANK_ON | NHNN weighted-average VND overnight interbank rate from https://sbv.gov.vn/vi/lãi-suất1 ; exact O/N row and the effective date of its scoped interbank table. Policy rates and other tenors are excluded. |
+| VN_M2_LEVEL | Published total means of payment, billion VND, methodology from October 2025 onward. |
+| VN_M2_YTD | Published change from previous year-end, not YoY. Empty/non-comparable YTD observations are left absent, never zero. |
+| VN_M2_GROWTH | YoY calculated only from exact corresponding months under the post-October-2025 methodology. Latest period without a comparable denominator is `NOT_COMPARABLE`. |
+| VN_CREDIT_GROWTH | Published **total** economy-wide credit growth versus previous year-end, not a sector growth rate and not YoY. |
+| VN_PPI_YOY | NSDP `PPIVNM.xml`, exact industrial aggregate `VNM_PPPI_ISIC4_BTE_BY_PP_IX`, quarterly. This series is already same quarter of previous year = 100, so percentage change is **index minus 100**, not another four-quarter ratio. |
+
+M2 and credit use the public NHNN page's own structured endpoint `https://sbv.gov.vn/o/article/v1.0/articles`, scope 20117, structure IDs 10038520 (M2) and 10034332 (credit), status=0. Public reference pages:
+
+- https://sbv.gov.vn/vi/tổng-phương-tiện-thanh-toán-và-tiền-gửi-của-khách-hàng-tại-tctd
+- https://sbv.gov.vn/vi/du-no-tin-dung-doi-voi-nen-kt-dttktt
+
+Pagination is bounded, every downloaded page is retained, and each observation refers to its actual originating page. Parsing requires a Vietnamese report title and matching explicit **month-end** field. Legacy non-month-end/inconsistent records and empty templates are skipped with warnings, rather than treating upload dates as economic periods. Revisions are chosen by modification timestamp and then article version; conflicting same-vintage totals fail validation. Raw article IDs remain in transformation metadata.
+
+NHNN explicitly reports a methodology change beginning October 2025. Consequently, this connector does not stitch earlier M2 levels into the new series or calculate YoY across that boundary. The dashboard adds separate level and YTD entries, explaining the expansion from 15 to 17 catalog items. Known historical periods without meaningful YTD are left as gaps. `NOT_COMPARABLE` is an expected data-policy state and does not by itself make the ingestion CLI fail. A real upstream error still does.
+
+The exact method boundary is reviewed against the NHNN source note, not inferred from a change in numeric values. Unrecognized methodology-change notes are rejected for manual review. Later revisions or methodology changes require rechecking these assumptions before altering the boundary.
+
+Quarterly PPI retains `YYYY-Qn` and the real quarter-end date in storage/API. The UI leaves missing quarters as gaps and does not fabricate monthly values. Percentage-series changes are in percentage points; YTD comparisons across the year boundary are suppressed to avoid presenting the reset as an economic decline.
+
+No SQL schema change is needed: the existing observation period string and period-end date support the new codes and quarters. Existing vintages remain intact. Refresh remains the established six-hour poll. Historical M2/credit availability is constrained by verified source records; FX and O/N currently ingest the visible official snapshot and accumulate daily history over time. No historical daily backfill is fabricated.
+
+Backend-only optional overrides `SBV_FX_URL`, `SBV_INTERBANK_URL` and `SBV_ARTICLES_URL` support controlled source migrations and tests. They do not bypass authentication or protection mechanisms. Source HTTP failures remain visible; body-read failures now receive the same bounded retries as transport failures.
+
+Official cross-check for industrial PPI semantics: https://www.nso.gov.vn/tin-tuc-thong-ke/2026/10/thong-cao-bao-chi-ve-tinh-hinh-gia-thang-chin-quy-iii-va-9-thang-nam-2026/ reports industrial PPI Q3/2026 at +4.75% YoY, matching the SDMX same-quarter index 104.75115176098 after subtracting 100 (rounding difference only).
+
+Opt-in network verification:
+
+```sh
+SBV_PPI_LIVE_SMOKE=1 go test ./internal/providers -run TestSBVPPILiveSmoke -v
+```
+
+Deterministic tests cover central FX versus buy/sell rates, effective versus issue dates, O/N versus policy/other-tenor rates, aggregate versus sector credit, M2 definition breaks/blank YTD/revisions, multi-page raw provenance, quarterly PPI transformations and truncated HTTP responses. PostgreSQL CI also round-trips quarterly observations across a connection restart.

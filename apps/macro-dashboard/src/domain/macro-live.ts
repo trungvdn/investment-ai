@@ -7,6 +7,7 @@ export const statusLabels: Record<string, string> = {
   NOT_CONFIGURED: "Chưa cấu hình nguồn",
   ERROR: "Chưa lấy được dữ liệu",
   NOT_IMPLEMENTED: "Chưa tích hợp",
+  NOT_COMPARABLE: "Chưa đủ kỳ cùng phương pháp",
 };
 export const groupLabels: Record<string, string> = {
   Liquidity: "Thanh khoản",
@@ -15,6 +16,20 @@ export const groupLabels: Record<string, string> = {
   Growth: "Tăng trưởng",
   External: "Quốc tế",
 };
+function periodStart(period: string, frequency: string) {
+  if (frequency === "QUARTERLY") {
+    const match = /^(\d{4})-Q([1-4])$/.exec(period);
+    if (!match) return null;
+    return new Date(Date.UTC(Number(match[1]), (Number(match[2]) - 1) * 3, 1));
+  }
+  const date = new Date(`${period}-01T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+function periodKey(date: Date, frequency: string) {
+  return frequency === "QUARTERLY"
+    ? `${date.getUTCFullYear()}-Q${Math.floor(date.getUTCMonth() / 3) + 1}`
+    : date.toISOString().slice(0, 7);
+}
 export function historyPoints(indicator: MacroIndicator, months: number) {
   const history = indicator.history;
   if (!history.length) return [];
@@ -22,17 +37,19 @@ export function historyPoints(indicator: MacroIndicator, months: number) {
   const cutoff = new Date(last);
   cutoff.setUTCMonth(cutoff.getUTCMonth() - months);
   const chosen = history.filter((o) => new Date(o.periodEnd) >= cutoff);
-  if (indicator.frequency !== "MONTHLY")
+  if (!["MONTHLY", "QUARTERLY"].includes(indicator.frequency))
     return chosen.map((o) => ({ period: o.period, value: o.value }));
   if (!chosen.length) return [];
   const byPeriod = new Map(chosen.map((o) => [o.period, o.value]));
   const out: { period: string; value: number | null }[] = [];
-  const date = new Date(`${chosen[0].period}-01T00:00:00Z`);
+  const date = periodStart(chosen[0].period, indicator.frequency);
+  if (!date) return [];
   const stop = chosen.at(-1)!.period;
-  while (date.toISOString().slice(0, 7) <= stop) {
-    const period = date.toISOString().slice(0, 7);
+  const step = indicator.frequency === "QUARTERLY" ? 3 : 1;
+  while (periodKey(date, indicator.frequency) <= stop) {
+    const period = periodKey(date, indicator.frequency);
     out.push({ period, value: byPeriod.get(period) ?? null });
-    date.setUTCMonth(date.getUTCMonth() + 1);
+    date.setUTCMonth(date.getUTCMonth() + step);
   }
   return out;
 }
@@ -41,10 +58,31 @@ export function previousChange(i: MacroIndicator) {
   if (h.length < 2) return null;
   const a = h.at(-2)!,
     b = h.at(-1)!;
-  if (i.frequency === "MONTHLY") {
-    const next = new Date(`${a.period}-01T00:00:00Z`);
-    next.setUTCMonth(next.getUTCMonth() + 1);
-    if (next.toISOString().slice(0, 7) !== b.period) return null;
+  if (
+    i.comparisonBasis === "YTD" &&
+    a.period.slice(0, 4) !== b.period.slice(0, 4)
+  )
+    return null;
+  if (["MONTHLY", "QUARTERLY"].includes(i.frequency)) {
+    const next = periodStart(a.period, i.frequency);
+    if (!next) return null;
+    next.setUTCMonth(
+      next.getUTCMonth() + (i.frequency === "QUARTERLY" ? 3 : 1),
+    );
+    if (periodKey(next, i.frequency) !== b.period) return null;
   }
   return b.value - a.value;
+}
+export const changeUnit = (i: MacroIndicator) =>
+  i.unit.startsWith("%")
+    ? "điểm %"
+    : ["tỷ đồng", "VND/USD"].includes(i.unit)
+      ? i.unit
+      : "đơn vị";
+export function sourceMessage(i: MacroIndicator) {
+  if (i.status === "NOT_CONFIGURED") return "Nguồn dữ liệu chưa được cấu hình.";
+  return (
+    i.lastAttempt?.message.replace(/^NOT_COMPARABLE:\s*/, "") ||
+    "Chờ thu thập từ nguồn chính thức."
+  );
 }

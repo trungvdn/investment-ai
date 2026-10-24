@@ -111,11 +111,20 @@ func TestPostgresPersistenceRevisionsAndSourcePriority(t *testing.T) {
 	if err = p.RecordAttempt(ctx, "test", macro.Attempt{Code: o.IndicatorCode, CheckedAt: time.Now(), Success: true, Message: "ok"}); err != nil {
 		t.Fatal(err)
 	}
+	ppiEnd, _ := macro.QuarterEnd("2026-Q3")
+	ppi := macro.Observation{IndicatorCode: "VN_PPI_YOY", Period: "2026-Q3", PeriodEnd: ppiEnd, Value: 4.75, Unit: "% YoY", Source: "NSO", SourceURL: doc.URL, SeriesID: "PPI_QUARTERLY", Method: "SAME_QUARTER_INDEX_MINUS_100", Priority: 100, RawID: id, CollectedAt: time.Now().UTC()}
+	if err = p.Save(ctx, ppi); err != nil {
+		t.Fatal(err)
+	}
 	p.Close()
 	p = reopen()
 	again, err := p.History(ctx, o.IndicatorCode, nil, nil, false)
 	if err != nil || len(again) != 1 || again[0].Value != 4 {
 		t.Fatal("data did not survive repository restart")
+	}
+	ppiHistory, err := p.History(ctx, "VN_PPI_YOY", nil, nil, false)
+	if err != nil || len(ppiHistory) != 1 || ppiHistory[0].Period != "2026-Q3" || ppiHistory[0].PeriodEnd.Format("2006-01-02") != "2026-09-30" {
+		t.Fatal("quarter period did not survive persistence")
 	}
 	attempts, err := p.Attempts(ctx)
 	if err != nil || !attempts[o.IndicatorCode].Success {

@@ -13,6 +13,8 @@ const safeURL = (value: unknown) => {
         "nsdp.nso.gov.vn",
         "nso.gov.vn",
         "www.nso.gov.vn",
+        "sbv.gov.vn",
+        "www.sbv.gov.vn",
       ].includes(u.hostname)
     );
   } catch {
