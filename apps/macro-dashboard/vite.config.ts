@@ -5,6 +5,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
+      "/api/macro": {
+        target: process.env.MACRO_API_URL || "http://localhost:3000",
+        changeOrigin: true,
+      },
       "/api": {
         target: process.env.STOCK_API_URL || "http://localhost:8081",
         changeOrigin: true,

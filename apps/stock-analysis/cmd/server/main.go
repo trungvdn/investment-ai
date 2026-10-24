@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -135,18 +138,45 @@ func newHandler(provider marketdata.Provider, demo bool, uiDir string) http.Hand
 	return mux
 }
 
+func newCombinedHandler(stock http.Handler, macroURL string) (http.Handler, error) {
+	target, err := url.Parse(macroURL)
+	if err != nil || (target.Scheme != "http" && target.Scheme != "https") || target.Host == "" {
+		return nil, fmt.Errorf("invalid MACRO_API_URL")
+	}
+	macroProxy := httputil.NewSingleHostReverseProxy(target)
+	macroProxy.Transport = &http.Transport{ResponseHeaderTimeout: 15 * time.Second}
+	macroProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "MACRO_API_UNAVAILABLE", "message": "Macro API is unavailable"})
+	}
+	combined := http.NewServeMux()
+	combined.Handle("/api/macro/", macroProxy)
+	combined.Handle("/", stock)
+
+	return combined, nil
+}
+
 func main() {
 	uiDir := os.Getenv("DASHBOARD_DIR")
 	if uiDir == "" {
 		uiDir = "../macro-dashboard/dist"
 	}
 	mux := newHandler(marketdata.NewKBSSource(), strings.EqualFold(os.Getenv("MARKET_DATA_PROVIDER"), "demo"), uiDir)
+	macroURL := os.Getenv("MACRO_API_URL")
+	if macroURL == "" {
+		macroURL = "http://127.0.0.1:3000"
+	}
+	combined, err := newCombinedHandler(mux, macroURL)
+	if err != nil {
+		log.Fatal(err)
+	}
 	addr := os.Getenv("PORT")
 	if addr == "" {
 		addr = "8081"
 	}
 	log.Printf("stock-analysis API listening on :%s", addr)
-	log.Fatal(http.ListenAndServe(":"+addr, mux))
+	log.Fatal(http.ListenAndServe(":"+addr, combined))
 }
 
 func demoCandles() []wyckoff.Candle {

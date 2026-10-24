@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/trungvdn/investment-ai/apps/stock-analysis/internal/wyckoff"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -90,5 +91,32 @@ func TestReactRoutesAndMissingAssets(t *testing.T) {
 		if recorder.Code != 404 || strings.Contains(recorder.Body.String(), "React entry") {
 			t.Fatalf("%s must stay 404", path)
 		}
+	}
+}
+
+func TestMacroProxyPreservesAPIStatusAndNeverServesHTMLFallback(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/macro/dashboard" {
+			t.Error("macro path was rewritten")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(503)
+		_, _ = w.Write([]byte(`{"error":"STORAGE_UNAVAILABLE"}`))
+	}))
+	stock := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("React entry")) })
+	h, err := newCombinedHandler(stock, upstream.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	h.ServeHTTP(recorder, httptest.NewRequest("GET", "/api/macro/dashboard", nil))
+	if recorder.Code != 503 || strings.Contains(recorder.Body.String(), "React entry") {
+		t.Fatal("upstream error replaced by HTML")
+	}
+	upstream.Close()
+	recorder = httptest.NewRecorder()
+	h.ServeHTTP(recorder, httptest.NewRequest("GET", "/api/macro/dashboard", nil))
+	if recorder.Code != 502 || !strings.Contains(recorder.Body.String(), "MACRO_API_UNAVAILABLE") {
+		t.Fatal("unreachable macro service must return JSON 502")
 	}
 }

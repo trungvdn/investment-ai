@@ -7,7 +7,10 @@ import { Layout } from "../components/layout";
 import Research from "./research";
 import Macro from "./macro";
 import { fetchStockReport } from "../data/stock-api-client.js";
+import { fetchMacroDashboard } from "../data/macro-api-client";
+import type { MacroDashboard } from "../lib/types";
 vi.mock("../data/stock-api-client.js", () => ({ fetchStockReport: vi.fn() }));
+vi.mock("../data/macro-api-client", () => ({ fetchMacroDashboard: vi.fn() }));
 vi.mock("../components/price-chart", () => ({
   PriceChart: ({ onSelectEvent, report }: any) => (
     <button onClick={() => onSelectEvent(report.events[0])}>
@@ -63,6 +66,70 @@ const report = {
   ],
   timeframe: "1D",
 };
+
+const latest = {
+  indicatorCode: "VN_CORE_CPI_YOY",
+  period: "2026-09",
+  periodEnd: "2026-09-30T00:00:00Z",
+  value: 4.45,
+  unit: "% YoY",
+  source: "NSO",
+  sourceUrl: "https://www.nso.gov.vn/report/",
+  sourceSeriesId: "NSO_REPORT",
+  method: "EXPLICIT_MONTHLY_YOY",
+  publishedAt: "2026-10-03T01:00:00Z",
+  firstSeenAt: "2026-10-24T00:00:00Z",
+  collectedAt: "2026-10-24T00:00:00Z",
+  revision: 1,
+  rawId: 1,
+};
+const macroFixture = {
+  mode: "live",
+  generatedAt: "2026-10-24T00:00:00Z",
+  available: 1,
+  enabled: 8,
+  score: null,
+  scoreStatus: "NOT_CONFIGURED",
+  indicators: [
+    {
+      code: "VN_CORE_CPI_YOY",
+      name: "Lạm phát cơ bản",
+      group: "Inflation",
+      country: "VN",
+      unit: "% YoY",
+      frequency: "MONTHLY",
+      comparisonBasis: "YoY",
+      enabled: true,
+      maxAgeDays: 60,
+      description: "Số tháng so cùng kỳ, không phải lũy kế.",
+      status: "AVAILABLE",
+      latest,
+      history: [latest],
+      lastAttempt: null,
+    },
+    {
+      code: "US_EFFR",
+      name: "Lãi suất Fed hiệu dụng",
+      group: "External",
+      country: "US",
+      unit: "%",
+      frequency: "DAILY",
+      comparisonBasis: "LEVEL",
+      enabled: true,
+      maxAgeDays: 7,
+      description: "FRED DFF",
+      status: "NOT_CONFIGURED",
+      latest: null,
+      history: [],
+      lastAttempt: {
+        message: "FRED_API_KEY is not configured",
+        success: false,
+        checkedAt: "2026-10-24T00:00:00Z",
+        indicatorCode: "US_EFFR",
+      },
+    },
+  ],
+} as MacroDashboard;
 function renderWorkspace(path = "/") {
   return render(
     <QueryClientProvider
@@ -84,6 +151,8 @@ function renderWorkspace(path = "/") {
   );
 }
 beforeEach(() => {
+  vi.mocked(fetchMacroDashboard).mockResolvedValue(macroFixture);
+
   vi.clearAllMocks();
   localStorage.clear();
   document.documentElement.classList.remove("dark");
@@ -164,24 +233,32 @@ describe("React workspace", () => {
       ),
     );
   });
-  it("filters macro indicators and opens history detail", async () => {
+
+  it("loads live macro data, filters missing sources and shows provenance without a market score", async () => {
     const user = userEvent.setup();
     renderWorkspace("/macro");
-    expect(screen.getByText("Hiển thị 15 / 15 chỉ báo")).toBeInTheDocument();
+    await screen.findByText("Hiển thị 2 / 2 chỉ báo");
+    expect(screen.getByText("MACRO SCORE TẠM ẨN")).toBeInTheDocument();
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Nhóm chỉ báo" }),
       "Inflation",
     );
-    expect(screen.getByText("Hiển thị 3 / 15 chỉ báo")).toBeInTheDocument();
+    expect(screen.getByText("Hiển thị 1 / 2 chỉ báo")).toBeInTheDocument();
     await user.type(
       screen.getByRole("textbox", { name: "Tìm chỉ báo" }),
-      "Core",
+      "Lạm phát",
     );
-    expect(screen.getByText("Hiển thị 1 / 15 chỉ báo")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^Core CPI$/ }));
     expect(
-      screen.getByRole("region", { name: "Chi tiết Core CPI" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Lịch sử chỉ báo")).toBeInTheDocument();
+      screen.getByRole("link", { name: "Mở nguồn chính thức" }),
+    ).toHaveAttribute("href", "https://www.nso.gov.vn/report/");
+    expect(screen.getByText("r1 / #1")).toBeInTheDocument();
+  });
+  it("shows a macro API outage and never renders the old mock score", async () => {
+    vi.mocked(fetchMacroDashboard).mockRejectedValue(
+      new Error("Macro API offline"),
+    );
+    renderWorkspace("/macro");
+    await screen.findByText("Macro API offline");
+    expect(screen.queryByText("62")).not.toBeInTheDocument();
   });
 });

@@ -49,3 +49,50 @@ export type AnalysisRequest = {
   from: string;
   to: string;
 };
+
+export type MacroObservation = {
+  indicatorCode: string;
+  period: string;
+  periodEnd: string;
+  value: number;
+  unit: string;
+  source: string;
+  sourceUrl: string;
+  sourceSeriesId: string;
+  method: string;
+  publishedAt: string | null;
+  firstSeenAt: string;
+  collectedAt: string;
+  revision: number;
+  rawId: number;
+};
+export type MacroIndicator = {
+  code: string;
+  name: string;
+  group: string;
+  country: string;
+  unit: string;
+  frequency: string;
+  comparisonBasis: string;
+  enabled: boolean;
+  maxAgeDays: number;
+  description: string;
+  status: string;
+  latest: MacroObservation | null;
+  history: MacroObservation[];
+  lastAttempt: {
+    indicatorCode: string;
+    checkedAt: string;
+    success: boolean;
+    message: string;
+  } | null;
+};
+export type MacroDashboard = {
+  mode: "live";
+  generatedAt: string;
+  available: number;
+  enabled: number;
+  indicators: MacroIndicator[];
+  score: null;
+  scoreStatus: string;
+};

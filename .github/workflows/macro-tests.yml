@@ -1,0 +1,47 @@
+name: Macro Data Tests
+on:
+  pull_request:
+    paths:
+      - "apps/macro-api/**"
+      - "docker-compose.macro.yml"
+      - ".github/workflows/macro-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/macro-api/**"
+      - "docker-compose.macro.yml"
+      - ".github/workflows/macro-tests.yml"
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: macro_test
+          POSTGRES_USER: macro
+          POSTGRES_PASSWORD: ci-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U macro -d macro_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/macro-api
+    env:
+      MACRO_TEST_DATABASE_URL: postgres://macro:ci-test-only@localhost:5432/macro_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/macro-api/go.mod
+          cache-dependency-path: apps/macro-api/go.sum
+      - name: Verify formatting
+        run: test -z "$(gofmt -l .)"
+      - run: go test -race ./...
+      - run: go vet ./...
