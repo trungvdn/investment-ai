@@ -3,11 +3,12 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/trungvdn/investment-ai/apps/macro-api/internal/macro"
-	"github.com/trungvdn/investment-ai/apps/macro-api/internal/providers"
 	"log/slog"
 	"strings"
 	"time"
+
+	"github.com/trungvdn/investment-ai/apps/macro-api/internal/macro"
+	"github.com/trungvdn/investment-ai/apps/macro-api/internal/providers"
 )
 
 type Repository interface {
@@ -22,9 +23,16 @@ type Service struct {
 	Providers []providers.Provider
 	Logger    *slog.Logger
 }
+type Failure struct {
+	RetryAt  *time.Time `json:"retryAt,omitempty"`
+	Provider string     `json:"provider"`
+	Kind     string     `json:"kind"`
+	Message  string     `json:"message"`
+}
 type RunResult struct {
-	Saved  int `json:"saved"`
-	Failed int `json:"failedSources"`
+	Failures []Failure `json:"failures"`
+	Saved    int       `json:"saved"`
+	Failed   int       `json:"failedSources"`
 }
 
 func (s *Service) Ingest(ctx context.Context) (RunResult, error) {

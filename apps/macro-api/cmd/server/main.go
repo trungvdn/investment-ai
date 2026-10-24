@@ -26,8 +26,8 @@ func main() {
 	if v := os.Getenv("INGEST_INTERVAL"); v != "" {
 		var err error
 		interval, err = time.ParseDuration(v)
-		if err != nil || interval < 5*time.Minute {
-			logger.Error("INGEST_INTERVAL must be at least 5m")
+		if err != nil || interval < 5*time.Minute || interval > 7*24*time.Hour {
+			logger.Error("INGEST_INTERVAL must be between 5m and 168h")
 			os.Exit(1)
 		}
 	}
@@ -47,25 +47,30 @@ func main() {
 	cancel()
 	defer repo.Close()
 	svc := &service.Service{Repo: repo, Providers: service.ProvidersFromEnv(), Logger: logger}
+	ids := []string{}
+	for _, p := range svc.Providers {
+		ids = append(ids, p.ID())
+	}
+	schedule, err := service.ParseSchedule(os.Getenv("INGEST_SCHEDULE"), ids)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 	workerDone := make(chan struct{})
 	go func() {
 		defer close(workerDone)
 		for {
-			runCtx, cancel := context.WithTimeout(ctx, 8*time.Minute)
-			result, err := svc.Ingest(runCtx)
-			cancel()
-			if err != nil && !errors.Is(err, context.Canceled) {
-				logger.Error("macro ingestion storage/run failure")
-			} else {
-				logger.Info("macro ingestion finished", "processed", result.Saved, "failedSources", result.Failed)
+			if err := svc.Tick(ctx, repo, schedule, interval); err != nil && !errors.Is(err, context.Canceled) {
+				logger.Error("macro scheduler failure")
 			}
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(interval):
+			case <-time.After(time.Minute):
 			}
 		}
 	}()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"

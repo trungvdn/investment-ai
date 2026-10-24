@@ -1,5 +1,10 @@
 import { it, expect } from "vitest";
-import { historyPoints, previousChange } from "./macro-live";
+import {
+  historyPoints,
+  previousChange,
+  sourceMessage,
+  statusLabels,
+} from "./macro-live";
 import type { MacroIndicator } from "../lib/types";
 it("leaves a gap in monthly charts and does not call nonconsecutive observations a monthly change", () => {
   const indicator = {
@@ -44,4 +49,18 @@ it("does not treat the year-end YTD reset as a fall in growth", () => {
     ],
   } as MacroIndicator;
   expect(previousChange(i)).toBeNull();
+});
+
+it("does not compare bill yields across changing tenor baskets, or expose status prefixes", () => {
+  const i = {
+    code: "VN_SBV_TBILL",
+    history: [{ value: 3.5 }, { value: 4 }],
+    status: "NO_PUBLISHED_RATE",
+    lastAttempt: {
+      message: "NO_PUBLISHED_RATE: Không có lãi suất trong phiên.",
+    },
+  } as MacroIndicator;
+  expect(previousChange(i)).toBeNull();
+  expect(sourceMessage(i)).toBe("Không có lãi suất trong phiên.");
+  expect(statusLabels.NO_PUBLISHED_RATE).toContain("không công bố");
 });
