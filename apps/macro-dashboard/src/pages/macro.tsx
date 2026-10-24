@@ -414,7 +414,79 @@ export default function Macro() {
                     </span>
                     <Status indicator={selected} />
                   </div>
-                </>…1430 tokens truncated…          <span className="section-kicker">INDICATOR MONITOR</span>
+                </>
+              ) : (
+                <div className="tab-empty">
+                  <Database size={26} />
+                  <h3>Chưa có quan sát cho chỉ báo này</h3>
+                  <p>
+                    {selected
+                      ? sourceMessage(selected)
+                      : "Chờ thu thập từ nguồn chính thức."}
+                  </p>
+                </div>
+              )}
+            </section>
+            <section className="card alerts-card" aria-label="Vận hành thu thập">
+ <div className="card-heading"><h2>Lịch thu thập & trạng thái nguồn</h2></div>
+ {operations.isError ? <p role="alert">Không tải được trạng thái vận hành nguồn.</p> : operations.data?.sources.length ? (
+ <div className="macro-alerts" style={{maxHeight:360,overflowY:"auto"}}>
+ {operations.data.sources.map(source=><div className="macro-alert" key={source.provider}><div>
+ <strong>{source.provider}</strong>
+ <p>{source.errorKind ? `${sourceErrorLabels[source.errorKind] || source.errorKind} · ${source.consecutiveFailures} lần lỗi liên tiếp` : source.leaseUntil && new Date(source.leaseUntil).getTime()>Date.now() ? "Đang thu thập" : source.lastChecked ? "Lần kiểm tra gần nhất thành công" : "Chưa chạy"}</p>
+ <p>Lần tiếp theo: {new Date(source.nextDue).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"})} (giờ Việt Nam)</p>
+ {source.errorKind && <p>{source.message}</p>}
+ {source.lastSuccess && <p>Kiểm tra thành công: {new Date(source.lastSuccess).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"})}</p>}
+ </div></div>)}
+ </div>
+ ) : <p>Chờ worker đăng ký lịch nguồn.</p>}
+ {operations.data?.alerts.some(a=>a.status==="SCHEDULER_OVERDUE") && <p role="alert">Có nguồn đã quá lịch thu thập. Kiểm tra worker.</p>}
+ </section>
+ <section className="card alerts-card">
+              <div className="card-heading">
+                <div>
+                  <span className="section-kicker">
+                    CHẤT LƯỢNG & KHẢ NĂNG TRUY CẬP
+                  </span>
+                  <h2>Nguồn cần chú ý</h2>
+                </div>
+                <span className="alert-counter">{alerts.length}</span>
+              </div>
+              {alerts.length ? (
+                <div className="macro-alerts">
+                  {alerts.map((i) => (
+                    <button
+                      key={i.code}
+                      className="macro-alert"
+                      onClick={() => setSelectedCode(i.code)}
+                    >
+                      <span className="alert-dot" />
+                      <div>
+                        <strong>{i.name}</strong>
+                        <p>{statusLabels[i.status]}</p><p>{sourceMessage(i)}</p>
+                        {i.latest && <p>Kỳ gần nhất: {i.latest.period}</p>}
+                      </div>
+                      <Info size={14} />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="detail-assessment">
+                  Các chỉ báo đang tích hợp đều có dữ liệu trong ngưỡng độ mới
+                  đã cấu hình.
+                </p>
+              )}
+              <p className="alert-note">
+                <Info size={13} /> Độ mới dựa trên kỳ thống kê, không dựa vào
+                việc vừa tải lại. Chỉ báo chưa sẵn sàng được giữ trống, không
+                thay bằng dữ liệu mẫu.
+              </p>
+            </section>
+          </div>
+          <section className="card indicator-section">
+            <div className="card-heading">
+              <div>
+                <span className="section-kicker">INDICATOR MONITOR</span>
                 <h2>
                   Bảng theo dõi chỉ báo{" "}
                   <span className="tab-count">
