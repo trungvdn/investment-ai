@@ -104,12 +104,25 @@ func main() {
 		_ = json.NewEncoder(w).Encode(result)
 	})
 
+	// The dashboard is a separate static frontend and calls this read-only API cross-origin.
+	// No cookies or credentials are used by this public market-data endpoint.
+	corsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
+
 	addr := os.Getenv("PORT")
 	if addr == "" {
 		addr = "8081"
 	}
 	log.Printf("stock-analysis API listening on :%s", addr)
-	log.Fatal(http.ListenAndServe(":"+addr, mux))
+	log.Fatal(http.ListenAndServe(":"+addr, corsHandler))
 }
 
 func demoCandles() []wyckoff.Candle {
