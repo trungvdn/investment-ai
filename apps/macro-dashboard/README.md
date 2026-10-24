@@ -36,8 +36,8 @@ For separate frontend hosting, serve `dist`, proxy `/api/stocks/` to Go, and rew
 - Wyckoff: normalized search, daily/weekly windows, query cancellation/timeout, explicit unknown/insufficient/provider-error states and URL-based analysis settings.
 - Interactive OHLCV chart: zoom, pan, crosshair, event markers, support/resistance and a shaded range. Toggle events/range/volume. Click an event date on the chart or choose one in the timeline to inspect evidence and focus the relevant interval.
 - Keyboard-accessible Radix report tabs preserve evidence, risks, watch conditions and quality metadata. Confidence remains rule strength, never a calibrated probability.
-- Macro: all 15 existing mock indicators and five equal-weight group scores preserved. Filter/search/sort the table, select group cards, choose 3/6-month score history, or inspect a specific indicator's six-month history.
-- Macro data remains the explicitly labeled **August 2026 mock dataset**. This migration does not add a live macro feed. Stock summary translations supplement the preserved original backend text; no company metadata is invented.
+- Macro: live observations from the Macro API, source/period/status filters and per-indicator history. Coverage cards replace market scores.
+- Macro source definitions and partial coverage are documented in the Macro API README. Stock summary translations supplement the preserved original backend text; no company metadata is invented.
 - TradingView attribution remains enabled on its chart.
 
 ## Checks
@@ -51,3 +51,9 @@ go vet ./...
 ```
 
 Root tests run the existing Node domain/API tests followed by React component tests. CI also type-checks and builds the production bundle.
+
+## Live macro data (FRED + NSO)
+
+The macro page now reads `/api/macro/dashboard` through TanStack Query, without mock fallback. It shows per-series periods, source links, collection/publication times, status and revision provenance; coverage replaces Macro Score. Eight connectors are enabled initially, while all 15 catalog items remain visible. Broad USD is explicitly different from ICE DXY. Missing monthly values remain gaps in the chart.
+
+Run PostgreSQL + macro-api with `docker compose -f docker-compose.macro.yml up --build -d` after setting `MACRO_DB_PASSWORD` and optionally `FRED_API_KEY`. Vite proxies `/api/macro` to `MACRO_API_URL` (default :3000); stock API requests still go to :8081. See `apps/macro-api/README.md` for exact source series, refresh policies and operational commands. Production stock-analysis also forwards `/api/macro/` to the Macro API.

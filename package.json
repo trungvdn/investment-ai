@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test apps/macro-dashboard/test/*.test.js && npm --prefix apps/macro-dashboard test",
-    "start:macro-api": "node apps/macro-api/src/server.js",
+    "start:macro-api": "cd apps/macro-api && go run ./cmd/server",
     "dev": "npm --prefix apps/macro-dashboard run dev",
     "build": "npm --prefix apps/macro-dashboard run build"
   }
