@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
-    "start:macro-api": "node apps/macro-api/src/server.js"
+    "test": "node --test apps/macro-dashboard/test/*.test.js && npm --prefix apps/macro-dashboard test",
+    "start:macro-api": "node apps/macro-api/src/server.js",
+    "dev": "npm --prefix apps/macro-dashboard run dev",
+    "build": "npm --prefix apps/macro-dashboard run build"
   }
 }

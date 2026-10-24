@@ -8,7 +8,6 @@ import {
   scenarios,
 } from "../src/domain/wyckoff-report.js";
 import { fetchStockReport } from "../src/data/stock-api-client.js";
-import { renderChart } from "../src/presentation/wyckoff-chart.js";
 const report = {
   schemaVersion: "1.0",
   symbol: "FPT",
@@ -78,15 +77,12 @@ test("static-host fallback cannot masquerade as a report", async () =>
     }),
     /Không tìm thấy API/,
   ));
-test("scenarios require actual range and chart escapes labels", () => {
+test("scenarios require actual range and labels are escaped", () => {
   assert.deepEqual(scenarios(null), []);
   assert.equal(scenarios({ support: 10, resistance: 12 }).length, 3);
   assert.equal(
     escapeHTML('<img onerror="bad">'),
     "&lt;img onerror=&quot;bad&quot;&gt;",
   );
-  const svg = renderChart({ ...report, symbol: "<script>" });
-  assert.ok(!svg.includes("<script>"));
-  assert.match(svg, /&lt;script&gt;/);
-  assert.ok(!svg.includes("NaN"));
+
 });

@@ -119,7 +119,18 @@ func newHandler(provider marketdata.Provider, demo bool, uiDir string) http.Hand
 	})
 
 	if uiDir != "" {
-		mux.Handle("/", http.FileServer(http.Dir(uiDir)))
+		files := http.FileServer(http.Dir(uiDir))
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			// BrowserRouter routes must resolve to the built React entry point.
+			// Asset and API misses retain 404 responses rather than HTML fallbacks.
+			if r.URL.Path == "/macro" || r.URL.Path == "/macro.html" {
+				cloned := r.Clone(r.Context())
+				cloned.URL.Path = "/"
+				files.ServeHTTP(w, cloned)
+				return
+			}
+			files.ServeHTTP(w, r)
+		})
 	}
 	return mux
 }
@@ -127,7 +138,7 @@ func newHandler(provider marketdata.Provider, demo bool, uiDir string) http.Hand
 func main() {
 	uiDir := os.Getenv("DASHBOARD_DIR")
 	if uiDir == "" {
-		uiDir = "../macro-dashboard"
+		uiDir = "../macro-dashboard/dist"
 	}
 	mux := newHandler(marketdata.NewKBSSource(), strings.EqualFold(os.Getenv("MARKET_DATA_PROVIDER"), "demo"), uiDir)
 	addr := os.Getenv("PORT")

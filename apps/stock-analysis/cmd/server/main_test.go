@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"github.com/trungvdn/investment-ai/apps/stock-analysis/internal/wyckoff"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -65,5 +68,27 @@ func TestWeeklyOHLCVAndInclusiveDates(t *testing.T) {
 	bars = prepareCandles([]wyckoff.Candle{a, b, c}, b.Date, b.Date, "1D")
 	if len(bars) != 1 || !bars[0].Date.Equal(b.Date) {
 		t.Fatal("date boundaries must be inclusive")
+	}
+}
+
+func TestReactRoutesAndMissingAssets(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("<div id=\"root\">React entry</div>"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	handler := newHandler(fakeProvider{}, false, dir)
+	for _, path := range []string{"/", "/macro", "/macro.html"} {
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, httptest.NewRequest("GET", path, nil))
+		if recorder.Code != 200 || !strings.Contains(recorder.Body.String(), "React entry") {
+			t.Fatalf("%s must serve React entry: %d", path, recorder.Code)
+		}
+	}
+	for _, path := range []string{"/assets/missing.js", "/api/stocks/FPT/missing"} {
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, httptest.NewRequest("GET", path, nil))
+		if recorder.Code != 404 || strings.Contains(recorder.Body.String(), "React entry") {
+			t.Fatalf("%s must stay 404", path)
+		}
 	}
 }

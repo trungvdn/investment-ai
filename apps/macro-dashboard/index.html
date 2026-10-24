@@ -2,101 +2,16 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#101f30" />
     <meta
       name="description"
-      content="Nghiên cứu cổ phiếu qua cấu trúc giá, khối lượng và bằng chứng Wyckoff."
+      content="Investment AI — Không gian nghiên cứu cổ phiếu Wyckoff và bối cảnh vĩ mô Việt Nam."
     />
-    <title>Investment AI · Wyckoff Research</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <title>Investment AI · Research Workspace</title>
   </head>
   <body>
-    <header class="topbar">
-      <a class="brand" href="./index.html"
-        ><span class="brand-icon">↗</span> Investment<span>AI</span></a
-      >
-      <nav aria-label="Điều hướng chính">
-        <a href="./index.html" aria-current="page">Phân tích cổ phiếu</a
-        ><a href="./macro.html">Bối cảnh vĩ mô</a>
-      </nav>
-      <span class="research-label">WYCKOFF RESEARCH</span>
-    </header>
-    <main class="shell">
-      <div class="intro">
-        <div>
-          <p class="eyebrow">TỪ DỮ LIỆU ĐẾN LUẬN ĐIỂM</p>
-          <h1>
-            Đọc dòng tiền.<br class="mobile-break" />
-            Hiểu cấu trúc thị trường.
-          </h1>
-          <p class="muted">
-            Nghiên cứu cổ phiếu bằng giá, khối lượng và phương pháp Wyckoff.
-          </p>
-        </div>
-        <span class="outline-tag">Explainability by design</span>
-      </div>
-      <section class="search-panel" aria-label="Thiết lập phân tích">
-        <form id="analysis-form">
-          <label class="symbol-label"
-            >Mã cổ phiếu
-            <div class="input-icon">
-              <span aria-hidden="true">⌕</span
-              ><input
-                id="symbol"
-                name="symbol"
-                placeholder="VD: FPT, VCB, MBB"
-                maxlength="10"
-                autocomplete="off"
-                autocapitalize="characters"
-                required
-                aria-describedby="symbol-help"
-              /></div></label
-          ><label
-            >Khung phân tích<select id="timeframe" name="timeframe">
-              <option value="1D">Ngày · 1D</option>
-              <option value="1W">Tuần · 1W</option>
-            </select></label
-          ><label
-            >Khoảng dữ liệu<select id="period" name="period">
-              <option value="6">6 tháng</option>
-              <option value="12">1 năm</option>
-              <option value="24" selected>2 năm</option>
-            </select></label
-          ><button class="primary" id="analyze" type="submit">
-            Phân tích Wyckoff <span aria-hidden="true">↗</span>
-          </button>
-        </form>
-        <div class="search-bottom">
-          <span id="symbol-help">Cổ phiếu niêm yết Việt Nam</span>
-          <div class="quick-symbols" aria-label="Chọn nhanh mã">
-            <button type="button" data-symbol="FPT">FPT</button
-            ><button type="button" data-symbol="VCB">VCB</button
-            ><button type="button" data-symbol="MBB">MBB</button
-            ><button type="button" data-symbol="VCI">VCI</button>
-          </div>
-        </div>
-      </section>
-      <div id="status" role="status" aria-live="polite"></div>
-      <section id="empty" class="empty-state">
-        <div class="empty-chart" aria-hidden="true">▂ ▅ ▃ ▆ ▄ █</div>
-        <p class="eyebrow">BẮT ĐẦU NGHIÊN CỨU</p>
-        <h2>Mỗi nhận định đều cần bằng chứng.</h2>
-        <p>
-          Nhập mã cổ phiếu để khám phá cấu trúc thị trường,<br />các sự kiện
-          Wyckoff và điều kiện xác nhận tiếp theo.
-        </p>
-        <div class="empty-features">
-          <span>01 &nbsp; Giá & khối lượng</span
-          ><span>02 &nbsp; Bằng chứng Wyckoff</span
-          ><span>03 &nbsp; Kịch bản theo dõi</span>
-        </div>
-      </section>
-      <section id="report" hidden aria-label="Báo cáo phân tích"></section>
-      <footer>
-        <span>Investment AI <span class="muted">/ Wyckoff Research</span></span
-        ><span>Phân tích có bằng chứng · Quyết định có cơ sở</span>
-      </footer>
-    </main>
-    <script type="module" src="./src/presentation/wyckoff-app.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
