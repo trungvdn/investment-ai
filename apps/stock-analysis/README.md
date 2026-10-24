@@ -49,3 +49,9 @@ For local deterministic testing only, set `MARKET_DATA_PROVIDER=demo`. Real mark
 The built-in KB Securities history endpoint is an unofficial third-party interface and may change or become unavailable. Prices from this endpoint are scaled down by 1,000 as documented in the community integration example. For production, use a licensed feed or official TCBS OpenAPI (requires credentials). Confirm data adjustment policy and corporate-action handling before historical analysis.
 
 This is an MVP heuristic, not a calibrated model or investment recommendation. Phase detection is subjective and needs manual labels and historical backtesting. Confidence is a rule-strength score, not a probability.
+
+## Research UI and chart series
+
+The service now serves `../macro-dashboard` at `/` (override with `DASHBOARD_DIR`). Open `http://localhost:8081` after starting from this directory. The former macro dashboard is at `/macro.html`.
+
+The `/report` response adds `candles` (the exact OHLCV observations analyzed) and `timeframe` (`1D` by default, or `1W`). Both analysis endpoints accept `timeframe=1D|1W`. Date filtering is inclusive, observations are ordered/deduplicated, and weekly OHLCV is aggregated by ISO week **before** analysis. Weekly bar dates identify the last observed session; the latest week may be incomplete. At least 60 observations are still required, so use two years for weekly analysis. Existing report fields and the raw analyzer response shape remain available.
