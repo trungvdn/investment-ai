@@ -17,6 +17,25 @@
         </div>
         <p id="as-of" class="as-of"></p>
       </header>
+
+      <section class="stock-report-section" aria-labelledby="stock-report-heading">
+        <div class="section-heading">
+          <div><p class="eyebrow">Equity research</p><h2 id="stock-report-heading">Stock analysis report</h2></div>
+          <span class="caption">Wyckoff · Schema v1.0</span>
+        </div>
+        <article class="panel stock-search-panel">
+          <form id="stock-report-form" class="stock-search-form">
+            <label>Stock symbol<input id="stock-symbol" name="symbol" value="VCI" maxlength="12" autocomplete="off" required /></label>
+            <label>Analysis API URL<input id="stock-api-base" name="apiBase" type="url" value="http://localhost:8081" required /></label>
+            <label>From (optional)<input id="stock-from" name="from" type="date" /></label>
+            <label>To (optional)<input id="stock-to" name="to" type="date" /></label>
+            <button id="stock-report-submit" type="submit">Analyze stock</button>
+          </form>
+          <p class="stock-help">Start the Go stock-analysis API on port 8081. Dates are optional; without them the API requests the latest two years.</p>
+          <p id="stock-report-status" class="stock-status" role="status" aria-live="polite">Enter a symbol and run an analysis.</p>
+        </article>
+        <div id="stock-report-result" class="stock-report-result" aria-live="polite"></div>
+      </section>
       <section id="macro-summary" class="summary-grid" aria-label="Macro summary"></section>
       <section aria-labelledby="groups-heading">
         <div class="section-heading">

@@ -15,3 +15,7 @@ document.querySelector("#trend-copy").textContent = `${dashboard.macroTrend} · 
 const alerts = dashboard.indicators.filter((indicator) => indicator.score < 55).sort((a, b) => a.score - b.score);
 document.querySelector("#alerts").innerHTML = alerts.map((alert) => `<div class="alert"><span class="alert-dot"></span><div><strong>${alert.name}</strong><p>${alert.assessment}</p></div><b>${alert.score}</b></div>`).join("");
 document.querySelector("#indicator-table").innerHTML = dashboard.indicators.map((indicator) => `<tr><td><strong>${indicator.name}</strong></td><td><span class="tag">${indicator.group}</span></td><td>${indicator.value.toLocaleString("en-US")} <small>${indicator.unit}</small></td><td class="${indicator.trend === "Falling" ? "down" : indicator.trend === "Rising" ? "up" : "flat"}">${trendSymbol(indicator.trend)} ${indicator.trend}</td><td><span class="assessment ${scoreTone(indicator.score)}">${indicator.assessment}</span></td></tr>`).join("");
+
+
+import { initStockReport } from "./stock-report.js";
+initStockReport();
