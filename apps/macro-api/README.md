@@ -1,6 +1,6 @@
-# Live macro data — FRED + NSO
+# Live macro data — FRED + NSO + NHNN + S&P Global + ICE
 
-Go API and ingestion worker backed by PostgreSQL. No mock or in-memory production mode. The catalog now contains **17 indicators**, with **15 connectors/definitions enabled**. PMI and NHNN bills remain unimplemented. M2 YoY may intentionally have no observation until a comparable prior-year month exists.
+Go API and ingestion worker backed by PostgreSQL. No mock or in-memory production mode. The catalog now contains **18 indicators**, with **18 definitions enabled**. DXY requires an authorized export feed; enabled does not mean data is available. M2 YoY may intentionally have no observation until a comparable prior-year month exists.
 
 ## Sources and exact definitions
 
@@ -50,15 +50,15 @@ go run ./cmd/server
 
 Use TLS and a managed secret store for production database connections. Alternatively use standard `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGSSLMODE`. The example `.env.example` is documentation; Go does not automatically load it.
 
-Startup runs the transactional, advisory-lock-protected migration and starts an asynchronous ingestion pass. Subsequent passes run every `INGEST_INTERVAL` (default `6h`, minimum `5m`). This is polling, not a promise of fresh releases every six hours. The frontend reads stored observations and never fetches providers itself. HTTP retries are bounded to three attempts for transport errors/429/5xx; failed sources do not prevent other connectors from running.
+Startup runs the transactional, advisory-lock-protected migration and starts an asynchronous scheduler. It checks due sources every minute; per-source cadence and retry state are stored in PostgreSQL (see Operations below). `INGEST_INTERVAL` is the fallback cadence (default `6h`, range `5m` to `168h`). This is polling, not a promise of fresh releases every six hours. The frontend reads stored observations and never fetches providers itself. HTTP retries are bounded to three attempts for transport errors/429/5xx; failed sources do not prevent other connectors from running.
 
-An explicit one-off run or backfill (same credentials):
+An explicit scheduler tick (same credentials; respects persisted due dates and active leases):
 
 ```sh
 go run ./cmd/ingest
 ```
 
-Exit 0: all connectors produced observations; exit 2: some sources failed or lacked configuration; exit 1: run/storage failure. The worker processes each connector independently and preserves the last successful observations. A partial write caused by a database failure can be safely replayed; an entire multi-source run is not one transaction.
+Exit 0: connectors produced observations or explicitly reported an expected methodology/publication gap; exit 2: some sources failed or lacked configuration; exit 1: run/storage failure. The worker processes each connector independently and preserves the last successful observations. A partial write caused by a database failure can be safely replayed; an entire multi-source run is not one transaction.
 
 Optional backend-only `NSO_ECONOMIC_FEED_URL` / `NSO_PRICES_FEED_URL` overrides must return the same WordPress JSON shape and are intended for controlled source migrations. They are not public API parameters.
 
@@ -135,7 +135,7 @@ The exact method boundary is reviewed against the NHNN source note, not inferred
 
 Quarterly PPI retains `YYYY-Qn` and the real quarter-end date in storage/API. The UI leaves missing quarters as gaps and does not fabricate monthly values. Percentage-series changes are in percentage points; YTD comparisons across the year boundary are suppressed to avoid presenting the reset as an economic decline.
 
-No SQL schema change is needed: the existing observation period string and period-end date support the new codes and quarters. Existing vintages remain intact. Refresh remains the established six-hour poll. Historical M2/credit availability is constrained by verified source records; FX and O/N currently ingest the visible official snapshot and accumulate daily history over time. No historical daily backfill is fabricated.
+No SQL schema change is needed: the existing observation period string and period-end date support the new codes and quarters. Existing vintages remain intact. Refresh uses the per-source operational cadences below. Historical M2/credit availability is constrained by verified source records; FX and O/N currently ingest the visible official snapshot and accumulate daily history over time. No historical daily backfill is fabricated.
 
 Backend-only optional overrides `SBV_FX_URL`, `SBV_INTERBANK_URL` and `SBV_ARTICLES_URL` support controlled source migrations and tests. They do not bypass authentication or protection mechanisms. Source HTTP failures remain visible; body-read failures now receive the same bounded retries as transport failures.
 
@@ -148,3 +148,61 @@ SBV_PPI_LIVE_SMOKE=1 go test ./internal/providers -run TestSBVPPILiveSmoke -v
 ```
 
 Deterministic tests cover central FX versus buy/sell rates, effective versus issue dates, O/N versus policy/other-tenor rates, aggregate versus sector credit, M2 definition breaks/blank YTD/revisions, multi-page raw provenance, quarterly PPI transformations and truncated HTTP responses. PostgreSQL CI also round-trips quarterly observations across a connection restart.
+
+## Phase 5 — PMI, DXY and NHNN bills
+
+**PMI:** original S&P Global Vietnam Manufacturing PMI headline, seasonally adjusted, index points, monthly; 50 means unchanged business conditions, not 50% growth. By default, discovers up to six explicitly titled Vietnam manufacturing release links from https://www.pmi.spglobal.com/Public/Release/PressReleases?language=en . `PMI_RELEASE_URLS` overrides discovery for a controlled source migration or backfill (comma separated; maximum 36, exactly one vintage per month). This is a public-release reader, not access to the licensed historical database.
+
+Example release URL verified in the S&P public index for September 2026:
+
+```sh
+export PMI_RELEASE_URLS='https://www.pmi.spglobal.com/Public/Home/PressRelease/dba8ca68ce13403591b68cb3e07175d9'
+```
+
+When using an explicit override, update release URLs monthly. Automatic discovery rejects unrecognized links/layouts and emits a source-quality alert; it never guesses release identifiers. Failed download/parsing retains previous observations. No numbers are embedded in production code. The parser reads page one of PDF releases with `pdftotext` (install `poppler-utils`; included in the Docker image), or text from HTML releases. It requires the Vietnam manufacturing headline, explicit report month/year and publication embargo time; it rejects other countries, subindices, duplicate months, ambiguous values and future releases. Each release has its own exact raw-document link. Publication time is the stated embargo, distinct from month-end and collection time. A revision must replace the URL for that month, rather than providing two vintages in one ingestion batch.
+
+**NHNN bills:** https://sbv.gov.vn/vi/nghiệp-vụ-thị-trường-mở — the official OMO result table, scoped to `ls01-wrap`, exact result date and explicit **Bán tín phiếu NHNN** sections. `VN_SBV_TBILL` is `sum(awarded volume × awarded annual rate) / sum(awarded volume)`, across bill tenors in that result. Units are %/year and billion VND. Tenors and awarded total are recorded in the method metadata. The tenor basket may change, so the UI suppresses a misleading day-to-day yield change. This series is neither Treasury bills, repo rates, outstanding stock nor net liquidity injection. History accumulates from observed result snapshots; no fabricated backfill.
+
+On a valid result table without bill awards or a published bill rate, the connector returns `NO_PUBLISHED_RATE`, stores the raw result, does not fabricate a zero yield and does not count the source as a failed ingestion. Previous awards retain their own dates and are not current quotes. An award with positive volume but missing/invalid rate is a parsing failure; HTTP 403/429, missing result blocks or changed table schemas are source failures, not evidence of no auction. `SBV_BILLS_URL` optionally overrides the result-page location.
+
+Live access is environment-dependent: SBV has returned HTTP 403 on the deployment host in an earlier run, and S&P returned HTTP 403 during phase-5 validation. No access-control bypass or substitute market series is used. Verify from the deployment host after configuring URLs:
+
+```sh
+PHASE5_LIVE_SMOKE=1 go test ./internal/providers -run TestPhase5LiveSmoke -v -count=1
+```
+
+Deterministic tests include actual PDF extraction, headline vs prior/subindex selection, December rollover, publication embargo, URL boundaries, volume-weighted bill rates, repo/Treasury exclusion, zero awards, malformed tables and persistence of expected missing-rate status. CI installs the same PDF reader used in production.
+
+## Operations — collection, retries and quality
+
+The server polls due sources once a minute. Each provider has a persisted `next_due`, lease/token, last successful check, consecutive failure count and safe error message in migration 002. A PostgreSQL atomic claim prevents simultaneous runs across API replicas or the one-off worker. Per-source fetch/ingestion has a 2-minute deadline; claims and completion queries have 10-second deadlines. A crashed owner can be reclaimed after its 10-minute lease; old owner tokens cannot complete newer runs. Shutdown cancels active requests. A worker restarting preserves due times and cooldowns. These are interval schedules measured from completion, not wall-clock cron jobs; slow sources may delay later checks in the sequential worker.
+
+Default cadences:
+
+| Providers | Cadence |
+| --- | --- |
+| Central FX, ICE DXY | 1 hour |
+| Interbank, NHNN bill results, S&P PMI index | 2 hours |
+| NHNN M2 / credit statistics | 12 hours |
+| FRED / NSO and other providers | `INGEST_INTERVAL`, default 6 hours |
+
+All polling runs throughout the week; missing weekend/holiday releases do not generate synthetic observations. Override individual IDs with `INGEST_SCHEDULE` JSON, for example `{"sbv:fx":"1h","spglobal:pmi:vn":"2h"}`. Durations outside 5m..168h and unknown IDs fail startup. Timestamps are stored in UTC and shown in Vietnam time on the operations panel. Changes to cadence apply after the next due collection; they do not reset an existing persisted cooldown. The one-off `cmd/ingest` runs the same due-source scheduler and respects leases. After changing credentials/URLs or resolving a network issue, an operator can request an immediate check using `go run ./cmd/ingest -source ice:dxy -due` (substitute the exact configured provider ID). This adjusts the due time but refuses to override an active lease. There is no unauthenticated HTTP reset/ingest action.
+
+HTTP attempts are limited to three with exponential delay plus jitter for transport/body failures, 429 and 5xx. Other 4xx (including 403) are not retried inline. `Retry-After` seconds/date is honored; delays over 60 seconds are persisted as a future retry rather than blocking the worker. Across scheduler ticks transient failures use 5m, 15m, 45m… capped at 6h; access denial/data-quality failures cool down 6h; missing configuration cools down 24h. A longer upstream Retry-After takes precedence. Error classes distinguish access denial, rate limiting, DNS, TLS, timeout, read, transport and data quality. Request URLs, authorization headers and API keys are omitted from errors. The last good stored observations remain available.
+
+`GET /api/macro/operations` is read-only and exposes source schedules and current alerts. Warnings are also emitted as structured JSON logs with provider, class, consecutive failures and next due time; recovery resets the counter and logs a recovery event. Alerts include source outages, missing/stale indicator data and schedules overdue by 15 minutes with no active lease. A successful check is not proof of a fresh observation: stale economic periods remain stale. Normal M2 comparability gaps and absence of published bill yields are not outages. No email/Slack delivery has been configured. `/healthz` remains process liveness; operations/dashboard return 503 on storage failures.
+
+Quality gates validate economic periods, future publication dates, unit/definition agreement, finite values, positive currency/index/monetary levels, PMI bounds and growth rates not below -100%. Duplicate same-indicator/period/series observations reject the entire provider batch before normalized writes. Exact raw responses are retained when parsing/validation fails; valid previous observations and vintages are not replaced by failed batches. Deterministic tests cover these cases, retries/cancellation/secret-safe failures and recovery. PostgreSQL CI additionally verifies concurrent claims, expiry/fencing, migration idempotence and schedule persistence after reopening connections.
+
+### Actual DXY versus Broad USD
+
+`US_DXY` is a separate daily ICE spot index (March 1973=100); `US_BROAD_USD` remains FRED DTWEXBGS. DX futures are not accepted as spot DXY. Configure an authorized export endpoint via `DXY_FEED_URL` (HTTPS) and optional `DXY_FEED_TOKEN` (Bearer). The endpoint contract is UTF-8 CSV with exact columns:
+
+```csv
+date,value,symbol
+2026-10-23,101.2,DXY
+```
+
+The row above is a schema example, not seeded market data. The feed must export the actual daily spot-index observation for the stated date. Duplicate dates, other symbols, nonfinite/nonpositive values and future dates fail quality checks. The backend retains the raw export and publishes ICE's index-definition source URL, never the credential-bearing feed URL. An unconfigured feed is `NOT_CONFIGURED`; there is no fabricated substitute. Live DXY ingestion cannot be verified until an authorized endpoint is provided. Official definition: https://www.ice.com/fixed-income-data-services/index-solutions/currency-indices .
+
+After deployment: verify `/api/macro/operations`, inspect source errors, supply the DXY feed if needed, and check a successful next-due run from the deployment host. A 403 remains a source-access failure; scheduling/retry handling does not claim to remove SBV/S&P access restrictions.

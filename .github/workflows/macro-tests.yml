@@ -41,6 +41,8 @@ jobs:
         with:
           go-version-file: apps/macro-api/go.mod
           cache-dependency-path: apps/macro-api/go.sum
+      - name: Install PMI PDF reader
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Verify formatting
         run: test -z "$(gofmt -l .)"
       - run: go test -race ./...

@@ -5,6 +5,7 @@ import {
   AreaChart,
   CartesianGrid,
   ResponsiveContainer,
+  ReferenceLine,
   Tooltip,
   XAxis,
   YAxis,
@@ -29,7 +30,10 @@ import {
   Wallet,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { fetchMacroDashboard } from "../data/macro-api-client";
+import {
+  fetchMacroDashboard,
+  fetchMacroOperations,
+} from "../data/macro-api-client";
 import {
   groupLabels,
   historyPoints,
@@ -37,6 +41,7 @@ import {
   statusLabels,
   changeUnit,
   sourceMessage,
+  sourceErrorLabels,
 } from "../domain/macro-live";
 import { cn, formatDate, formatNumber } from "../lib/utils";
 import type { MacroIndicator } from "../lib/types";
@@ -82,6 +87,15 @@ export default function Macro() {
     },
     staleTime: 60000,
     refetchInterval: 300000,
+  });
+  const operations = useQuery({
+    queryKey: ["macro-operations"],
+    queryFn: ({ signal }) =>
+      fetchMacroOperations({
+        signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]),
+      }),
+    refetchInterval: 60000,
+    staleTime: 30000,
   });
   const [group, setGroup] = useState("all"),
     [search, setSearch] = useState(""),
@@ -186,7 +200,9 @@ export default function Macro() {
           <div className="live-source-banner">
             <span>
               <Database size={14} />
-              <strong>Nguồn thực tế: FRED + NSO + NHNN</strong>
+              <strong>
+                Nguồn thực tế: FRED + NSO + NHNN + S&P Global + ICE
+              </strong>
             </span>
             <span>
               API cập nhật lúc{" "}
@@ -366,6 +382,15 @@ export default function Macro() {
                             fontSize: 11,
                           }}
                         />
+                        {selected.code === "VN_PMI" && (
+                          <ReferenceLine
+                            ifOverflow="extendDomain"
+                            y={50}
+                            stroke="#94a3b8"
+                            strokeDasharray="4 4"
+                            label="50 · Không thay đổi"
+                          />
+                        )}
                         <Area
                           type="linear"
                           connectNulls={false}
@@ -402,7 +427,22 @@ export default function Macro() {
                 </div>
               )}
             </section>
-            <section className="card alerts-card">
+            <section className="card alerts-card" aria-label="Vận hành thu thập">
+ <div className="card-heading"><h2>Lịch thu thập & trạng thái nguồn</h2></div>
+ {operations.isError ? <p role="alert">Không tải được trạng thái vận hành nguồn.</p> : operations.data?.sources.length ? (
+ <div className="macro-alerts" style={{maxHeight:360,overflowY:"auto"}}>
+ {operations.data.sources.map(source=><div className="macro-alert" key={source.provider}><div>
+ <strong>{source.provider}</strong>
+ <p>{source.errorKind ? `${sourceErrorLabels[source.errorKind] || source.errorKind} · ${source.consecutiveFailures} lần lỗi liên tiếp` : source.leaseUntil && new Date(source.leaseUntil).getTime()>Date.now() ? "Đang thu thập" : source.lastChecked ? "Lần kiểm tra gần nhất thành công" : "Chưa chạy"}</p>
+ <p>Lần tiếp theo: {new Date(source.nextDue).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"})} (giờ Việt Nam)</p>
+ {source.errorKind && <p>{source.message}</p>}
+ {source.lastSuccess && <p>Kiểm tra thành công: {new Date(source.lastSuccess).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"})}</p>}
+ </div></div>)}
+ </div>
+ ) : <p>Chờ worker đăng ký lịch nguồn.</p>}
+ {operations.data?.alerts.some(a=>a.status==="SCHEDULER_OVERDUE") && <p role="alert">Có nguồn đã quá lịch thu thập. Kiểm tra worker.</p>}
+ </section>
+ <section className="card alerts-card">
               <div className="card-heading">
                 <div>
                   <span className="section-kicker">
@@ -423,7 +463,7 @@ export default function Macro() {
                       <span className="alert-dot" />
                       <div>
                         <strong>{i.name}</strong>
-                        <p>{statusLabels[i.status]}</p>
+                        <p>{statusLabels[i.status]}</p><p>{sourceMessage(i)}</p>
                         {i.latest && <p>Kỳ gần nhất: {i.latest.period}</p>}
                       </div>
                       <Info size={14} />
@@ -604,6 +644,12 @@ export default function Macro() {
                 <Status indicator={selected} />
               </div>
               <p className="detail-assessment">{selected.description}</p>
+              {selected.latest && selected.status !== "AVAILABLE" && (
+                <p className="detail-assessment" role="status">
+                  {sourceMessage(selected)} Giá trị bên dưới thuộc kỳ{" "}
+                  {selected.latest.period}.
+                </p>
+              )}
               {selected.latest ? (
                 <dl className="data-list provenance-list">
                   <div>

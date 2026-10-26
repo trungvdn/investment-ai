@@ -8,6 +8,7 @@ export const statusLabels: Record<string, string> = {
   ERROR: "Chưa lấy được dữ liệu",
   NOT_IMPLEMENTED: "Chưa tích hợp",
   NOT_COMPARABLE: "Chưa đủ kỳ cùng phương pháp",
+  NO_PUBLISHED_RATE: "Phiên không công bố lãi suất tín phiếu",
 };
 export const groupLabels: Record<string, string> = {
   Liquidity: "Thanh khoản",
@@ -54,6 +55,7 @@ export function historyPoints(indicator: MacroIndicator, months: number) {
   return out;
 }
 export function previousChange(i: MacroIndicator) {
+  if (i.code === "VN_SBV_TBILL") return null; // The tenor basket can change between auctions.
   const h = i.history;
   if (h.length < 2) return null;
   const a = h.at(-2)!,
@@ -82,7 +84,24 @@ export const changeUnit = (i: MacroIndicator) =>
 export function sourceMessage(i: MacroIndicator) {
   if (i.status === "NOT_CONFIGURED") return "Nguồn dữ liệu chưa được cấu hình.";
   return (
-    i.lastAttempt?.message.replace(/^NOT_COMPARABLE:\s*/, "") ||
-    "Chờ thu thập từ nguồn chính thức."
+    i.lastAttempt?.message.replace(
+      /^(?:NOT_COMPARABLE|NO_PUBLISHED_RATE):\s*/,
+      "",
+    ) || "Chờ thu thập từ nguồn chính thức."
   );
 }
+
+export const sourceErrorLabels: Record<string, string> = {
+  ACCESS_DENIED: "Nguồn từ chối truy cập",
+  RATE_LIMIT: "Nguồn giới hạn tần suất",
+  UPSTREAM: "Nguồn tạm thời lỗi",
+  DNS: "Không phân giải được tên miền",
+  TLS: "Lỗi chứng chỉ kết nối",
+  TIMEOUT: "Hết thời gian chờ",
+  BODY_READ: "Không đọc hết phản hồi",
+  TRANSPORT: "Lỗi kết nối",
+  HTTP: "Nguồn trả lỗi HTTP",
+  DATA_QUALITY: "Dữ liệu không đạt kiểm tra",
+  NOT_CONFIGURED: "Chưa cấu hình nguồn",
+  STORAGE: "Lỗi kho dữ liệu",
+};

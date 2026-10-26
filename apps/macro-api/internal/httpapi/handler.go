@@ -18,6 +18,14 @@ func write(w http.ResponseWriter, status int, payload any) {
 func New(s *service.Service) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { write(w, 200, map[string]string{"status": "ok"}) })
+	mux.HandleFunc("GET /api/macro/operations", func(w http.ResponseWriter, r *http.Request) {
+		result, err := s.Operations(r.Context(), time.Now().UTC())
+		if err != nil {
+			write(w, 503, map[string]string{"error": "STORAGE_UNAVAILABLE"})
+			return
+		}
+		write(w, 200, result)
+	})
 	mux.HandleFunc("GET /api/macro/indicators", func(w http.ResponseWriter, r *http.Request) {
 		write(w, 200, map[string]any{"indicators": macro.Catalog()})
 	})

@@ -63,3 +63,16 @@ func TestQuarterEndAndNotComparableStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPMIConfigAndBillsNoPublishedRateRetainHistoricalMeaning(t *testing.T) {
+	now := time.Now()
+	pmi, _ := Find("VN_PMI")
+	if Status(pmi, nil, &Attempt{Message: "PMI_RELEASE_URLS is not configured"}, now) != "NOT_CONFIGURED" {
+		t.Fatal("PMI config gap hidden")
+	}
+	bill, _ := Find("VN_SBV_TBILL")
+	old := &Observation{Value: 4, PeriodEnd: now.AddDate(0, 0, -30)}
+	if Status(bill, old, &Attempt{Message: "NO_PUBLISHED_RATE: no published rate"}, now) != "NO_PUBLISHED_RATE" {
+		t.Fatal("historical award masquerades as today's rate")
+	}
+}

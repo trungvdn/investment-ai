@@ -3,11 +3,12 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/trungvdn/investment-ai/apps/macro-api/internal/macro"
-	"github.com/trungvdn/investment-ai/apps/macro-api/internal/providers"
 	"log/slog"
 	"strings"
 	"time"
+
+	"github.com/trungvdn/investment-ai/apps/macro-api/internal/macro"
+	"github.com/trungvdn/investment-ai/apps/macro-api/internal/providers"
 )
 
 type Repository interface {
@@ -22,18 +23,32 @@ type Service struct {
 	Providers []providers.Provider
 	Logger    *slog.Logger
 }
+type Failure struct {
+	RetryAt  *time.Time `json:"retryAt,omitempty"`
+	Provider string     `json:"provider"`
+	Kind     string     `json:"kind"`
+	Message  string     `json:"message"`
+}
 type RunResult struct {
-	Saved  int `json:"saved"`
-	Failed int `json:"failedSources"`
+	Failures []Failure `json:"failures"`
+	Saved    int       `json:"saved"`
+	Failed   int       `json:"failedSources"`
 }
 
 func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 	result := RunResult{}
+	// List of providers to ingest from, in order. If a provider fails, we still try the others.
+	if s.Logger != nil {
+		s.Logger.Debug("ingest run started", "providers", s.Providers)
+	}
 	for _, p := range s.Providers {
 		if ctx.Err() != nil {
 			return result, ctx.Err()
 		}
 		batch, fetchErr := p.Fetch(ctx)
+		if s.Logger != nil {
+			s.Logger.Debug("provider fetch completed", "provider", p.ID(), "observations", len(batch.Observations), "warnings", len(batch.Warnings), "unavailable", batch.Unavailable, "error", fetchErr)
+		}
 		docs := append([]macro.RawDocument{batch.Document}, batch.Documents...)
 		ids := make([]int64, len(docs))
 		for i, doc := range docs {
@@ -48,11 +63,26 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		counts := map[string]int{}
 		if fetchErr == nil {
+			seen := make(map[struct {
+				code     string
+				period   string
+				seriesID string
+			}]struct{}, len(batch.Observations))
 			for _, o := range batch.Observations {
 				if err := macro.Validate(o, time.Now()); err != nil || o.RawIndex < 0 || o.RawIndex >= len(ids) || ids[o.RawIndex] == 0 {
 					fetchErr = fmt.Errorf("invalid normalized data")
 					break
 				}
+				key := struct {
+					code     string
+					period   string
+					seriesID string
+				}{o.IndicatorCode, o.Period, o.SeriesID}
+				if _, exists := seen[key]; exists {
+					fetchErr = fmt.Errorf("duplicate normalized observation")
+					break
+				}
+				seen[key] = struct{}{}
 			}
 			if fetchErr == nil {
 				for _, o := range batch.Observations {
@@ -68,7 +98,9 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		missing := false
 		for _, code := range p.Codes() {
-			if counts[code] == 0 && !strings.HasPrefix(batch.Unavailable[code], "NOT_COMPARABLE:") {
+			if counts[code] == 0 &&
+				!strings.HasPrefix(batch.Unavailable[code], "NOT_COMPARABLE:") &&
+				!strings.HasPrefix(batch.Unavailable[code], "NO_PUBLISHED_RATE:") {
 				missing = true
 			}
 		}
@@ -77,6 +109,12 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		if fetchErr != nil {
 			result.Failed++
+			result.Failures = append(result.Failures, Failure{
+				RetryAt:  providers.RetryAt(fetchErr),
+				Provider: p.ID(),
+				Kind:     providers.ErrorKind(fetchErr),
+				Message:  fetchErr.Error(),
+			})
 			if s.Logger != nil {
 				s.Logger.Warn("macro source unavailable", "provider", p.ID(), "reason", fetchErr.Error())
 			}
