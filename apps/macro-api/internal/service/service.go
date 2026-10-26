@@ -63,11 +63,26 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		counts := map[string]int{}
 		if fetchErr == nil {
+			seen := make(map[struct {
+				code     string
+				period   string
+				seriesID string
+			}]struct{}, len(batch.Observations))
 			for _, o := range batch.Observations {
 				if err := macro.Validate(o, time.Now()); err != nil || o.RawIndex < 0 || o.RawIndex >= len(ids) || ids[o.RawIndex] == 0 {
 					fetchErr = fmt.Errorf("invalid normalized data")
 					break
 				}
+				key := struct {
+					code     string
+					period   string
+					seriesID string
+				}{o.IndicatorCode, o.Period, o.SeriesID}
+				if _, exists := seen[key]; exists {
+					fetchErr = fmt.Errorf("duplicate normalized observation")
+					break
+				}
+				seen[key] = struct{}{}
 			}
 			if fetchErr == nil {
 				for _, o := range batch.Observations {
