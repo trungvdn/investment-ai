@@ -27,6 +27,9 @@ class CPIReportTests(unittest.TestCase):
   text=SUMMARY.split("Bình quân chín tháng")[0]
   rows=extract_article(article(text),URL,date(2026,10,26))
   self.assertEqual({r["basis"] for r in rows},{"MoM","YoY"})
+ def test_average_requires_explicit_year_on_year_comparator(self):
+  text=SUMMARY.replace("3,10% so với cùng kỳ năm trước","3,10% so với tháng trước")
+  self.assertEqual({r["basis"] for r in extract_article(article(text),URL,date(2026,10,26))},{"MoM","YoY"})
  def test_price_release_title_is_not_confused_with_province_word(self):
   rows=extract_article(article(title="Thông cáo báo chí về tình hình giá tháng Chín, quý III và 9 tháng năm 2026"),URL,date(2026,10,26))
   self.assertEqual(len(rows),3)

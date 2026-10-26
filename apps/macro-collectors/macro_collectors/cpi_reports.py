@@ -133,7 +133,7 @@ def extract_article(html,url,today):
             patterns=[r"binh quan\s+("+MONTH+r")\s+thang\s+(?:dau\s+)?nam\s+"+str(year)+r"\s*[,;:]?\s*cpi\s+"+CHANGE,
                       r"cpi\s+binh quan\s+("+MONTH+r")\s+thang\s+(?:dau\s+)?nam\s+"+str(year)+r"\s*[,;:]?\s*"+CHANGE]
             for pattern in patterns:
-                for match in re.finditer(pattern,text):
+                for match in re.finditer(pattern+r"\s+so voi cung ky (?:nam truoc|nam\s+"+str(year-1)+r")",text):
                     if month_number(match[1])!=month:continue
                     direction,value=match[2],match[3]
                     percent=change_value(direction,value)
@@ -142,7 +142,7 @@ def extract_article(html,url,today):
             for paragraph_index,paragraph in enumerate(parser.paragraphs):
                 text=fold(paragraph)
                 for pattern in (r"binh quan nam "+str(year)+r"\s*[,;:]?\s*cpi\s+"+CHANGE,r"cpi binh quan nam "+str(year)+r"\s*[,;:]?\s*"+CHANGE):
-                    for match in re.finditer(pattern,text):
+                    for match in re.finditer(pattern+r"\s+so voi cung ky (?:nam truoc|nam\s+"+str(year-1)+r")",text):
                         values["AVG_YOY"].append(signed(match));evidence["AVG_YOY"].append({"text":match.group(0),"paragraphIndex":paragraph_index})
         result=[]
         for basis,found in values.items():
