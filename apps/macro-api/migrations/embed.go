@@ -13,3 +13,6 @@ var IngestionPilot string
 
 //go:embed 004_cpi_reports.sql
 var CPIReports string
+
+//go:embed 005_te_pmi.sql
+var TradingEconomicsPMI string

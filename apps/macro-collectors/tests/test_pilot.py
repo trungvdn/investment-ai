@@ -63,9 +63,9 @@ class PostgresPilotFixture(unittest.TestCase):
         self.admin.execute(sql.SQL("CREATE SCHEMA {} ").format(sql.Identifier(self.schema)))
         self.db=self.connection()
         migrations=Path(__file__).resolve().parents[2]/"macro-api"/"migrations"
-        for name in ("001_macro.sql","002_operations.sql","003_ingestion_pilot.sql","004_cpi_reports.sql"):
+        for name in ("001_macro.sql","002_operations.sql","003_ingestion_pilot.sql","004_cpi_reports.sql","005_te_pmi.sql"):
             self.db.execute((migrations/name).read_text(),prepare=False)
-        self.db.execute("UPDATE macro_datasets SET enabled=false WHERE id='gso_cpi_reports'")
+        self.db.execute("UPDATE macro_datasets SET enabled=false WHERE id IN ('gso_cpi_reports','te_vietnam_pmi')")
         self.tmp=tempfile.TemporaryDirectory()
         self.binary=os.environ.get("SDMX_REPLAY_BIN")
         if not self.binary:

@@ -10,7 +10,7 @@ Python 3.12 service that discovers and downloads public-source artifacts. It doe
 - Transport errors use persisted 15m exponential backoff capped at 6h. HTTP 401/403 is not retried inline and cools down 6h. Retry-After can postpone a run further (bounded to one year for malformed/extreme hints). The HTTP client checks a 180-second budget before attempts, with up to three attempts per request, a 30-second socket timeout and a 16 MiB response bound. PDF text extraction is bounded to page one and 15 seconds per artifact.
 - After success, no automatic revision checks run until next month; use the manual force command to check a revised release sooner.
 
-This service **does not solve a publisher/network HTTP 403 by changing languages**. It uses the same official public S&P index and release URLs with a transparent user agent and standard certificate verification. There is no proxy rotation, challenge solver, credential reuse or third-party data substitution. If the deployment network cannot access those URLs, collection reports `ACCESS_DENIED`; use the authorized feed/local-PDF modes or resolve access with the source/network operator. Discovery and scheduling are covered by deterministic tests; live S&P access remains denied in the current validation environment.
+This official-PDF workflow **does not solve a publisher/network HTTP 403 by changing languages**. It uses the same official public S&P index and release URLs with a transparent user agent and standard certificate verification. There is no proxy rotation, challenge solver, credential reuse or third-party data substitution. If the deployment network cannot access those URLs, collection reports `ACCESS_DENIED`; use the authorized feed/local-PDF modes or resolve access with the source/network operator. Discovery and scheduling are covered by deterministic tests; live S&P access remains denied in the current validation environment.
 
 ## Deploy alongside the API
 
@@ -64,3 +64,7 @@ Tests cover month/year rollover, Sunday release delays, restart persistence, ind
 ## Shadow ingestion pilot
 
 The separate `macro_collectors.pilot` command runs CPI and IIP SDMX datasets directly against PostgreSQL in **shadow mode only**. It never writes `macro_observations`, `macro_attempts` or `macro_raw_documents`, and never changes ingestion ownership. See `PILOT.md` for configuration, comparisons and review gates.
+
+## Secondary PMI HTML source
+
+The direct-DB shadow pilot also supports the user-selected Trading Economics Vietnam PMI page, independently of the official PDF workflow. See [PILOT.md](PILOT.md#trading-economics-vietnam-pmi-html) for migration, scheduling, manual commands and validation limits.

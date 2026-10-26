@@ -91,3 +91,37 @@ If you already use other Compose overrides, retain those `-f` arguments when add
 This new article dataset uses **cross-source review**, not the SDMX same-payload parity gate: it compares monthly YoY with Go's currently selected value for the same indicator/period, reports previously missing periods and marks MoM/average metrics as new metrics without an existing baseline. Numerical agreement between different publications is explicitly not parser parity. `CROSS_SOURCE_REVIEW`/`CROSS_SOURCE_MISMATCH` never contributes to automatic review eligibility; no production values or ingestion ownership are changed. The two additional metric definitions are in the pilot registry, not newly enabled production dashboard cards.
 
 The public topic page and linked September 2026 reports were inspected during implementation. Direct network fetches from this execution environment were blocked by environment policy, so live scraping must still be verified on the deployment host. Deterministic tests cover the national summary structure, all comparison bases, precision/evidence, source aliases and DB shadow persistence.
+
+## Trading Economics Vietnam PMI (HTML)
+
+Dataset `te_vietnam_pmi` reads the user-selected public page
+<https://tradingeconomics.com/vietnam/manufacturing-pmi>. This is HTML, not a PDF;
+no PDF download, LLM, API key or S&P request is needed for this adapter.
+Trading Economics is the secondary publisher; S&P Global remains the original
+index producer. `VN_PMI` is an index level, not a percentage change.
+
+Migration 005 registers the dataset/binding. Rebuild/start macro-api first to apply
+migrations, then rebuild macro-pilot. The existing daemon checks this dataset every
+six hours, including release day and subsequent days; manual runs use the same lease.
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml up -d --build macro-api macro-pilot
+docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm macro-pilot run --once --indicator VN_PMI --force
+docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm macro-pilot report --dataset te_vietnam_pmi
+```
+
+The parser uses the actual current/previous summary heading with explicit month/year,
+checks month adjacency and range 0–100, and ignores forecasts, scripts and historical
+news. Missing/conflicting headings or layout changes fail with `DATA_QUALITY` and
+retain raw HTML. A source 403 remains `ACCESS_DENIED`; there is no bypass.
+Publication time stays null when not explicitly provided; fetch time is separate.
+Reports show the observed reference month and freshness, not the collection month.
+Only the latest published observation is extracted; this is not a history backfill.
+
+Each run keeps audit observations, while identical HTML deduplicates in raw storage.
+Compare values against the same production indicator/period with tolerance 0.01.
+No baseline is `NEW_SOURCE_PERIOD`; a numerical match is `CROSS_SOURCE_VALUE_MATCH`,
+never same-payload parser parity. All writes remain in shadow tables, no dashboard
+update or cutover is performed. Run this dataset on the deployed network to verify
+actual HTTP accessibility: the local runtime's network policy blocked direct requests,
+although the public page was inspected through web retrieval on 2026-10-26.

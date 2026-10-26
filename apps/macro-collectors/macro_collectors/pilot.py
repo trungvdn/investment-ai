@@ -15,7 +15,7 @@ from .http import CollectionError, HTTPClient
 from .sdmx import VERSION, compare, parse
 
 LOG = logging.getLogger("macro_pilot")
-PILOT_IDS = {"nso_cpi", "nso_iip", "gso_cpi_reports"}
+PILOT_IDS = {"nso_cpi", "nso_iip", "gso_cpi_reports", "te_vietnam_pmi"}
 
 
 def connect():
@@ -121,7 +121,10 @@ def run(db, dataset_id="all", force=False, client_factory=HTTPClient):
         config, body, rows, failure = bindings(db, dataset_id), None, [], None
         try:
             if reports:
-                from .cpi_shadow import normalize
+                if dataset_id == "te_vietnam_pmi":
+                    from .te_pmi import normalize
+                else:
+                    from .cpi_shadow import normalize
                 body,rows=normalize(client_factory(),dataset,config,datetime.now(ZONE).date())
             else:
                 body = client_factory().get(dataset["url"])
@@ -159,7 +162,7 @@ def main():
     parser.add_argument("action", choices=["run", "report"])
     selector=parser.add_mutually_exclusive_group()
     selector.add_argument("--dataset", choices=["all", *sorted(PILOT_IDS)], default="all")
-    selector.add_argument("--indicator", choices=["VN_CPI_YOY","VN_CPI_MOM","VN_CPI_AVG_YOY","VN_IIP_YOY"])
+    selector.add_argument("--indicator", choices=["VN_CPI_YOY","VN_CPI_MOM","VN_CPI_AVG_YOY","VN_IIP_YOY","VN_PMI"])
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
