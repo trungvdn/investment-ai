@@ -69,6 +69,7 @@ def month_number(word):
 
 
 def report_period(title):
+    title=re.split(r"Ngày đăng|Kỳ tham chiếu|Lần công bố",title,flags=re.I)[0]
     text=fold(title)
     if re.search(r"\btỉnh\b|\bthành phố\b",title,re.I) or re.search(r"\b(?:thanh pho|khu vuc|ha noi|ho chi minh)\b",text):
         raise ValueError("Regional CPI is not the national series")
@@ -114,12 +115,13 @@ def extract_article(html,url,today):
             dates=set(re.findall(r"ngay dang:\s*(\d{2}/\d{2}/\d{4})",fold(" ".join(parser.text))))
             if len(dates)>1:raise ValueError("Ambiguous publication date")
             if dates:published=datetime.strptime(dates.pop(),"%d/%m/%Y").replace(tzinfo=ZONE)
-        if published and (published.date()<end or published.date()>today):raise ValueError("Inconsistent CPI publication date")
+        if published and (published.date()<end.replace(day=1) or published.date()>today):raise ValueError("Inconsistent CPI publication date")
         values={"MoM":[],"YoY":[],"AVG_YOY":[]}
         evidence={"MoM":[],"YoY":[],"AVG_YOY":[]}
         for paragraph_index,paragraph in enumerate(parser.paragraphs):
             text=fold(paragraph)
-            if re.match(r"(?:chi so gia tieu dung\s*(?:\(cpi\))?|cpi)\s+thang\b",text):
+            subject_month=re.match(r"(?:chi so gia tieu dung\s*(?:\(cpi\))?|cpi)\s+thang\s+("+MONTH+r")(?:/(\d{4})|\s+nam\s+(\d{4}))?\b",text)
+            if subject_month and month_number(subject_month[1])==month and all(int(value)==year for value in subject_month.groups()[1:] if value):
                 monthly=re.split(r"cpi binh quan|binh quan|lam phat co ban|chi so gia vang|chi so gia do la",text,maxsplit=1)[0]
                 for basis,pattern in (("MoM",CHANGE+r"\s+so voi thang truoc"),("YoY",CHANGE+r"\s+so voi cung ky (?:nam truoc|nam\s+"+str(year-1)+r")")):
                     for match in re.finditer(pattern,monthly):
@@ -201,3 +203,49 @@ def collect(client,index,today):
     if not rows:fail("No CPI articles passed all comparison-basis checks")
     bundle=archive()
     return bundle,rows
+
+
+
+def collect_archive(client,index,page_number,today,first,last):
+    """One bounded page per committed run. Return good rows plus explicit warnings."""
+    if not official(index) or urlsplit(index).path!="/cpi-vi/" or urlsplit(index).query:
+        raise CollectionError("DATA_QUALITY","Unexpected CPI archive index")
+    if not 1<=page_number<=100:
+        raise ValueError("Archive page must be between 1 and 100")
+    def page_url(base):
+        return base if page_number==1 else base+"?paged="+str(page_number)
+    try:page=client.get(page_url(index))
+    except CollectionError:
+        if urlsplit(index).netloc not in {"www.gso.gov.vn","gso.gov.vn"}:raise
+        index=ALTERNATE;page=client.get(page_url(index))
+    parser=ArticleHTML();parser.feed(page.decode("utf-8"))
+    urls=[]
+    for href,title in parser.links:
+        title=re.split(r"Ngày đăng|Kỳ tham chiếu|Lần công bố",title,flags=re.I)[0]
+        try:period=report_period(title)
+        except ValueError:continue
+        url=urljoin(index,href)
+        if first<=period<=last and official(url) and url not in urls:urls.append(url)
+    articles=[];rows={};warnings=[]
+    def archive():
+        return json.dumps({"indexUrl":page_url(index),"indexHtml":page.decode("utf-8"),"articles":articles,"warnings":warnings},ensure_ascii=False).encode()
+    for url in urls[:12]:
+        try:html=client.get(url).decode("utf-8")
+        except CollectionError as error:
+            warnings.append({"url":url,"kind":error.kind});continue
+        articles.append({"url":url,"html":html})
+        try:parsed=extract_article(html,url,today)
+        except CollectionError:
+            warnings.append({"url":url,"kind":"DATA_QUALITY"});continue
+        for row in parsed:
+            if not first<=row["period"]<=last:continue
+            key=(row["period"],row["basis"])
+            if key in rows and rows[key]["value"]!=row["value"]:
+                error=CollectionError("DATA_QUALITY","Conflicting CPI archive reports")
+                error.payload=archive();raise error
+            rows.setdefault(key,row)
+    if len(urls)>12:warnings.append({"kind":"PAGE_TRUNCATED","discovered":len(urls),"processed":12})
+    if not rows:
+        error=CollectionError("DATA_QUALITY","CPI archive page has no supported reports in the requested range")
+        error.payload=archive();raise error
+    return archive(),list(rows.values()),warnings

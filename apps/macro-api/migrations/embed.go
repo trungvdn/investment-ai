@@ -16,3 +16,6 @@ var CPIReports string
 
 //go:embed 005_te_pmi.sql
 var TradingEconomicsPMI string
+
+//go:embed 006_source_selection.sql
+var SourceSelection string

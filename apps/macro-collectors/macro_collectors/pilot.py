@@ -41,7 +41,7 @@ def claim(db, dataset, force=False):
     return token if row else None
 
 
-def persist(db, dataset, token, body, rows, config, failure=None):
+def persist(db, dataset, token, body, rows, config, failure=None, notes=None):
     from psycopg.types.json import Jsonb
     with db.transaction():
         db.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
@@ -85,10 +85,17 @@ def persist(db, dataset, token, body, rows, config, failure=None):
                     ORDER BY o.indicator_code,o.series_id,o.period,o.revision DESC""", (dataset["id"],)).fetchall()
                 report.update(compare(rows, reference, config, datetime.now(ZONE).date()))
                 status = "MISMATCH" if report["discrepancies"] else "STALE" if report["stale"] else ("AWAITING_RELEASE" if report["publicationWindow"] else "RELEASE_LAG") if report["behind"] else "MATCH"
+        if notes:
+            report.update(notes)
+            if notes.get("warnings") and not failure:
+                status = "PARTIAL"
         run_id = db.execute("INSERT INTO macro_pilot_runs(dataset_id,raw_id,parser_version,status,baseline_raw_id,report) VALUES(%s,%s,%s,%s,%s,%s) RETURNING id", (dataset["id"], raw_id, config[0]["extractor_key"] if config else VERSION, status, baseline_id, Jsonb(report))).fetchone()["id"]
         for row in rows:
             db.execute("""INSERT INTO macro_pilot_observations(run_id,binding_id,period,period_end,value,unit,series_id,method,source_url,published_at,evidence)
               VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", (run_id, row["binding_id"], row["period"], row["period_end"], row["value"], row["unit"], row["series_id"], row["method"],row.get("source_url"),row.get("published_at"),Jsonb(row.get("evidence",{}))))
+        if not failure and rows:
+            from .selection import remember
+            remember(db, run_id, raw_id, rows)
         delay = 300 if status in ("NO_BASELINE", "BASELINE_BUSY", "BASELINE_INCOMPLETE", "VINTAGE_MISMATCH") else dataset["interval_seconds"]
         if failure:
             delay = max(delay, min(failure.retry_after, 365 * 86400))
@@ -133,6 +140,11 @@ def run(db, dataset_id="all", force=False, client_factory=HTTPClient):
             failure = error
             body=getattr(error,"payload",body)
         output.append({"dataset": dataset_id, "status": persist(db, dataset, token, body, rows, config, failure)})
+        if dataset_id in ("nso_cpi", "gso_cpi_reports"):
+            from .selection import activate
+            result = activate(db, "VN_CPI_YOY", datetime.now(ZONE).date(), automatic=True)
+            if result["mode"] != "inactive":
+                output[-1]["canonical"] = result["mode"]
     return output
 
 

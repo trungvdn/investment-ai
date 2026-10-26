@@ -11,6 +11,10 @@ from .http import CollectionError
 
 def normalize(client,dataset,config,today):
     body,metrics=cpi_reports.collect(client,dataset["url"],today)
+    return body,bind_metrics(metrics,config)
+
+
+def bind_metrics(metrics,config):
     result=[]
     for binding in config:
         if binding["extractor_key"]!=cpi_reports.VERSION or binding["transform_key"]!="published_percent":
@@ -20,7 +24,7 @@ def normalize(client,dataset,config,today):
         for row in metrics:
             if row["basis"]!=basis:continue
             result.append({**row,"binding_id":binding["id"],"indicator_code":binding["indicator_code"],"series_id":binding["series_id"],"unit":binding["unit"],"priority":binding["priority"],"method":"PUBLISHED_NATIONAL_CPI_PERCENT; BASIS="+basis+"; PARSER="+cpi_reports.VERSION})
-    return body,result
+    return result
 
 
 def compare(db,dataset,rows,config,today):

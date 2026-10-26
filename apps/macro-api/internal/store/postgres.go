@@ -81,6 +81,12 @@ func (p *Postgres) Migrate(ctx context.Context) error {
 	if _, err = tx.Exec(ctx, `INSERT INTO macro_schema_migrations(version) VALUES(5) ON CONFLICT DO NOTHING`); err != nil {
 		return err
 	}
+	if _, err = tx.Exec(ctx, migrations.SourceSelection); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO macro_schema_migrations(version) VALUES(6) ON CONFLICT DO NOTHING`); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 func (p *Postgres) Close() { p.Pool.Close() }
@@ -135,7 +141,8 @@ const observationColumns = `indicator_code,period,period_end,value,unit,source,s
 func (p *Postgres) History(ctx context.Context, code string, from, to *time.Time, revisions bool) ([]macro.Observation, error) {
 	query := `SELECT ` + observationColumns + ` FROM macro_observations WHERE indicator_code=$1 AND ($2::date IS NULL OR period_end >= $2) AND ($3::date IS NULL OR period_end <= $3) ORDER BY period_end,priority DESC,revision DESC`
 	if !revisions {
-		query = `SELECT DISTINCT ON (period_end) ` + observationColumns + ` FROM macro_observations WHERE indicator_code=$1 AND ($2::date IS NULL OR period_end >= $2) AND ($3::date IS NULL OR period_end <= $3) ORDER BY period_end,priority DESC,revision DESC,collected_at DESC`
+		query = `SELECT DISTINCT ON (period_end) ` + observationColumns + ` FROM macro_observations WHERE indicator_code=$1 AND ($2::date IS NULL OR period_end >= $2) AND ($3::date IS NULL OR period_end <= $3) AND (NOT EXISTS (SELECT 1 FROM macro_source_policies p WHERE p.indicator_code=$1 AND p.active_batch_id IS NOT NULL)
+          OR id IN (SELECT l.observation_id FROM macro_canonical_links l JOIN macro_source_policies p ON p.active_batch_id=l.batch_id WHERE p.indicator_code=$1)) ORDER BY period_end,priority DESC,revision DESC,collected_at DESC`
 	}
 	rows, err := p.Pool.Query(ctx, query, code, from, to)
 	if err != nil {
@@ -153,7 +160,7 @@ func (p *Postgres) History(ctx context.Context, code string, from, to *time.Time
 	return out, rows.Err()
 }
 func (p *Postgres) Attempts(ctx context.Context) (map[string]macro.Attempt, error) {
-	rows, err := p.Pool.Query(ctx, `SELECT DISTINCT ON (indicator_code) indicator_code,checked_at,success,message FROM macro_attempts ORDER BY indicator_code,checked_at DESC,success DESC`)
+	rows, err := p.Pool.Query(ctx, `SELECT DISTINCT ON (indicator_code) indicator_code,checked_at,success,message FROM macro_attempts a WHERE (a.provider_id LIKE 'python:canonical:%') = EXISTS (SELECT 1 FROM macro_source_policies p WHERE p.indicator_code=a.indicator_code AND p.active_batch_id IS NOT NULL) ORDER BY indicator_code,checked_at DESC,success DESC`)
 	if err != nil {
 		return nil, err
 	}
