@@ -3,11 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/trungvdn/investment-ai/apps/macro-api/internal/macro"
 	"github.com/trungvdn/investment-ai/apps/macro-api/internal/providers"
 	"github.com/trungvdn/investment-ai/apps/macro-api/internal/testutil"
-	"testing"
-	"time"
 )
 
 type fakeProvider struct {

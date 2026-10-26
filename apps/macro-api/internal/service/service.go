@@ -37,11 +37,18 @@ type RunResult struct {
 
 func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 	result := RunResult{}
+	// List of providers to ingest from, in order. If a provider fails, we still try the others.
+	if s.Logger != nil {
+		s.Logger.Debug("ingest run started", "providers", s.Providers)
+	}
 	for _, p := range s.Providers {
 		if ctx.Err() != nil {
 			return result, ctx.Err()
 		}
 		batch, fetchErr := p.Fetch(ctx)
+		if s.Logger != nil {
+			s.Logger.Debug("provider fetch completed", "provider", p.ID(), "observations", len(batch.Observations), "warnings", len(batch.Warnings), "unavailable", batch.Unavailable, "error", fetchErr)
+		}
 		docs := append([]macro.RawDocument{batch.Document}, batch.Documents...)
 		ids := make([]int64, len(docs))
 		for i, doc := range docs {
@@ -76,7 +83,9 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		missing := false
 		for _, code := range p.Codes() {
-			if counts[code] == 0 && !strings.HasPrefix(batch.Unavailable[code], "NOT_COMPARABLE:") {
+			if counts[code] == 0 &&
+				!strings.HasPrefix(batch.Unavailable[code], "NOT_COMPARABLE:") &&
+				!strings.HasPrefix(batch.Unavailable[code], "NO_PUBLISHED_RATE:") {
 				missing = true
 			}
 		}
@@ -85,6 +94,12 @@ func (s *Service) Ingest(ctx context.Context) (RunResult, error) {
 		}
 		if fetchErr != nil {
 			result.Failed++
+			result.Failures = append(result.Failures, Failure{
+				RetryAt:  providers.RetryAt(fetchErr),
+				Provider: p.ID(),
+				Kind:     providers.ErrorKind(fetchErr),
+				Message:  fetchErr.Error(),
+			})
 			if s.Logger != nil {
 				s.Logger.Warn("macro source unavailable", "provider", p.ID(), "reason", fetchErr.Error())
 			}
