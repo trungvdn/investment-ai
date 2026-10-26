@@ -10,3 +10,6 @@ var Operations string
 
 //go:embed 003_ingestion_pilot.sql
 var IngestionPilot string
+
+//go:embed 004_cpi_reports.sql
+var CPIReports string

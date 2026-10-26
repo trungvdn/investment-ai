@@ -69,6 +69,12 @@ func (p *Postgres) Migrate(ctx context.Context) error {
 	if _, err = tx.Exec(ctx, `INSERT INTO macro_schema_migrations(version) VALUES(3) ON CONFLICT DO NOTHING`); err != nil {
 		return err
 	}
+	if _, err = tx.Exec(ctx, migrations.CPIReports); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO macro_schema_migrations(version) VALUES(4) ON CONFLICT DO NOTHING`); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 func (p *Postgres) Close() { p.Pool.Close() }

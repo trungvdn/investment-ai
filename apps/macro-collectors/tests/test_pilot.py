@@ -51,7 +51,7 @@ class ParserTests(unittest.TestCase):
 
 
 @unittest.skipUnless(os.getenv("MACRO_TEST_DATABASE_URL"),"requires CI PostgreSQL")
-class DatabasePilotTests(unittest.TestCase):
+class PostgresPilotFixture(unittest.TestCase):
     def setUp(self):
         import psycopg
         from psycopg import sql
@@ -63,8 +63,9 @@ class DatabasePilotTests(unittest.TestCase):
         self.admin.execute(sql.SQL("CREATE SCHEMA {} ").format(sql.Identifier(self.schema)))
         self.db=self.connection()
         migrations=Path(__file__).resolve().parents[2]/"macro-api"/"migrations"
-        for name in ("001_macro.sql","002_operations.sql","003_ingestion_pilot.sql"):
+        for name in ("001_macro.sql","002_operations.sql","003_ingestion_pilot.sql","004_cpi_reports.sql"):
             self.db.execute((migrations/name).read_text(),prepare=False)
+        self.db.execute("UPDATE macro_datasets SET enabled=false WHERE id='gso_cpi_reports'")
         self.tmp=tempfile.TemporaryDirectory()
         self.binary=os.environ.get("SDMX_REPLAY_BIN")
         if not self.binary:
@@ -93,6 +94,9 @@ class DatabasePilotTests(unittest.TestCase):
             def get(self,url):return body
         return run(self.db,dataset,True,Client)[0]["status"]
 
+
+
+class DatabasePilotTests(PostgresPilotFixture):
     def test_real_go_parity_shadow_only_and_repeated_runs(self):
         from macro_collectors.pilot import report
         body=self.baseline();before=self.db.execute("SELECT count(*) AS n,max(collected_at) AS ts FROM macro_observations").fetchone()

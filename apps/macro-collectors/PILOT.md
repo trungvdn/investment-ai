@@ -64,3 +64,30 @@ Fixtures prove parser parity, discrepancy detection, freshness classification, m
 The development check fetched the current official NSO XML files and replayed the **same bytes** through the existing Go parser (`cmd/sdmx-replay`) and the new Python parser. CPI matched 51 periods with no value/metadata discrepancies, but its newest SDMX period was October 2025; IIP matched 105 periods with no discrepancies, newest September 2026. CPI is therefore a source-freshness failure even though the parsers agree, and must not qualify for cutover. A higher-priority report-based CPI source may be newer; this pilot does not confuse it with the SDMX series.
 
 This was a source/parser replay, **not a production database comparison**. Real DB comparisons and three-day review eligibility require deploying the shadow service against the existing Go baseline. The replay does not contribute matching days or seed production values.
+
+## National CPI report collector
+
+Migration 004 adds `gso_cpi_reports`, which scrapes the national **Chỉ số giá tiêu dùng** topic at `https://www.gso.gov.vn/cpi-vi/`. When the old host is unavailable it tries the same publisher's current `https://www.nso.gov.vn/cpi-vi/`. It discovers dated CPI/price reports from the page's actual links; it does not guess article slugs or retrieve provincial CPI sites. It processes the newest linked report month and checks duplicate publications for contradictory values.
+
+Three separate bindings are persisted to shadow observations:
+
+| Indicator | Meaning | Unit |
+| --- | --- | --- |
+| VN_CPI_MOM | Current month versus previous month | % MoM |
+| VN_CPI_YOY | Current month versus the same month last year | % YoY |
+| VN_CPI_AVG_YOY | Average January..report-month versus the same period last year | % average YoY |
+
+The extractor does not confuse December-baseline growth, quarterly averages, core CPI, gold/USD indices or component-price changes with those figures. Vietnamese month names, decimal commas, increases/decreases and unchanged values are handled explicitly. Missing monthly MoM/YoY or conflicting values reject the article rather than substituting an average for monthly YoY. If the source omits the YTD average, valid monthly values are retained and the average is reported as missing, never filled with a quarter average or zero. Source HTML (including rejected article evidence), article URLs, publication dates/precision, matched text, paragraph index and average-window length remain auditable. No LLM is required for this stable national report format.
+
+Run or inspect this dataset:
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm macro-pilot run --once --dataset gso_cpi_reports --force
+docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm macro-pilot report --dataset gso_cpi_reports
+```
+
+If you already use other Compose overrides, retain those `-f` arguments when adding the pilot override. Migration 004 is applied by the rebuilt Go API; restart/rebuild it before starting this collector. Existing SDMX datasets remain as historical/comparison sources. `--indicator VN_CPI_YOY` resolves all enabled mapped pilot datasets, so the new report source and legacy SDMX source can both be inspected without collapsing their provenance.
+
+This new article dataset uses **cross-source review**, not the SDMX same-payload parity gate: it compares monthly YoY with Go's currently selected value for the same indicator/period, reports previously missing periods and marks MoM/average metrics as new metrics without an existing baseline. Numerical agreement between different publications is explicitly not parser parity. `CROSS_SOURCE_REVIEW`/`CROSS_SOURCE_MISMATCH` never contributes to automatic review eligibility; no production values or ingestion ownership are changed. The two additional metric definitions are in the pilot registry, not newly enabled production dashboard cards.
+
+The public topic page and linked September 2026 reports were inspected during implementation. Direct network fetches from this execution environment were blocked by environment policy, so live scraping must still be verified on the deployment host. Deterministic tests cover the national summary structure, all comparison bases, precision/evidence, source aliases and DB shadow persistence.
