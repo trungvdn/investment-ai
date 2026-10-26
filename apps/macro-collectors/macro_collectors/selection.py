@@ -136,9 +136,10 @@ def activate(db, code, today, automatic=False):
     with db.transaction():
         db.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         db.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("source-selection:" + code,))
-        policy = db.execute("SELECT * FROM macro_source_policies WHERE indicator_code=%s FOR UPDATE", (code,)).fetchone()
+        policy = db.execute("SELECT * FROM macro_source_policies WHERE indicator_code=%s", (code,)).fetchone()
         if not policy or (automatic and policy["active_batch_id"] is None):
             return {"indicator": code, "mode": "inactive"}
+        policy = db.execute("SELECT * FROM macro_source_policies WHERE indicator_code=%s FOR UPDATE", (code,)).fetchone()
         result = preview(db, code, today)
         if not result["eligible"]:
             result["mode"] = "blocked_previous_selection_retained"

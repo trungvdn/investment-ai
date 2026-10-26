@@ -1,12 +1,16 @@
+# Current source-selection phase
+
+Default collection remains shadow-only. Migration 006 adds source vintages, historical backfill and an explicit, gated CPI dashboard selection path. See [SOURCES.md](SOURCES.md) for commands, privileges and rollback. The earlier SDMX parity gate below does not automatically activate this new policy.
+
 # NSO Python ingestion pilot
 
-Scope: `nso_cpi` (VN_CPI_YOY / PCPI_IX) and `nso_iip` (VN_IIP_YOY / AIP_ISIC4_IX). Both use structured official NSO SDMX and the same-series twelve-month YoY transformation already implemented in Go. PMI/SBV are not migration candidates in this pilot because their public access is currently unreliable. No LLM is needed for these XML sources.
+Original SDMX parity scope: `nso_cpi` (VN_CPI_YOY / PCPI_IX) and `nso_iip` (VN_IIP_YOY / AIP_ISIC4_IX). Both use structured official NSO SDMX and the same-series twelve-month YoY transformation already implemented in Go. PMI/SBV are not migration candidates in this pilot because their public access is currently unreliable. No LLM is needed for these XML sources.
 
 ## Registry and ownership
 
 Migration 003 introduces sources, datasets, indicator definitions and many-to-many indicator bindings. A source has many datasets; a dataset can output many indicators; an indicator can have bindings to multiple datasets. Bindings identify a versioned extractor/transform, source series, unit, priority and validation rules. Dataset cadence is independent of indicator freshness. CPI and IIP are seeded as enabled, six-hour datasets **owned by Go**. Existing configuration is not overwritten by rerunning migrations.
 
-The registry is initially a two-indicator pilot, not a replacement for the entire Go catalog. Python currently accepts only the two pilot dataset IDs and the supported NSO extractor/transform. Editing a row does not enable arbitrary code, URLs or a new parser. Add a tested adapter before expanding the pilot.
+The registry is initially a two-indicator pilot, not a replacement for the entire Go catalog. Python accepts the tested SDMX, national CPI article and Trading Economics PMI adapters. Editing a row does not enable arbitrary code, URLs or a new parser. Add a tested adapter before expanding the pilot.
 
 ## Deploy without changing production values
 
@@ -49,7 +53,7 @@ Statuses include NO_BASELINE, BASELINE_BUSY, BASELINE_INCOMPLETE, VINTAGE_MISMAT
 - At least three distinct **Vietnam calendar days** within fourteen days have MATCH runs for the same parser version and binding configuration hash, each with at least twelve matched observations.
 - The latest run has no value/metadata/missing-period discrepancy or freshness lag.
 
-Eligibility is only an input to review. This phase intentionally exposes **no promotion command and no Python production writer**. Do not change `ingestion_owner` manually. Before cutover, implement and review the production writer, shared revision/idempotency semantics, ownership fencing against already-running Go jobs, rollback procedure and source-health updates. Only then transfer one dataset at a time; the remaining sources continue on Go. This prevents an untested switch from silently replacing the existing ingestion path.
+Eligibility is only an input to review. The original shadow/parity path itself exposes no ownership-promotion command. The separate CPI canonical-selection path now has a gated production publisher described in SOURCES.md. Do not change `ingestion_owner` manually. Dataset ingestion ownership remains Go. CPI canonical selection uses explicit observation links, shared production revision locks, an activation gate, audited deactivation and separate health; it does not disable already-running Go providers. Broader ingestion ownership transfer is still a later phase. This prevents an untested switch from silently replacing the existing ingestion path.
 
 ## Restricted DB role
 

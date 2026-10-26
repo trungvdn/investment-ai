@@ -163,3 +163,57 @@ class SourceSelectionDatabaseTests(PostgresPilotFixture):
         result = activate(self.db, "VN_CPI_YOY", today)
         self.assertFalse(result["eligible"])
         self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"], 0)
+
+    def test_normal_ingestion_refreshes_active_selection_and_source_failure_retains_it(self):
+        from macro_collectors.selection import activate
+        from macro_collectors.pilot import run
+        from macro_collectors.http import CollectionError
+        today = self.seed()
+        first = activate(self.db, "VN_CPI_YOY", today)
+        year, month = map(int, self.months[-1].split("-"))
+        url = f"https://www.nso.gov.vn/du-lieu-va-so-lieu-thong-ke/{today.year}/fixture-cpi/"
+        html = (f"<h1>Chỉ số giá tiêu dùng tháng {month} năm {year}</h1>"
+                f"<p>CPI tháng {month} tăng 0,1% so với tháng trước; tăng 3,7% so với cùng kỳ năm trước.</p>"
+                f"<p>Ngày đăng: {today.strftime('%d/%m/%Y')}</p>").encode()
+
+        class Client:
+            def get(self, requested):
+                if requested.endswith("/cpi-vi/"):
+                    return (f'<a href="{url}">Chỉ số giá tiêu dùng tháng {month} năm {year}</a>').encode()
+                return html
+
+        result = run(self.db, "gso_cpi_reports", True, Client)[0]
+        self.assertEqual(result["canonical"], "active")
+        current = self.db.execute("SELECT active_batch_id FROM macro_source_policies").fetchone()["active_batch_id"]
+        self.assertNotEqual(first["activeBatchId"], current)
+        selected = self.db.execute("""SELECT o.value FROM macro_canonical_links l JOIN macro_observations o ON o.id=l.observation_id
+          WHERE l.batch_id=%s AND l.period=%s""", (current, self.months[-1])).fetchone()
+        self.assertEqual(selected["value"], 3.7)
+
+        class Denied:
+            def get(self, requested):
+                raise CollectionError("ACCESS_DENIED", "fixture HTTP 403")
+
+        failed = run(self.db, "gso_cpi_reports", True, Denied)[0]
+        self.assertEqual(failed["canonical"], "blocked_previous_selection_retained")
+        self.assertEqual(self.db.execute("SELECT active_batch_id FROM macro_source_policies").fetchone()["active_batch_id"], current)
+
+    def test_bounded_backfill_reruns_do_not_duplicate_source_vintages(self):
+        from macro_collectors.sources import backfill
+        from test_pilot import fixture
+        self.db.execute("UPDATE macro_datasets SET enabled=true WHERE id='gso_cpi_reports'")
+        body = fixture()
+
+        class Client:
+            def get(self, url):
+                if url.endswith("CPIVNM.xml"):
+                    return body
+                if url.endswith("/cpi-vi/"):
+                    return ('<a href="' + URL + '">Chỉ số giá tiêu dùng tháng Chín năm 2026</a>').encode()
+                return article().encode()
+
+        backfill(self.db, "VN_CPI_YOY", "2026-09", "2026-09", 1, 1, Client)
+        before = self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"]
+        backfill(self.db, "VN_CPI_YOY", "2026-09", "2026-09", 1, 1, Client)
+        self.assertEqual(before, self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"])
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"], 0)
