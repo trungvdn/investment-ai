@@ -76,3 +76,12 @@ func TestPMIConfigAndBillsNoPublishedRateRetainHistoricalMeaning(t *testing.T) {
 		t.Fatal("historical award masquerades as today's rate")
 	}
 }
+
+func TestPMIPendingDoesNotHidePreviouslyStaleData(t *testing.T) {
+	now := time.Now()
+	ind, _ := Find("VN_PMI")
+	old := &Observation{PeriodEnd: now.AddDate(0, -3, 0)}
+	if Status(ind, old, &Attempt{Message: "AWAITING_RELEASE: waiting for new report"}, now) != "STALE" {
+		t.Fatal("publication wait hid stale stored observation")
+	}
+}

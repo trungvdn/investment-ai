@@ -1,0 +1,33 @@
+name: Macro Collector Tests
+on:
+  pull_request:
+    paths:
+      - "apps/macro-collectors/**"
+      - "docker-compose.collectors.yml"
+      - ".github/workflows/collector-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/macro-collectors/**"
+      - "docker-compose.collectors.yml"
+      - ".github/workflows/collector-tests.yml"
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests -v
+        working-directory: apps/macro-collectors
+      - name: Validate collector deployment configuration
+        run: docker compose -f docker-compose.macro.yml -f docker-compose.collectors.yml config --quiet
+        env:
+          MACRO_DB_PASSWORD: ci-test-only
+      - name: Build and smoke-test collector runtime
+        run: |
+          docker build -t investment-ai-collectors:test apps/macro-collectors
+          docker run --rm --entrypoint sh investment-ai-collectors:test -c 'test -w /collector-data && command -v pdftotext && python -m macro_collectors --help'

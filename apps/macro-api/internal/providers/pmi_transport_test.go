@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func pmiExportFixture() []byte {
@@ -120,5 +121,52 @@ func TestPMILocalPDFNeedsNoNetworkAndRetainsExactProvenance(t *testing.T) {
 	p.LocalReleases = []PMILocalRelease{{Path: path, SourceURL: pmiRelease}}
 	if _, err = p.Fetch(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatal("local import ignored cancellation")
+	}
+}
+
+func TestPythonCollectorManifestImportsAndPropagatesHealth(t *testing.T) {
+	if _, err := exec.LookPath("pdftotext"); err != nil {
+		t.Skip("install poppler-utils")
+	}
+	dir := t.TempDir()
+	pdf := filepath.Join(dir, "release.pdf")
+	os.WriteFile(pdf, minimalPMIPDF(), 0600)
+	manifest := filepath.Join(dir, "manifest.json")
+	now := time.Now().UTC()
+	data := map[string]any{"version": 1, "collector": "vn_pmi", "targetPeriod": "2026-09", "checkedAt": now.Add(-time.Minute).Format(time.RFC3339), "nextDue": now.Add(time.Hour).Format(time.RFC3339), "status": "READY", "releases": []PMILocalRelease{{Path: pdf, SourceURL: pmiRelease}}}
+	write := func() {
+		b, _ := json.Marshal(data)
+		if e := os.WriteFile(manifest, b, 0600); e != nil {
+			t.Fatal(e)
+		}
+	}
+	write()
+	p := PMI{ManifestFile: manifest, HTTP: HTTP{Client: &http.Client{Transport: phase5Transport(func(*http.Request) (*http.Response, error) {
+		t.Fatal("manifest must not request public source")
+		return nil, nil
+	})}}}
+	b, err := p.Fetch(context.Background())
+	if err != nil || len(b.Observations) != 1 || b.Observations[0].RawIndex != 1 || len(b.Documents) != 1 {
+		t.Fatalf("Python bridge failed %+v %v", b, err)
+	}
+	data["status"] = "ERROR"
+	data["errorKind"] = "ACCESS_DENIED"
+	write()
+	b, err = p.Fetch(context.Background())
+	if ErrorKind(err) != "ACCESS_DENIED" || len(b.Observations) != 0 || len(b.Document.Body) == 0 {
+		t.Fatal("cached PDF hid scraper access denial")
+	}
+	data["status"] = "PENDING"
+	write()
+	b, err = p.Fetch(context.Background())
+	if err != nil || !strings.HasPrefix(b.Unavailable["VN_PMI"], "AWAITING_RELEASE:") {
+		t.Fatal("publication delay incorrectly treated as a value")
+	}
+	data["status"] = "READY"
+	data["nextDue"] = now.Add(-25 * time.Hour).Format(time.RFC3339)
+	data["checkedAt"] = now.Add(-30 * time.Hour).Format(time.RFC3339)
+	write()
+	if _, err = p.Fetch(context.Background()); err == nil {
+		t.Fatal("stopped collector appeared healthy")
 	}
 }

@@ -173,3 +173,86 @@ func ParsePMIFeed(body []byte, now time.Time) ([]macro.Observation, error) {
 	}
 	return out, nil
 }
+
+// The Python collector atomically publishes this manifest and immutable PDFs.
+// Its upstream status is checked before importing, so a cached PDF cannot make
+// an access-denied or stopped collector appear healthy.
+func (p *PMI) fetchManifest(ctx context.Context) (macro.Batch, error) {
+	b := macro.Batch{}
+	if !filepath.IsAbs(p.ManifestFile) {
+		return b, fmt.Errorf("PMI_RELEASE_MANIFEST must be an absolute path")
+	}
+	f, err := os.Open(p.ManifestFile)
+	if err != nil {
+		return b, fmt.Errorf("PMI collector manifest is not ready; check the Python collector: %w", &SourceError{Source: "PMI collector", Kind: "TRANSPORT"})
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil || !info.Mode().IsRegular() {
+		return b, fmt.Errorf("PMI collector manifest must be a regular file")
+	}
+	body, err := io.ReadAll(io.LimitReader(f, 1024*1024+1))
+	if err != nil || len(body) > 1024*1024 {
+		return b, fmt.Errorf("PMI collector manifest could not be read within limit")
+	}
+	b.Document = macro.RawDocument{Source: "S&P Global", URL: pmiPublicURL, ContentType: "application/json", Body: body, FetchedAt: time.Now().UTC()}
+	var manifest struct {
+		Version   int               `json:"version"`
+		Collector string            `json:"collector"`
+		Status    string            `json:"status"`
+		Target    string            `json:"targetPeriod"`
+		Checked   string            `json:"checkedAt"`
+		Next      string            `json:"nextDue"`
+		Kind      string            `json:"errorKind"`
+		Releases  []PMILocalRelease `json:"releases"`
+	}
+	if json.Unmarshal(body, &manifest) != nil || manifest.Version != 1 || manifest.Collector != "vn_pmi" {
+		return b, fmt.Errorf("invalid PMI collector manifest")
+	}
+	if _, err := macro.MonthEnd(manifest.Target); err != nil {
+		return b, fmt.Errorf("invalid PMI collector target period")
+	}
+	checked, e1 := time.Parse(time.RFC3339, manifest.Checked)
+	next, e2 := time.Parse(time.RFC3339, manifest.Next)
+	now := time.Now()
+	if e1 != nil || e2 != nil || checked.After(now) || !next.After(checked) {
+		return b, fmt.Errorf("invalid PMI collector schedule timestamps")
+	}
+	if now.After(next.Add(24 * time.Hour)) {
+		return b, fmt.Errorf("PMI Python collector is overdue; check worker health")
+	}
+	if manifest.Status == "PENDING" {
+		b.Unavailable = map[string]string{"VN_PMI": "AWAITING_RELEASE: Python collector đang chờ bản công bố PMI kỳ " + manifest.Target}
+		return b, nil
+	}
+	if manifest.Status == "ERROR" {
+		kind := manifest.Kind
+		switch kind {
+		case "ACCESS_DENIED", "RATE_LIMIT", "TRANSPORT", "TIMEOUT", "HTTP":
+		default:
+			kind = "DATA_QUALITY"
+		}
+		return b, fmt.Errorf("PMI Python collector failed: %w", &SourceError{Source: "S&P Global collector", Kind: kind})
+	}
+	if manifest.Status != "READY" || len(manifest.Releases) == 0 {
+		return b, fmt.Errorf("PMI collector manifest has no ready releases")
+	}
+	child := *p
+	child.LocalReleases = manifest.Releases
+	raw, err := child.fetchLocal(ctx)
+	if len(raw.Document.Body) > 0 {
+		b.Documents = append(b.Documents, raw.Document)
+	}
+	b.Documents = append(b.Documents, raw.Documents...)
+	if err != nil {
+		return b, err
+	}
+	for _, o := range raw.Observations {
+		if o.Period != manifest.Target {
+			return b, fmt.Errorf("PMI collector target does not match PDF report period")
+		}
+		o.RawIndex++
+		b.Observations = append(b.Observations, o)
+	}
+	return b, nil
+}

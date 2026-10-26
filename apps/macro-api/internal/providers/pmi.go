@@ -23,6 +23,7 @@ type PMI struct {
 	ReleaseURLs        []string
 	IndexURL           string
 	FeedURL, FeedToken string
+	ManifestFile       string
 	LocalReleases      []PMILocalRelease
 }
 
@@ -37,6 +38,9 @@ func (p *PMI) Fetch(ctx context.Context) (macro.Batch, error) {
 	}
 	if p.FeedURL != "" {
 		return p.fetchFeed(ctx)
+	}
+	if p.ManifestFile != "" {
+		return p.fetchManifest(ctx)
 	}
 	if len(p.LocalReleases) > 0 {
 		return p.fetchLocal(ctx)

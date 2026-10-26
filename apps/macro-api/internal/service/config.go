@@ -21,7 +21,7 @@ func ProvidersFromEnv() []providers.Provider {
 		&providers.SBVStatistics{Kind: "m2", Endpoint: os.Getenv("SBV_ARTICLES_URL")},
 		&providers.SBVStatistics{Kind: "credit", Endpoint: os.Getenv("SBV_ARTICLES_URL")},
 		&providers.PPI{},
-		&providers.PMI{FeedURL: os.Getenv("PMI_FEED_URL"), FeedToken: os.Getenv("PMI_FEED_TOKEN"), LocalReleases: providers.PMILocalFromEnv(os.Getenv("PMI_RELEASE_FILES")), IndexURL: os.Getenv("PMI_RELEASE_INDEX_URL"), ReleaseURLs: strings.FieldsFunc(os.Getenv("PMI_RELEASE_URLS"), func(r rune) bool { return r == ',' || r == ' ' || r == '\n' })},
+		&providers.PMI{ManifestFile: os.Getenv("PMI_RELEASE_MANIFEST"), FeedURL: os.Getenv("PMI_FEED_URL"), FeedToken: os.Getenv("PMI_FEED_TOKEN"), LocalReleases: providers.PMILocalFromEnv(os.Getenv("PMI_RELEASE_FILES")), IndexURL: os.Getenv("PMI_RELEASE_INDEX_URL"), ReleaseURLs: strings.FieldsFunc(os.Getenv("PMI_RELEASE_URLS"), func(r rune) bool { return r == ',' || r == ' ' || r == '\n' })},
 		&providers.SBVBills{URL: os.Getenv("SBV_BILLS_URL")},
 		&providers.Reports{Kind: "economic", URL: os.Getenv("NSO_ECONOMIC_FEED_URL")},
 		&providers.Reports{Kind: "prices", URL: os.Getenv("NSO_PRICES_FEED_URL")},

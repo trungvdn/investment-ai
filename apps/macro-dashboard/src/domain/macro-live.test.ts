@@ -64,3 +64,12 @@ it("does not compare bill yields across changing tenor baskets, or expose status
   expect(sourceMessage(i)).toBe("Không có lãi suất trong phiên.");
   expect(statusLabels.NO_PUBLISHED_RATE).toContain("không công bố");
 });
+
+it("shows a normal publication delay without exposing the manifest status prefix", () => {
+  const i = {
+    status: "AWAITING_RELEASE",
+    lastAttempt: { message: "AWAITING_RELEASE: Chờ PMI kỳ mới" },
+  } as MacroIndicator;
+  expect(sourceMessage(i)).toBe("Chờ PMI kỳ mới");
+  expect(statusLabels.AWAITING_RELEASE).toBe("Chờ công bố kỳ mới");
+});
