@@ -20,8 +20,10 @@ import (
 // Explicit URLs override discovery from the public release index.
 type PMI struct {
 	HTTP
-	ReleaseURLs []string
-	IndexURL    string
+	ReleaseURLs        []string
+	IndexURL           string
+	FeedURL, FeedToken string
+	LocalReleases      []PMILocalRelease
 }
 
 func (p *PMI) ID() string      { return "spglobal:pmi:vn" }
@@ -30,6 +32,15 @@ func (p *PMI) Codes() []string { return []string{"VN_PMI"} }
 const PMINotConfigured = "PMI_RELEASE_URLS is not configured"
 
 func (p *PMI) Fetch(ctx context.Context) (macro.Batch, error) {
+	if p.FeedToken != "" && p.FeedURL == "" {
+		return macro.Batch{}, fmt.Errorf("PMI_FEED_TOKEN requires PMI_FEED_URL; DXY settings are independent")
+	}
+	if p.FeedURL != "" {
+		return p.fetchFeed(ctx)
+	}
+	if len(p.LocalReleases) > 0 {
+		return p.fetchLocal(ctx)
+	}
 	b := macro.Batch{}
 	urls := p.ReleaseURLs
 	offset := 0
@@ -44,7 +55,7 @@ func (p *PMI) Fetch(ctx context.Context) (macro.Batch, error) {
 		}
 		doc, e := p.Get(ctx, index, index, "S&P Global")
 		if e != nil {
-			return b, e
+			return b, pmiFetchError("release index", e)
 		}
 		b.Document = doc
 		urls, e = DiscoverPMI(doc.Body, index)
@@ -65,7 +76,7 @@ func (p *PMI) Fetch(ctx context.Context) (macro.Batch, error) {
 		}
 		d, err := p.Get(ctx, u, u, "S&P Global")
 		if err != nil {
-			return b, err
+			return b, pmiFetchError("release document", err)
 		}
 		if i == 0 && offset == 0 {
 			b.Document = d
@@ -146,13 +157,13 @@ func ParsePMIText(text, sourceURL string, now time.Time) (macro.Observation, err
 	if err != nil {
 		return empty, fmt.Errorf("invalid PMI publication date")
 	}
-	pattern := `(?i)(?:The )?S&P Global Vietnam Manufacturing (?:Purchasing Managers' Index\s*\(PMI\)|PMI|Purchasing Managers' Index)[^.!?]{0,100}?(?:posted|registered|recorded|stood at|rose to|fell to|dropped to|increased to|decreased to|climbed to|edged (?:up|down) to)\s+(\d{1,2}(?:\.\d+)?)\s*(?:points?\s*)?in\s+(` + englishMonth + `)`
+	pattern := `(?i)(?:The )?S&P Global Vietnam Manufacturing (?:Purchasing Managers' Index\s*\(PMI\)|PMI|Purchasing Managers' Index)[^.!?]{0,100}?(?:posted|registered|recorded|stood at|rose to|fell to|dropped to|increased to|decreased to|climbed to|edged (?:up|down) to)\s+(\d{1,3}(?:\.\d+)?)\s*(?:points?\s*)?in\s+(` + englishMonth + `)`
 	matches := regexp.MustCompile(pattern).FindAllStringSubmatch(text, -1)
 	if len(matches) != 1 {
 		return empty, fmt.Errorf("PMI headline value/month is missing or ambiguous")
 	}
 	value, err := strconv.ParseFloat(matches[0][1], 64)
-	if err != nil || value <= 0 || value > 100 {
+	if err != nil || value < 0 || value > 100 {
 		return empty, fmt.Errorf("invalid PMI headline")
 	}
 	// Publication normally occurs in the next month; December belongs to the

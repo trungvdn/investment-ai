@@ -1,0 +1,15 @@
+# Optional official-PDF import mode when S&P public HTTP access is denied.
+# Set PMI_PDF_DIR to an absolute host directory containing downloaded official PDFs.
+# Set PMI_RELEASE_FILES to JSON using /data/pmi/... paths and original release URLs.
+# Run with: docker compose -f docker-compose.macro.yml -f docker-compose.pmi-local.example.yml up -d --build macro-api
+services:
+  macro-api:
+    environment:
+      PMI_FEED_URL: ""
+      PMI_FEED_TOKEN: ""
+      PMI_RELEASE_FILES: ${PMI_RELEASE_FILES:?Set official PDF paths and source URLs}
+    volumes:
+      - type: bind
+        source: ${PMI_PDF_DIR:?Set absolute directory containing official PMI PDFs}
+        target: /data/pmi
+        read_only: true
