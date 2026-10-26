@@ -27,6 +27,8 @@ def parse(body, bindings, today):
             if binding["extractor_key"] != VERSION or binding["transform_key"] != "yoy_12m":
                 raise ValueError("Unrecognized binding parser/transform")
             rules = binding["validation"]
+            if rules["ref_area"]!="VN" or rules["counterpart"]!="_Z" or rules["frequency"]!="M" or rules["unit_mult"]!="0" or not 0<rules["tolerance"]<=1e-6 or binding["unit"]!="% YoY" or binding["frequency"]!="MONTHLY" or binding["comparison_basis"]!="YoY":
+                raise ValueError("Binding does not satisfy the pilot definition/tolerance contract")
             candidates = [node for node in root.iter() if node.tag.split("}")[-1] == "Series" and node.get("INDICATOR") == binding["series_id"] and node.get("REF_AREA") == rules["ref_area"] and node.get("COUNTERPART_AREA") == rules["counterpart"] and node.get("FREQ") == rules["frequency"]]
             if len(candidates) != 1:
                 raise ValueError("Missing/ambiguous NSO series")

@@ -35,7 +35,7 @@ Python stores exact downloaded bytes/checksum in `macro_pilot_raw`, normalized c
 Comparisons use the **exact source series**, not the canonical dashboard value: CPI's report-based source may have higher priority or different rounding and must not be mistaken for a parser disagreement. Before comparing:
 
 - The Go provider must have a successful completed attempt after its latest raw fetch, with no active collection lease.
-- The Python payload checksum must equal the latest Go raw snapshot. A new source revision produces `VINTAGE_MISMATCH`, not a false parser failure; Go is allowed to catch up and Python retries in five minutes.
+- The Python payload checksum must equal the latest Go raw snapshot. A new source revision produces `VINTAGE_MISMATCH`, not a false parser failure; Go is allowed to catch up and Python retries in five minutes. An operator can requeue the original provider, for example `ingest -source nso:sdmx:PCPI_IX -due`, before rerunning the pilot; this still does not transfer ownership.
 - Within a repeatable-read transaction, compare every available normalized period, value (absolute tolerance 1e-8), unit, period end, method, source URL and priority. Missing periods on either side and metadata mismatches are explicitly listed.
 - Freshness is evaluated separately: report latest periods, the expected previous calendar month, missing release periods, a ten-day publication window and the existing sixty-day maximum age. Equal but old values do not produce a fresh-data MATCH.
 
