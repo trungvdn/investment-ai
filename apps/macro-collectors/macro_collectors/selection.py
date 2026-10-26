@@ -4,6 +4,8 @@ import json
 import math
 from datetime import timedelta
 
+from .core import ZONE
+
 
 def fingerprint(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, default=str, ensure_ascii=False).encode()).hexdigest()
@@ -102,11 +104,12 @@ def preview(db, code, today):
         raise ValueError("No implemented source-selection policy for this indicator")
     result = plan(current_values(db, [policy["history_binding"], policy["update_binding"]]), policy, today)
     for binding in (policy["history_binding"], policy["update_binding"]):
-        state = db.execute("""SELECT s.last_status,r.checked_at,b.indicator_code,b.enabled,d.enabled AS dataset_enabled
+        state = db.execute("""SELECT s.last_status,r.checked_at,b.indicator_code,b.enabled,d.enabled AS dataset_enabled,i.unit,i.frequency,i.comparison_basis
           FROM macro_indicator_bindings b JOIN macro_datasets d ON d.id=b.dataset_id
+          JOIN macro_indicator_definitions i ON i.code=b.indicator_code
           LEFT JOIN macro_pilot_state s ON s.dataset_id=b.dataset_id LEFT JOIN macro_pilot_runs r ON r.id=s.last_run_id
           WHERE b.id=%s""", (binding,)).fetchone()
-        if not state or state["indicator_code"] != code or not state["enabled"] or not state["dataset_enabled"] or not state["checked_at"] or state["checked_at"].date() < today - timedelta(days=1) or state["last_status"] in ("SOURCE_ERROR", "PARTIAL"):
+        if not state or state["indicator_code"] != code or state["unit"] != "% YoY" or state["frequency"] != "MONTHLY" or state["comparison_basis"] != "YoY" or not state["enabled"] or not state["dataset_enabled"] or not state["checked_at"] or state["checked_at"].astimezone(ZONE).date() < today - timedelta(days=1) or state["last_status"] in ("SOURCE_ERROR", "PARTIAL"):
             result["issues"].append({"kind": "SOURCE_NOT_RECENTLY_VERIFIED", "binding": binding})
     result["eligible"] = not result["issues"]
     result["activeBatchId"] = policy["active_batch_id"]

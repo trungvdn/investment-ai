@@ -62,4 +62,4 @@ jobs:
       - name: Build and smoke-test collector runtime
         run: |
           docker build -t investment-ai-collectors:test apps/macro-collectors
-          docker run --rm --entrypoint sh investment-ai-collectors:test -c 'test -w /collector-data && command -v pdftotext && python -m macro_collectors --help'
+          docker run --rm --entrypoint sh investment-ai-collectors:test -c 'test -w /collector-data && command -v pdftotext && python -m macro_collectors --help && python -m macro_collectors.sources inventory --indicator VN_CPI_YOY >/dev/null && python -m macro_collectors.sources --help'
