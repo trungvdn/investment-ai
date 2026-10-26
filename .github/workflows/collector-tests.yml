@@ -4,27 +4,59 @@ on:
     paths:
       - "apps/macro-collectors/**"
       - "docker-compose.collectors.yml"
+      - "docker-compose.pilot.yml"
+      - "apps/macro-api/migrations/**"
+      - "apps/macro-api/cmd/sdmx-replay/**"
       - ".github/workflows/collector-tests.yml"
   push:
     branches: [main]
     paths:
       - "apps/macro-collectors/**"
       - "docker-compose.collectors.yml"
+      - "docker-compose.pilot.yml"
+      - "apps/macro-api/migrations/**"
+      - "apps/macro-api/cmd/sdmx-replay/**"
       - ".github/workflows/collector-tests.yml"
 permissions:
   contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: macro_test
+          POSTGRES_USER: macro
+          POSTGRES_PASSWORD: ci-test-only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U macro -d macro_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MACRO_TEST_DATABASE_URL: postgres://macro:ci-test-only@localhost:5432/macro_test?sslmode=disable
+      SDMX_REPLAY_BIN: /tmp/sdmx-replay
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/macro-api/go.mod
+          cache-dependency-path: apps/macro-api/go.sum
+      - run: go build -o /tmp/sdmx-replay ./cmd/sdmx-replay
+        working-directory: apps/macro-api
+      - run: pip install -r requirements.txt
+        working-directory: apps/macro-collectors
       - run: python -m unittest discover -s tests -v
         working-directory: apps/macro-collectors
       - name: Validate collector deployment configuration
-        run: docker compose -f docker-compose.macro.yml -f docker-compose.collectors.yml config --quiet
+        run: |
+          docker compose -f docker-compose.macro.yml -f docker-compose.collectors.yml config --quiet
+          docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml config --quiet
         env:
           MACRO_DB_PASSWORD: ci-test-only
       - name: Build and smoke-test collector runtime

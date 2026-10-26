@@ -60,3 +60,7 @@ python -m unittest discover -s tests -v
 ```
 
 Tests cover month/year rollover, Sunday release delays, restart persistence, independent interval plugins, immutable artifacts, source/URL validation, no retry on 403, Retry-After deferral, preservation of previous releases and force-run locking. Go tests separately exercise actual PDF extraction and the manifest bridge's raw provenance and health propagation.
+
+## Shadow ingestion pilot
+
+The separate `macro_collectors.pilot` command runs CPI and IIP SDMX datasets directly against PostgreSQL in **shadow mode only**. It never writes `macro_observations`, `macro_attempts` or `macro_raw_documents`, and never changes ingestion ownership. See `PILOT.md` for configuration, comparisons and review gates.
