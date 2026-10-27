@@ -56,7 +56,7 @@ def parse_table(body, today):
                 raise CollectionError('CONFLICT', 'Conflicting policy rates')
             result[key] = dict(indicator_code=code, period=end.isoformat(), period_end=end, value=value,
                                source_url=INTERBANK, published_at=None,
-                               method='POLICY_RATE; PERIOD=EFFECTIVE_DATE; SOURCE=CURRENT_NHNN_TABLE')
+                               method='POLICY_RATE; PERIOD=EFFECTIVE_DATE; PARSER=CURRENT_NHNN_TABLE')
     if set(r['indicator_code'] for r in result.values()) != set(CODES.values()):
         raise CollectionError('DATA_QUALITY', 'Current table must identify all three policy rates')
     return list(result.values())
@@ -80,7 +80,7 @@ def parse_release(body, today):
             raise CollectionError('DATA_QUALITY', 'Invalid policy release rate')
         result.append(dict(indicator_code=code, period=end.isoformat(), period_end=end, value=value,
                            source_url=RELEASE, published_at=None,
-                           method='POLICY_RATE; PERIOD=EFFECTIVE_DATE; DECISION=1123/QD-NHNN; GOVERNMENT_REPUBLICATION; CURRENT_STATUS_UNVERIFIED'))
+                           method='POLICY_RATE; PERIOD=EFFECTIVE_DATE; PARSER=GOVERNMENT_1123_CURRENT_STATUS_UNVERIFIED'))
     return result
 
 

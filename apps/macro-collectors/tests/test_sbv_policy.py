@@ -61,3 +61,16 @@ class PolicyPersistenceTests(PostgresPilotFixture):
         self.assertEqual(len(rows), 3)
         self.assertTrue(all(r['period'] == '2023-06-19' for r in rows))
         self.assertEqual(self.db.execute('SELECT count(*) AS n FROM macro_raw_documents').fetchone()['n'], 1)
+
+    def test_alternating_fallback_and_current_check_does_not_duplicate_equal_events(self):
+        from macro_collectors.history import ingest
+        class Fallback:
+            def get(self, url):
+                if url == RELEASE: return release()
+                raise CollectionError('ACCESS_DENIED', '403')
+        class Current:
+            def get(self, url): return table()
+        for client in (Fallback, Current, Fallback, Current):
+            result = ingest(self.db, 'sbv_policy_rates', force=True, client_factory=client)
+            self.assertEqual(result['status'], 'PARTIAL' if client is Fallback else 'WRITTEN')
+        self.assertEqual(self.db.execute('SELECT count(*) AS n FROM macro_observations').fetchone()['n'], 3)
