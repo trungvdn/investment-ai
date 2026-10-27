@@ -63,7 +63,7 @@ class PostgresPilotFixture(unittest.TestCase):
         self.admin.execute(sql.SQL("CREATE SCHEMA {} ").format(sql.Identifier(self.schema)))
         self.db=self.connection()
         migrations=Path(__file__).resolve().parents[2]/"macro-api"/"migrations"
-        for name in ("001_macro.sql","002_operations.sql","003_ingestion_pilot.sql","004_cpi_reports.sql","005_te_pmi.sql","006_source_selection.sql","007_pmi_history.sql"):
+        for name in ("001_macro.sql","002_operations.sql","003_ingestion_pilot.sql","004_cpi_reports.sql","005_te_pmi.sql","006_source_selection.sql","007_pmi_history.sql","008_sbv_history.sql"):
             self.db.execute((migrations/name).read_text(),prepare=False)
         self.db.execute("UPDATE macro_datasets SET enabled=false WHERE id IN ('gso_cpi_reports','te_vietnam_pmi')")
         self.tmp=tempfile.TemporaryDirectory()

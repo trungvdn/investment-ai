@@ -1,7 +1,8 @@
 """Source inventory, measured coverage, CPI backfill and canonical selection CLI."""
 import argparse
+import calendar
 import json
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from .core import ZONE
@@ -19,6 +20,20 @@ def inventory(indicator="all"):
     return data
 
 
+def expected_periods(frequency, first, last, all_days=False):
+    months=periods_between(first,last)
+    if frequency=="MONTHLY":return months
+    if frequency=="QUARTERLY":
+        return [m[:4]+"-Q"+str(int(m[5:])//3) for m in months if int(m[5:])%3==0]
+    if frequency=="DAILY":
+        start=date.fromisoformat(first+"-01")
+        year,month=map(int,last.split("-"))
+        end=min(date(year,month,calendar.monthrange(year,month)[1]),datetime.now(ZONE).date())
+        return [(start+timedelta(days=i)).isoformat() for i in range(max(0,(end-start).days+1))
+                if all_days or (start+timedelta(days=i)).weekday()<5]
+    return []
+
+
 def coverage(db, indicator="all", first=None, last=None):
     catalog = {row["code"]: row for row in inventory()["indicators"]}
     if indicator != "all" and indicator not in catalog:
@@ -29,20 +44,26 @@ def coverage(db, indicator="all", first=None, last=None):
           count(DISTINCT period) AS periods,count(*) AS vintages FROM macro_observations
           WHERE indicator_code=%s GROUP BY series_id,source,unit ORDER BY series_id,source,unit""", (code,)).fetchall()
         configured = db.execute("""SELECT b.id,b.dataset_id,b.extractor_key,b.transform_key,b.enabled,d.enabled AS dataset_enabled,
-          d.url,d.interval_seconds FROM macro_indicator_bindings b JOIN macro_datasets d ON d.id=b.dataset_id
+          d.url,d.interval_seconds,b.validation FROM macro_indicator_bindings b JOIN macro_datasets d ON d.id=b.dataset_id
           WHERE b.indicator_code=%s ORDER BY b.id""", (code,)).fetchall()
         shadow = []
         for binding in configured:
-            rows = db.execute("""SELECT DISTINCT ON(period) period,revision,value FROM macro_source_values
+            rows = db.execute("""SELECT DISTINCT ON(period) period,period_end,revision,value FROM macro_source_values
               WHERE binding_id=%s ORDER BY period,revision DESC""", (binding["id"],)).fetchall()
             periods = [row["period"] for row in rows]
-            monthly = catalog[code]["frequency"] == "MONTHLY"
-            gaps = sorted(set(periods_between(periods[0], periods[-1])) - set(periods)) if periods and monthly else []
-            requested = sorted(set(periods_between(first, last)) - set(periods)) if first and monthly else None
+            frequency = catalog[code]["frequency"]
+            monthly = frequency=="MONTHLY"
+            all_days = binding["validation"].get("calendar")=="ALL_DAYS"
+            left=rows[0]["period_end"].strftime("%Y-%m") if rows else None
+            right=rows[-1]["period_end"].strftime("%Y-%m") if rows else None
+            gaps=sorted(set(expected_periods(frequency,left,right,all_days))-set(periods)) if periods else []
+            requested=sorted(set(expected_periods(frequency,first,last,all_days))-set(periods)) if first else None
             state = db.execute("SELECT last_status,next_due,last_run_id FROM macro_pilot_state WHERE dataset_id=%s", (binding["dataset_id"],)).fetchone()
             shadow.append({**binding, "first": periods[0] if periods else None, "last": periods[-1] if periods else None,
                            "periods": len(periods), "revisions": sum(row["revision"] for row in rows),
-                           "missingMonths": gaps, "missingRequestedMonths": requested, "state": state})
+                           "missingMonths": gaps if monthly else [], "missingRequestedMonths": requested if monthly else None,
+                           "missingPeriods": gaps, "missingRequestedPeriods": requested,
+                           "dailyCalendarNote": "Unobserved weekdays include possible holidays; no fill is performed" if frequency=="DAILY" and not all_days else None, "state": state})
         policy = db.execute("SELECT * FROM macro_source_policies WHERE indicator_code=%s", (code,)).fetchone()
         result.append({"indicator": code, "definition": catalog[code], "productionSources": production,
                        "pythonSources": shadow, "selectionPolicy": policy})

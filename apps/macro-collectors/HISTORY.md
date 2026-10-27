@@ -39,3 +39,39 @@ shadow privileges documented in SOURCES.md. No production write permission is ne
 The daemon checks due work every minute using the registry's six-hour interval
 and page one; manual archive pages use the same DB leases. Keep current/update
 collectors alongside this service. No historical source is silently promoted.
+
+## Lãi suất và tăng trưởng tín dụng
+
+Migration 008 adds `sbv_credit_history`, `sbv_interbank_history`,
+`fred_effr_history` and `fred_10y_history`. They remain shadow-only.
+
+Credit requests one actual NHNN article page at a time, validates pagination and
+national month-end total fields, and keeps the latest explicit source version.
+Growth is % YTD, never YoY; regional/sector-only and mid-month figures are rejected.
+On API ACCESS_DENIED only, a separate public NHNN HTML table is tried. That fallback
+is explicitly PARTIAL and does not claim the entire archive is accessible.
+
+O/N reads only explicit dated NHNN VND overnight tables. Starred rows use the
+stated prior reference date. Actual dated links or public URLs configured in
+`SBV_INTERBANK_HISTORY_URLS` can add historical tables; no guessed date-query
+parameters are used. Full daily history is **not yet verified**. Coverage reports
+unobserved weekdays and does not pretend holidays are missing trading sessions.
+No weekly average is substituted for a daily O/N observation.
+
+FRED needs `FRED_API_KEY` in the history service. Requests start in 1900 and keep
+all returned available history (not the Go adapter's default five-year window).
+Missing "." observations remain missing; truncated responses fail. API keys never
+enter raw provenance. The --from/--to range filters normalized imports by month.
+Disable unused optional datasets in the registry if credentials are not configured.
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_credit_history --from 2020-01 --to 2026-09 --start-page 1 --pages 5
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_interbank_history --from 2020-01 --to 2026-09
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset fred_effr_history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset fred_10y_history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history coverage --indicator VN_INTERBANK_ON --from 2020-01 --to 2026-09
+```
+
+Inspect lastPage/totalCount to choose further credit pages. All original reports
+are retained. A successful bounded job is not a declaration of complete history.
+No source is activated for dashboard publication in this phase.

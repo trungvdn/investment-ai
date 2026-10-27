@@ -22,3 +22,6 @@ var SourceSelection string
 
 //go:embed 007_pmi_history.sql
 var PMIHistory string
+
+//go:embed 008_sbv_history.sql
+var SBVHistory string
