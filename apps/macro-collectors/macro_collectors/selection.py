@@ -74,17 +74,27 @@ def plan(rows, policy, today):
                          for period in periods]}
 
 
+VALUE_FIELDS = ("value", "unit", "period_end", "method")
+
+
+def same_value(left, right):
+    """A revision records a value/definition change, not a crawl-layout change."""
+    return all(left.get(field) == right.get(field) for field in VALUE_FIELDS)
+
+
 def remember(db, run_id, raw_id, rows):
     """Within the ingestion transaction: unchanged data only refreshes last_seen."""
     from psycopg.types.json import Jsonb
     for row in sorted(rows, key=lambda r: (r["binding_id"], r["period"])):
         key = f"source-value:{row['binding_id']}:{row['period']}"
         db.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (key,))
-        payload = {key: row.get(key) for key in ("value", "unit", "period_end", "method", "source_url", "published_at", "evidence")}
+        payload = {key: row.get(key) for key in VALUE_FIELDS}
         digest = fingerprint(payload)
-        previous = db.execute("SELECT id,revision,fingerprint FROM macro_source_values WHERE binding_id=%s AND period=%s ORDER BY revision DESC LIMIT 1", (row["binding_id"], row["period"])).fetchone()
-        if previous and previous["fingerprint"] == digest:
-            db.execute("UPDATE macro_source_values SET last_seen_at=now() WHERE id=%s", (previous["id"],))
+        previous = db.execute("SELECT * FROM macro_source_values WHERE binding_id=%s AND period=%s ORDER BY revision DESC LIMIT 1", (row["binding_id"], row["period"])).fetchone()
+        if previous and same_value(previous, row):
+            # Compare actual fields so pre-fix hashes do not create one more
+            # duplicate. Retain the first raw/evidence and every run snapshot.
+            db.execute("UPDATE macro_source_values SET fingerprint=%s,last_seen_at=now() WHERE id=%s", (digest, previous["id"]))
             continue
         db.execute("""INSERT INTO macro_source_values(binding_id,period,period_end,revision,fingerprint,value,unit,method,source_url,published_at,evidence,raw_id,first_run_id)
           VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
@@ -129,7 +139,8 @@ def publish_value(db, row):
     key = row["indicator_code"] + "|" + row["period"] + "|" + row["series_id"]
     db.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (key,))
     old = db.execute("SELECT * FROM macro_observations WHERE indicator_code=%s AND period=%s AND series_id=%s ORDER BY revision DESC LIMIT 1", (row["indicator_code"], row["period"], row["series_id"])).fetchone()
-    if old and all(old[key] == row[key] for key in ("value", "unit", "source_url", "method", "published_at")):
+    if old and same_value(old, row):
+        db.execute("UPDATE macro_observations SET collected_at=GREATEST(collected_at,%s) WHERE id=%s", (row["last_seen_at"], old["id"]))
         return old["id"]
     return db.execute("""INSERT INTO macro_observations(indicator_code,period,period_end,value,unit,source,source_url,series_id,method,priority,published_at,first_seen_at,collected_at,revision,raw_id)
       VALUES(%s,%s,%s,%s,%s,'NSO',%s,%s,%s,%s,%s,now(),now(),%s,%s) RETURNING id""",

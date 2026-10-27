@@ -270,3 +270,58 @@ class SourceSelectionDatabaseTests(PostgresPilotFixture):
         result = backfill(self.db, "VN_CPI_YOY", requested, requested, 1, 3, Client)
         self.assertEqual(result[-1]["status"], "BACKFILL_INCOMPLETE")
         self.assertEqual(result[-1]["missingRequestedMonths"], [requested])
+
+    def test_evidence_url_and_publication_changes_do_not_create_value_revisions(self):
+        from macro_collectors.selection import activate, fingerprint
+        from datetime import timedelta
+        today = self.seed()
+        active = activate(self.db, "VN_CPI_YOY", today)["activeBatchId"]
+        initial_source = self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"]
+        initial_production = self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"]
+        initial_raw = self.db.execute("SELECT count(*) AS n FROM macro_pilot_raw").fetchone()["n"]
+        values = copy.deepcopy(self.rows["gso_cpi_reports"])
+        original = self.db.execute("SELECT * FROM macro_source_values WHERE binding_id='gso_cpi_yoy' ORDER BY period LIMIT 1").fetchone()
+        # Exercise legacy hashes already stored by the previous implementation.
+        self.db.execute("UPDATE macro_source_values SET fingerprint='legacy-metadata-hash' WHERE binding_id='gso_cpi_yoy'")
+        for i in range(3):
+            for value in values:
+                value["source_url"] = f"https://www.nso.gov.vn/reissued-cpi-{i}/"
+                value["published_at"] = datetime.now(ZONE) + timedelta(seconds=i)
+                value["evidence"] = {"text": "same published value", "paragraphIndex": i}
+            self.save("gso_cpi_reports", values)
+            result = activate(self.db, "VN_CPI_YOY", today)
+            self.assertEqual(result["activeBatchId"], active)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"], initial_source)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"], initial_production)
+        self.assertGreater(self.db.execute("SELECT count(*) AS n FROM macro_pilot_raw").fetchone()["n"], initial_raw)
+        retained = self.db.execute("SELECT * FROM macro_source_values WHERE id=%s", (original["id"],)).fetchone()
+        self.assertEqual(retained["raw_id"], original["raw_id"])
+        self.assertEqual(retained["source_url"], original["source_url"])
+        self.assertEqual(retained["fingerprint"], fingerprint({key: retained[key] for key in ("value", "unit", "period_end", "method")}))
+
+    def test_real_value_changes_and_return_to_old_value_remain_distinct_revisions(self):
+        self.seed()
+        baseline = copy.deepcopy(self.rows["gso_cpi_reports"])
+        revised = copy.deepcopy(baseline)
+        revised[-1]["value"] += 0.2
+        self.save("gso_cpi_reports", revised)
+        self.save("gso_cpi_reports", revised)
+        self.save("gso_cpi_reports", baseline)
+        rows = self.db.execute("SELECT revision,value FROM macro_source_values WHERE binding_id='gso_cpi_yoy' AND period=%s ORDER BY revision", (self.months[-1],)).fetchall()
+        self.assertEqual([r["revision"] for r in rows], [1, 2, 3])
+        self.assertEqual(rows[0]["value"], rows[-1]["value"])
+        self.assertNotEqual(rows[0]["value"], rows[1]["value"])
+
+    def test_production_metadata_drift_does_not_create_duplicate_revision(self):
+        from macro_collectors.selection import activate, publish_value, current_values
+        today = self.seed()
+        activate(self.db, "VN_CPI_YOY", today)
+        current = current_values(self.db, ["gso_cpi_yoy"])[-1]
+        initial = self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"]
+        original_id = self.db.execute("SELECT id FROM macro_observations WHERE indicator_code='VN_CPI_YOY' AND period=%s AND series_id=%s ORDER BY revision DESC LIMIT 1", (current["period"], current["series_id"])).fetchone()["id"]
+        current["source_url"] = "https://www.nso.gov.vn/reissued-but-unchanged/"
+        current["published_at"] = datetime.now(ZONE)
+        with self.db.transaction():
+            repeated_id = publish_value(self.db, current)
+        self.assertEqual(repeated_id, original_id)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"], initial)

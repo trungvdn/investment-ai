@@ -172,3 +172,24 @@ warnings, overlap/gaps/freshness, blocked activation, production provenance,
 idempotent activation, retained prior batches, deactivation, and Go API selection
 and health. No live database/backfill or activation was performed in development.
 Runtime source access and actual coverage must be checked in deployment.
+
+## Rerun identity and duplicate diagnostics
+
+A source revision is identified by binding + period and a change to
+value, unit, period end or method. URL, publication metadata, evidence text and
+paragraph positions are retained in raw/run audit snapshots; those crawl metadata
+changes alone no longer create a new source or production value revision.
+Existing pre-fix hashes are handled by comparing the stored semantic fields,
+so the first rerun after upgrade does not insert another metadata-only revision.
+The first value's original evidence/raw provenance stays intact.
+
+An actual A -> B -> A change still creates three revisions. Different source
+series for the same indicator/month are also retained. The default API history
+and active canonical selection choose one observation per period; revision history
+and per-run pilot audit snapshots intentionally contain multiple rows.
+
+Use the read-only queries in `sql/check_duplicates.sql` to distinguish consecutive
+identical source/production vintages from expected collection-run snapshots.
+The patch prevents new metadata-only duplicates; it does not delete existing
+source revisions, raw evidence, or immutable canonical batches. No production DB
+inspection or destructive cleanup has been performed from development.
