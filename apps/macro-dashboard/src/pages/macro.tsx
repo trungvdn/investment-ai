@@ -211,18 +211,6 @@ export default function Macro() {
               công bố tùy chỉ báo
             </span>
           </div>
-          <section className="card indicator-section" aria-label="Lãi suất điều hành NHNN">
-            <div className="card-heading"><h2>Lãi suất điều hành NHNN</h2><span className="badge green">%/năm · Theo quyết định</span></div>
-            <p className="detail-assessment">Tái cấp vốn, tái chiết khấu và cho vay qua đêm của NHNN. Ngày hiệu lực có thể giữ nguyên nhiều năm; trạng thái phản ánh lần kiểm tra nguồn hiện hành.</p>
-            <div className="table-scroll"><table className="indicator-table"><thead><tr><th>Lãi suất</th><th>Mức theo quyết định</th><th>Hiệu lực từ</th><th>Trạng thái nguồn</th></tr></thead><tbody>
-              {dashboard.indicators.filter((i) => i.group === "Policy").map((i) => <tr key={i.code}>
-                <td><button className="indicator-name" onClick={() => setSelectedCode(i.code)}>{i.name}</button></td>
-                <td className="indicator-value">{i.latest ? `${formatNumber(i.latest.value)}%` : "—"}</td>
-                <td>{i.latest?.period || "—"}{i.latest && <div className="source-cell"><a href={i.latest.sourceUrl} target="_blank" rel="noreferrer">Nguồn quyết định <ExternalLink size={9} /></a></div>}</td><td><Status indicator={i} /></td>
-              </tr>)}
-            </tbody></table></div>
-            {dashboard.indicators.some((i) => i.group === "Policy" && i.latest && i.status !== "AVAILABLE") && <p className="detail-assessment" role="status">Chưa xác minh được mức hiện hành. Các giá trị bên trên thuộc quyết định đã thu thập, theo ngày hiệu lực hiển thị.</p>}
-          </section>
           <div className="live-overview">
             <section className="macro-score-card">
               <div>
