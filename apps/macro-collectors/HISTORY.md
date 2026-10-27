@@ -1,77 +1,80 @@
-# Historical indicator collection
+# One production table for historical and latest data
 
-## PMI / MBS
+Backfill and scheduled jobs both write to `macro_observations`. There is no new
+history data table and no shadow/activate step in this worker. The existing
+`macro_raw_documents` retains original response bundles. Job leases, due times,
+retry counters and health use `macro_source_state` and `macro_attempts`.
+Existing legacy pilot/CPI tables are not deleted or rewritten.
 
-Migration 007 registers `mbs_pmi_history`. The new history worker writes only raw,
-per-run audit and normalized source-vintage tables. It does not activate dashboard
-values or alter Go provider ownership. Trading Economics remains the separate latest
-PMI collector.
+Go Save and Python use the same PostgreSQL function
+`macro_save_observation_v1` (migration 007). It locks
+`indicator_code + period + series_id`, reuses unchanged values, and appends a
+revision only when value/unit/period-end/semantic method changes. Crawl URL,
+publication/evidence changes and ARTICLE_ID/PARSER annotations alone do not
+create another value revision. True A -> B -> A corrections retain all revisions.
+Raw snapshots remain independently deduplicated by source/URL/checksum.
 
-MBS index pages and download links are discovered from actual HTML, not guessed
-monthly slugs. Each job processes at most eight reports on one listing page,
-20 MiB of documents and the first 20 pages of each PDF. Exact PDF bytes are archived
-as base64 plus SHA256 in the raw bundle. Text extraction uses installed Poppler;
-there is no LLM call. Forecasts and unlabelled chart numbers are excluded.
-A year omitted next to an explicitly stated month is resolved against the report
-issue year with December/January rollover and recorded in evidence.
+The worker writes each bounded job atomically. Valid rows from a partially
+successful crawl are retained with PARTIAL health and warnings. Conflicting or
+invalid batches do not replace good observations. A source failure retains old
+data, records failed health, and backs off. Backfill and daemon jobs share the
+same source lease; --force bypasses due time but cannot steal a running lease.
+Source identifiers matching Go providers share the existing scheduler key.
 
-The inspected listing only exposed a partial archive. This adapter is **not**
-proof of a complete 2020–present series. Some PDFs could not be fetched with the
-research browser. Runtime access, all older layouts and 12 consecutive real months
-still require a deployment coverage check. Unsupported files become warnings;
-conflicting values reject a job. Original producer S&P Global and secondary MBS
-publisher are recorded separately.
+## Deployment
+
+These jobs now **write production data**. Build the API and worker together so
+migration 007 installs the shared writer before collection begins. The DB role
+needs SELECT/INSERT/UPDATE on raw documents, observations, source state and
+attempts, sequence USAGE, registry SELECT and EXECUTE on the shared function.
+Use the application role or a dedicated ingestion role through HISTORY_DB_USER /
+HISTORY_DB_PASSWORD. A restricted shadow-only PILOT_DB_USER is not sufficient.
+The SQL functions use invoker privileges, not SECURITY DEFINER.
 
 ```sh
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml up -d --build macro-api macro-history
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset mbs_pmi_history --from 2020-01 --to 2026-09 --start-page 1 --pages 2
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history run --once --dataset te_vietnam_pmi --force
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history coverage --indicator VN_PMI --from 2020-01 --to 2026-09
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history report --dataset mbs_pmi_history
 ```
 
-Dates are requested coverage, not an assertion of source availability. `PARTIAL`
-and `SOURCE_ERROR` exit nonzero for manual runs. Successful old observations can
-be `STALE` for current-update purposes and still valid historical records.
-`NOT_DUE_OR_BUSY` never steals an active source lease. Reruns reuse source vintages;
-run snapshots remain independent audit events. DB permissions are the same extended
-shadow privileges documented in SOURCES.md. No production write permission is needed.
+The daemon checks due work each minute using the configured six-hour intervals.
+Backfill changes the requested page/date scope; it uses the exact same writer as
+latest collection. Results show inserted physical rows, revised (a subset of
+inserted), unchanged, rawId and warnings. No activate command is required.
+WRITTEN means the bounded job wrote valid observations, not that history is complete.
+Coverage reads the same production table that the API/dashboard uses.
 
-The daemon checks due work every minute using the registry's six-hour interval
-and page one; manual archive pages use the same DB leases. Keep current/update
-collectors alongside this service. No historical source is silently promoted.
+## PMI
 
-## Lãi suất và tăng trưởng tín dụng
+MBS report discovery, bounded PDF download and explicit month/value extraction
+supply available history; Trading Economics supplies a latest-month observation
+in the same table under its own source series. Source priority chooses one value
+per period while revision history retains source vintages. The MBS public archive
+and PDF accessibility remain partial/unverified; 12 consecutive real months have
+not been established. Coverage must expose gaps instead of inferring values from
+charts or forecasts. Exact PDF/HTML evidence remains in raw documents.
 
-Migration 008 adds `sbv_credit_history`, `sbv_interbank_history`,
-`fred_effr_history` and `fred_10y_history`. They remain shadow-only.
+No production deployment or DB cleanup has been performed from development.
 
-Credit requests one actual NHNN article page at a time, validates pagination and
-national month-end total fields, and keeps the latest explicit source version.
-Growth is % YTD, never YoY; regional/sector-only and mid-month figures are rejected.
-On API ACCESS_DENIED only, a separate public NHNN HTML table is tried. That fallback
-is explicitly PARTIAL and does not claim the entire archive is accessible.
+## Rates and credit
 
-O/N reads only explicit dated NHNN VND overnight tables. Starred rows use the
-stated prior reference date. Actual dated links or public URLs configured in
-`SBV_INTERBANK_HISTORY_URLS` can add historical tables; no guessed date-query
-parameters are used. Full daily history is **not yet verified**. Coverage reports
-unobserved weekdays and does not pretend holidays are missing trading sessions.
-No weekly average is substituted for a daily O/N observation.
+NHNN credit uses national month-end total YTD values, never regional, mid-month or
+YoY values. Archive pages use validated real pagination. An API access denial may
+fall back to a public NHNN total table, explicitly marked PARTIAL. O/N imports
+only dated VND overnight rows; starred rows use the stated prior reference date.
+A complete daily NHNN archive is unverified. Public historical table URLs may be
+configured with SBV_INTERBANK_HISTORY_URLS; no guessed date-query is used.
 
-FRED needs `FRED_API_KEY` in the history service. Requests start in 1900 and keep
-all returned available history (not the Go adapter's default five-year window).
-Missing "." observations remain missing; truncated responses fail. API keys never
-enter raw provenance. The --from/--to range filters normalized imports by month.
-Disable unused optional datasets in the registry if credentials are not configured.
+FRED_API_KEY is required for EFFR and US 10Y. History requests start in 1900 and
+retain available responses, not just the Go adapter's default five-year window.
+Missing "." values stay missing; API credentials are not stored in provenance.
+Daily coverage lists unobserved weekdays without pretending all are trading days.
 
 ```sh
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_credit_history --from 2020-01 --to 2026-09 --start-page 1 --pages 5
-docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_interbank_history --from 2020-01 --to 2026-09
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_interbank_history
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset fred_effr_history
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset fred_10y_history
-docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history coverage --indicator VN_INTERBANK_ON --from 2020-01 --to 2026-09
 ```
-
-Inspect lastPage/totalCount to choose further credit pages. All original reports
-are retained. A successful bounded job is not a declaration of complete history.
-No source is activated for dashboard publication in this phase.

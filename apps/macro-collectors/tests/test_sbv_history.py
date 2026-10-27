@@ -73,7 +73,7 @@ class SBVHistoryTests(unittest.TestCase):
 
 @unittest.skipUnless(os.getenv("MACRO_TEST_DATABASE_URL"),"requires CI PostgreSQL")
 class SBVHistoryDatabaseTests(PostgresPilotFixture):
-    def test_credit_rerun_keeps_one_vintage_and_no_production_write(self):
+    def test_credit_rerun_keeps_one_production_observation(self):
         from macro_collectors.history import ingest
         class Client:
             def get(self,url):
@@ -81,5 +81,5 @@ class SBVHistoryDatabaseTests(PostgresPilotFixture):
         for _ in range(2):
             result=ingest(self.db,"sbv_credit_history",True,client_factory=Client)
             self.assertEqual(result["importedObservations"],1)
-        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"],1)
-        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"],0)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"],0)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"],1)

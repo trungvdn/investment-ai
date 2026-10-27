@@ -1,4 +1,4 @@
-# Optional historical collectors; apply with docker-compose.macro.yml.
+# Direct production ingestion; apply with docker-compose.macro.yml.
 services:
   macro-history:
     build: ./apps/macro-collectors
@@ -9,8 +9,8 @@ services:
       SBV_INTERBANK_HISTORY_URLS: ${SBV_INTERBANK_HISTORY_URLS:-}
       PGHOST: postgres
       PGPORT: "5432"
-      PGUSER: ${PILOT_DB_USER:-macro}
-      PGPASSWORD: ${PILOT_DB_PASSWORD:-${MACRO_DB_PASSWORD:?Set MACRO_DB_PASSWORD}}
+      PGUSER: ${HISTORY_DB_USER:-macro}
+      PGPASSWORD: ${HISTORY_DB_PASSWORD:-${MACRO_DB_PASSWORD:?Set MACRO_DB_PASSWORD}}
       PGDATABASE: macro
       PGSSLMODE: disable
     depends_on:

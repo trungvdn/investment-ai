@@ -61,7 +61,7 @@ class MBSHistoryTests(unittest.TestCase):
 
 @unittest.skipUnless(os.getenv("MACRO_TEST_DATABASE_URL"),"requires CI PostgreSQL")
 class MBSHistoryDatabaseTests(PostgresPilotFixture):
-    def test_manual_rerun_stores_one_source_vintage_and_zero_production_values(self):
+    def test_manual_rerun_stores_one_production_value_without_staging(self):
         from macro_collectors.history import ingest
         class Client:
             def get(self,url):
@@ -71,6 +71,6 @@ class MBSHistoryDatabaseTests(PostgresPilotFixture):
             result=ingest(self.db,"mbs_pmi_history",True,client_factory=Client)
             self.assertEqual(result["importedObservations"],1)
             self.assertNotEqual(result["status"],"SOURCE_ERROR")
-        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"],1)
-        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"],0)
-        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_pilot_runs").fetchone()["n"],2)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"],0)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"],1)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_pilot_runs").fetchone()["n"],0)
