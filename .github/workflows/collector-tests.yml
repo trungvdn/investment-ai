@@ -69,18 +69,7 @@ jobs:
               try:
                   raw=HTTPClient(deadline=35).get(transport(url))
                   parser=ArticleHTML();parser.feed(raw.decode('utf-8'))
-                  print(json.dumps({'url':url,'bytes':len(raw),'paginationIds':sorted(set(re.findall(r'AssetPublisherPortlet_INSTANCE_[A-Za-z0-9]+',raw.decode('utf-8')))),'links':[(u,t) for u,t in parser.links if 'dien bien lai suat' in fold(t) or re.search(r'^[0-9]{1,2}
-        run: |
-          docker compose -f docker-compose.macro.yml -f docker-compose.collectors.yml config --quiet
-          docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml config --quiet
-          docker compose -f docker-compose.macro.yml -f docker-compose.history.yml config --quiet
-        env:
-          MACRO_DB_PASSWORD: ci-test-only
-      - name: Build and smoke-test collector runtime
-        run: |
-          docker build -t investment-ai-collectors:test apps/macro-collectors
-          docker run --rm --entrypoint sh investment-ai-collectors:test -c 'test -w /collector-data && command -v pdftotext && python -m macro_collectors --help && python -m macro_collectors.sources inventory --indicator VN_CPI_YOY >/dev/null && python -m macro_collectors.sources --help && python -m macro_collectors.history --help'
-,t.strip())]},ensure_ascii=False))
+                  print(json.dumps({'url':url,'bytes':len(raw),'paginationIds':sorted(set(re.findall(r'AssetPublisherPortlet_INSTANCE_[A-Za-z0-9]+',raw.decode('utf-8')))),'links':[(u,t) for u,t in parser.links if 'dien bien lai suat' in fold(t) or re.fullmatch(r'[0-9]{1,2}',t.strip())]},ensure_ascii=False))
               except Exception as error:print(json.dumps({'url':url,'error':str(error)}))
           PY
       - name: Validate collector deployment configuration
