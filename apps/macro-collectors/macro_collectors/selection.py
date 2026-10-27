@@ -131,17 +131,17 @@ def preview(db, code, today):
 
 def publish_value(db, row):
     """Production revisions share Go's exact advisory-lock key."""
-    raw = db.execute("SELECT payload,checksum,fetched_at FROM macro_pilot_raw WHERE id=%s", (row["raw_id"],)).fetchone()
-    raw_id = db.execute("""INSERT INTO macro_raw_documents(source,source_url,content_type,checksum,payload,first_fetched_at,last_fetched_at)
-      VALUES('NSO',%s,%s,%s,%s,%s,%s) ON CONFLICT(source,source_url,checksum) DO UPDATE
-      SET last_fetched_at=GREATEST(macro_raw_documents.last_fetched_at,EXCLUDED.last_fetched_at) RETURNING id""",
-      (row["source_url"], "application/xml" if row["binding_id"] == "nso_cpi_yoy" else "application/json", raw["checksum"], raw["payload"], raw["fetched_at"], raw["fetched_at"])).fetchone()["id"]
     key = row["indicator_code"] + "|" + row["period"] + "|" + row["series_id"]
     db.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (key,))
     old = db.execute("SELECT * FROM macro_observations WHERE indicator_code=%s AND period=%s AND series_id=%s ORDER BY revision DESC LIMIT 1", (row["indicator_code"], row["period"], row["series_id"])).fetchone()
     if old and same_value(old, row):
         db.execute("UPDATE macro_observations SET collected_at=GREATEST(collected_at,%s) WHERE id=%s", (row["last_seen_at"], old["id"]))
         return old["id"]
+    raw = db.execute("SELECT payload,checksum,fetched_at FROM macro_pilot_raw WHERE id=%s", (row["raw_id"],)).fetchone()
+    raw_id = db.execute("""INSERT INTO macro_raw_documents(source,source_url,content_type,checksum,payload,first_fetched_at,last_fetched_at)
+      VALUES('NSO',%s,%s,%s,%s,%s,%s) ON CONFLICT(source,source_url,checksum) DO UPDATE
+      SET last_fetched_at=GREATEST(macro_raw_documents.last_fetched_at,EXCLUDED.last_fetched_at) RETURNING id""",
+      (row["source_url"], "application/xml" if row["binding_id"] == "nso_cpi_yoy" else "application/json", raw["checksum"], raw["payload"], raw["fetched_at"], raw["fetched_at"])).fetchone()["id"]
     return db.execute("""INSERT INTO macro_observations(indicator_code,period,period_end,value,unit,source,source_url,series_id,method,priority,published_at,first_seen_at,collected_at,revision,raw_id)
       VALUES(%s,%s,%s,%s,%s,'NSO',%s,%s,%s,%s,%s,now(),now(),%s,%s) RETURNING id""",
       (row["indicator_code"], row["period"], row["period_end"], row["value"], row["unit"], row["source_url"], row["series_id"], row["method"], row["priority"], row["published_at"], old["revision"] + 1 if old else 1, raw_id)).fetchone()["id"]

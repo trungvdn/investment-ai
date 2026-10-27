@@ -318,6 +318,7 @@ class SourceSelectionDatabaseTests(PostgresPilotFixture):
         activate(self.db, "VN_CPI_YOY", today)
         current = current_values(self.db, ["gso_cpi_yoy"])[-1]
         initial = self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"]
+        original_raw_count = self.db.execute("SELECT count(*) AS n FROM macro_raw_documents").fetchone()["n"]
         original_id = self.db.execute("SELECT id FROM macro_observations WHERE indicator_code='VN_CPI_YOY' AND period=%s AND series_id=%s ORDER BY revision DESC LIMIT 1", (current["period"], current["series_id"])).fetchone()["id"]
         current["source_url"] = "https://www.nso.gov.vn/reissued-but-unchanged/"
         current["published_at"] = datetime.now(ZONE)
@@ -325,6 +326,7 @@ class SourceSelectionDatabaseTests(PostgresPilotFixture):
             repeated_id = publish_value(self.db, current)
         self.assertEqual(repeated_id, original_id)
         self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"], initial)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_raw_documents").fetchone()["n"], original_raw_count)
 
     def test_read_only_duplicate_diagnostics_separate_legacy_vintages_from_run_audit(self):
         from pathlib import Path
