@@ -58,16 +58,21 @@ def backfill(db, indicator, first, last, start_page, pages, client_factory=HTTPC
         raise ValueError("Unknown CPI historical source")
     if source == "combined" and (not 1 <= pages <= 10 or not 1 <= start_page <= 100 or start_page + pages - 1 > 100):
         raise ValueError("Use 1-10 pages per bounded job, within archive pages 1-100")
-    periods_between(first, last)
+    if first and last:
+        periods_between(first, last)
+    elif first or last or source == "combined":
+        raise ValueError("Combined archive backfill requires an explicit date range")
     results = run(db, "nso_cpi", True, client_factory)
     if results[0]["status"] in ("SOURCE_ERROR", "NOT_DUE_OR_BUSY"):
         return results
     if source == "sdmx":
         rows = db.execute("""SELECT DISTINCT period FROM macro_source_values WHERE binding_id='nso_cpi_yoy' ORDER BY period""").fetchall()
         available = [row["period"] for row in rows]
-        requested = periods_between(first, last)
+        requested = periods_between(first, last) if first else (periods_between(available[0], available[-1]) if available else [])
         missing = sorted(set(requested) - set(available))
-        results.append({"dataset": "nso_cpi", "status": "BACKFILL_INCOMPLETE" if missing else "BACKFILL_COMPLETE",
+        status = "BACKFILL_INCOMPLETE" if missing or not available else "BACKFILL_COMPLETE" if first else "HISTORY_LOADED"
+        results.append({"dataset": "nso_cpi", "status": status,
+                        "coverageScope": "requested_range" if first else "available_sdmx_history",
                         "source": "sdmx", "series": "PCPI_IX", "requestedFrom": first, "requestedTo": last,
                         "availableFrom": available[0] if available else None, "availableTo": available[-1] if available else None,
                         "storedPeriods": len(available), "coveredRequestedPeriods": len(requested) - len(missing),
@@ -119,8 +124,8 @@ def main():
             parser.error("Use a valid bounded YYYY-MM range")
     if args.action not in ("inventory", "coverage") and args.indicator == "all":
         parser.error("This action requires one explicit --indicator")
-    if args.action == "backfill" and not args.first:
-        parser.error("backfill requires --from YYYY-MM --to YYYY-MM")
+    if args.action == "backfill" and args.source == "combined" and not args.first:
+        parser.error("combined backfill requires --from YYYY-MM --to YYYY-MM")
     try:
         if args.action == "inventory":
             result = inventory(args.indicator)

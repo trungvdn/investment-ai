@@ -55,7 +55,16 @@ The policy remains inactive on installation and on repeated migrations.
 Backfill defaults to **SDMX only**, independently of report access or enabled archive datasets.
 It downloads and normalizes the complete available SDMX history using prior-year
 levels for YoY; it does not filter the upstream download to the requested dates.
-The requested range controls the completeness report:
+Without dates, load all available SDMX history:
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm --entrypoint python macro-pilot -m macro_collectors.sources backfill --indicator VN_CPI_YOY --source sdmx
+```
+
+`HISTORY_LOADED` means all currently stored SDMX history was loaded and its internal
+range has no missing months. It is not a claim that the source covers all years
+or the latest published month. To check a desired range, supply dates; these
+control the completeness report:
 
 ```sh
 docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm --entrypoint python macro-pilot -m macro_collectors.sources backfill --indicator VN_CPI_YOY --source sdmx --from 2021-01 --to 2026-09

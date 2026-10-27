@@ -238,6 +238,11 @@ class SourceSelectionDatabaseTests(PostgresPilotFixture):
                 return body
 
         # Report dataset stays disabled: historical loading must be independent.
+        all_history = backfill(self.db, "VN_CPI_YOY", None, None, 1, 3, Client)[-1]
+        self.assertEqual(all_history["status"], "HISTORY_LOADED")
+        self.assertEqual(all_history["coverageScope"], "available_sdmx_history")
+        self.assertEqual(all_history["storedPeriods"], len(expected))
+        requested_urls.clear()
         result = backfill(self.db, "VN_CPI_YOY", last, last, 1, 3, Client)
         summary = result[-1]
         self.assertEqual(summary["status"], "BACKFILL_COMPLETE")
