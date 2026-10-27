@@ -200,6 +200,7 @@ def collect(client,dataset,config,today,page=1,first=None,last=None):
     documents=[];notes={"history":True,"warnings":[],"page":page}
     if dataset["id"]=="sbv_credit_history":
         if dataset["url"]!=ARTICLES or not 1<=page<=100:raise CollectionError("DATA_QUALITY","Unexpected credit archive URL/page")
+        parse_credit({"articles":[]},config,today)  # validate even on the HTML fallback
         url=ARTICLES+"?"+urlencode({"scopeKey":"20117","contentStructureId":"10034332","pageSize":200,"page":page,"filter":"status eq 0"})
         try:
             raw=client.get(url)

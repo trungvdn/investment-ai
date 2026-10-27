@@ -30,12 +30,18 @@ def bind_metrics(metrics,config):
 def compare(db,dataset,rows,config,today):
     required={binding["indicator_code"]:binding for binding in config if binding["validation"].get("baseline_required",True)}
     checks=[]
+    # Batch full daily histories instead of one query per observation.
+    reference_rows=db.execute("""SELECT DISTINCT ON(indicator_code,period)
+      indicator_code,value,unit,source,source_url,series_id,period
+      FROM macro_observations WHERE indicator_code=ANY(%s) AND period=ANY(%s)
+      ORDER BY indicator_code,period,priority DESC,revision DESC,collected_at DESC,id DESC""",
+      (sorted(required),sorted({row["period"] for row in rows}))).fetchall() if required else []
+    references={(ref["indicator_code"],ref["period"]):ref for ref in reference_rows}
     for row in rows:
         code=row["indicator_code"]
         if code not in required:
             checks.append({"indicator":code,"period":row["period"],"status":"NEW_METRIC_NO_BASELINE"});continue
-        reference=db.execute("""SELECT value,unit,source,source_url,series_id,period FROM macro_observations
-          WHERE indicator_code=%s AND period=%s ORDER BY priority DESC,revision DESC,collected_at DESC LIMIT 1""",(code,row["period"])).fetchone()
+        reference=references.get((code,row["period"]))
         if not reference:
             checks.append({"indicator":code,"period":row["period"],"status":"NEW_SOURCE_PERIOD"});continue
         tolerance=required[code]["validation"]["tolerance"]

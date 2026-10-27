@@ -32,6 +32,14 @@ def report_url(url):
     return allowed(url) and not p.query and bool(re.search(r"(?:trien-vong|vietnamoutlook|vi-mo)", p.path, re.I)) and not p.path.lower().endswith(".pdf")
 
 
+class ReportHTML(ArticleHTML):
+    # MBS summaries use list items and h2 headings rather than paragraph/h1.
+    def handle_starttag(self,tag,attrs):
+        super().handle_starttag("p" if tag=="li" else "h1" if tag=="h2" else tag,attrs)
+    def handle_endtag(self,tag):
+        super().handle_endtag("p" if tag=="li" else "h1" if tag=="h2" else tag)
+
+
 def release_period(title):
     text = fold(title)
     match = re.search(r"(?:thang\s*|t)(\d{1,2})\s*[/.-]\s*(20\d{2})", text)
@@ -110,7 +118,7 @@ def collect(client, dataset, config, today, page=1, first=None, last=None, text_
             used_bytes += len(html)
             if used_bytes > 20*1024*1024:
                 raise CollectionError("DATA_QUALITY", "MBS job byte budget exceeded")
-            article = ArticleHTML(); article.feed(html.decode("utf-8"))
+            article = ReportHTML(); article.feed(html.decode("utf-8"))
             # The shared parser exposes h1 only; MBS uses h2 for article titles.
             title = next((title for href,title in parser.links if urljoin(url,href) == target), "")
             report_year, report_month = release_period(title)

@@ -78,3 +78,20 @@ docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --r
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset fred_effr_history
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset fred_10y_history
 ```
+
+## IIP and PPI
+
+IIP parses full SDMX input before deriving monthly YoY using same-series prior-year
+levels. PPI uses the quarterly national industrial B–E index with same-quarter
+prior-year=100 and subtracts 100 once. No monthly PPI values are manufactured.
+Both feed macro_observations directly, with source raw bytes preserved.
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset nso_iip
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset nso_ppi_history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history coverage --indicator VN_PPI_YOY --from 2020-01 --to 2026-09
+```
+
+Merge/deploy the stacked PRs in order #12, #13, #14. All groups use this single
+production writer. Legacy pilot diagnostics remain optional and are not required
+by this worker.

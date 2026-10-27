@@ -46,6 +46,15 @@ class MBSHistoryTests(unittest.TestCase):
         self.assertFalse(notes["warnings"])
         self.assertEqual(calls,[INDEX,REPORT,PDF])
 
+    def test_real_site_list_item_summary_is_a_supported_html_fallback(self):
+        class Client:
+            def get(self,url):
+                if url==INDEX:return ('<a href="'+REPORT+'">Báo cáo triển vọng vĩ mô tháng 2/2025</a>').encode()
+                return '<h2>Báo cáo triển vọng vĩ mô tháng 2/2025</h2><ul><li>Trong tháng 1, chỉ số PMI giảm về mức 49,3.</li></ul>'.encode()
+        _,rows,notes=collect(Client(),{"url":INDEX},[binding()],date(2026,10,27))
+        self.assertEqual(rows[0]["period"],"2025-01")
+        self.assertEqual(rows[0]["value"],49.3)
+
     def test_untrusted_download_host_is_not_requested(self):
         calls=[]
         class Client:

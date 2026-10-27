@@ -11,7 +11,7 @@ from .pilot import connect, bindings
 from .production import claim, persist, validated, coverage, report
 from .selection import periods_between
 
-DATASETS = {"mbs_pmi_history","sbv_credit_history","sbv_interbank_history","fred_effr_history","fred_10y_history","te_vietnam_pmi"}
+DATASETS = {"mbs_pmi_history","sbv_credit_history","sbv_interbank_history","fred_effr_history","fred_10y_history","nso_iip","nso_ppi_history","te_vietnam_pmi"}
 
 
 def collect(client, dataset, config, today, page, first, last):
@@ -23,6 +23,9 @@ def collect(client, dataset, config, today, page, first, last):
         return adapter(client,dataset,config,today,page,first,last)
     if dataset["id"].startswith("fred_"):
         from .fred_history import collect as adapter
+        return adapter(client,dataset,config,today,page,first,last)
+    if dataset["id"] in ("nso_iip","nso_ppi_history"):
+        from .nso_history import collect as adapter
         return adapter(client,dataset,config,today,page,first,last)
     if dataset["id"]=="te_vietnam_pmi":
         from .te_pmi import normalize
@@ -60,11 +63,14 @@ def ingest(db, dataset_id, force=False, page=1, first=None, last=None, client_fa
 
 def selected_datasets(db,dataset="all",indicator="all"):
     if indicator!="all":
-        return [r["dataset_id"] for r in db.execute("""SELECT DISTINCT b.dataset_id FROM macro_indicator_bindings b
+        ids=[row["dataset_id"] for row in db.execute("""SELECT DISTINCT b.dataset_id FROM macro_indicator_bindings b
           JOIN macro_datasets d ON d.id=b.dataset_id WHERE b.indicator_code=%s AND b.enabled AND d.enabled
-          AND b.dataset_id=ANY(%s) ORDER BY b.dataset_id""",(indicator,sorted(DATASETS) if dataset=="all" else [dataset])).fetchall()]
+          AND b.dataset_id=ANY(%s) ORDER BY b.dataset_id""",
+          (indicator,sorted(DATASETS) if dataset=="all" else [dataset])).fetchall()]
+        if not ids:raise ValueError("No enabled history binding for indicator")
+        return ids
     if dataset!="all":return [dataset]
-    return [r["id"] for r in db.execute("SELECT id FROM macro_datasets WHERE id=ANY(%s) AND enabled ORDER BY id",(sorted(DATASETS),)).fetchall()]
+    return [row["id"] for row in db.execute("SELECT id FROM macro_datasets WHERE id=ANY(%s) AND enabled ORDER BY id",(sorted(DATASETS),)).fetchall()]
 
 
 def main():
@@ -108,7 +114,7 @@ def main():
                             if item["status"]=="NOT_DUE_OR_BUSY":break
             print(json.dumps(result,default=str,ensure_ascii=False),flush=True)
             if args.action!="run" or args.once:
-                return int(any(row.get("status") in ("SOURCE_ERROR","PARTIAL","NOT_DUE_OR_BUSY") for row in result))
+                return int(any(row.get("status") in ("SOURCE_ERROR","PARTIAL","NOT_DUE_OR_BUSY","DISABLED_OR_OTHER_OWNER") for row in result))
         except Exception as error:
             print(json.dumps({"status":"ERROR","kind":type(error).__name__,"sqlstate":getattr(error,"sqlstate",None),
                               "message":"Historical ingestion unavailable; check migration, permissions and source report"}),flush=True)
