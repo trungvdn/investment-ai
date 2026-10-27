@@ -3,7 +3,7 @@ import os
 import unittest
 from datetime import date
 from unittest.mock import patch
-from macro_collectors.sbv_deposit import collect, parse_report, INDEX, VERSION
+from macro_collectors.sbv_deposit import collect, parse_report, INDEX, ARCHIVE, VERSION
 from macro_collectors.production import validated
 from macro_collectors.http import CollectionError
 from test_pilot import PostgresPilotFixture
@@ -28,6 +28,7 @@ class Client:
     def get(self, url):
         if url == INDEX:
             return f'<a href="{ARTICLE}">Diễn biến lãi suất của tổ chức tín dụng đối với khách hàng tháng 9/2026</a>'.encode()
+        if url == ARCHIVE: return b'<html></html>'
         if url == ARTICLE:
             return f'<a href="{PDF}">Diễn biến lãi suất tháng 9/2026</a>'.encode()
         if url == PDF: return b'%PDF-fixture'
@@ -75,3 +76,32 @@ class DepositPersistenceTests(PostgresPilotFixture):
         stored = self.db.execute('SELECT value,upper_value,revision FROM macro_observations ORDER BY revision').fetchall()
         self.assertEqual([(r['value'], r['upper_value'], r['revision']) for r in stored], [(6.6, 8.1, 1), (6.6, 8.2, 2)])
         self.assertEqual(self.db.execute('SELECT count(*) AS n FROM macro_raw_documents').fetchone()['n'], 1)
+
+
+class ArchiveTests(unittest.TestCase):
+    def test_january_to_september_in_three_batches_and_paginated_discovery(self):
+        class ArchiveClient:
+            def get(self, url):
+                if url == INDEX: return b'<html></html>'
+                if url in (ARCHIVE, ARCHIVE + '?_publisher_cur=2'):
+                    months = range(5, 10) if url == ARCHIVE else range(1, 5)
+                    links = ''.join(f'<a href="https://sbv.gov.vn/report/{m}">Diễn biến lãi suất của tổ chức tín dụng đối với khách hàng tháng {m}/2026</a>' for m in months)
+                    if url == ARCHIVE: links += '<a href="?_publisher_cur=2">2</a>'
+                    return links.encode()
+                month = int(url.rsplit('/', 1)[1])
+                return ('<h1>Diễn biến lãi suất của tổ chức tín dụng đối với khách hàng tháng '+str(month)+'/2026</h1><p>'+REPORT.replace('THÁNG 9/2026', f'THÁNG {month}/2026')+'</p>').encode()
+        output = []
+        with patch.dict(os.environ, {'SBV_DEPOSIT_REPORT_URLS': ''}), patch('macro_collectors.sbv_deposit.load_registry', return_value=[]):
+            for page in (1, 2, 3):
+                _, rows, notes = collect(ArchiveClient(), {'url': INDEX}, [binding()], TODAY, page, '2026-01', '2026-09')
+                self.assertFalse(notes['missingMonths'])
+                self.assertFalse(notes['warnings'])
+                output.extend(rows)
+        self.assertEqual(sorted(r['period'] for r in output), [f'2026-{m:02d}' for m in range(1,10)])
+
+    def test_missing_requested_months_are_explicit_not_a_successful_backfill(self):
+        with patch.dict(os.environ, {'SBV_DEPOSIT_REPORT_URLS': ''}), patch('macro_collectors.sbv_deposit.load_registry', return_value=[]):
+            _, rows, notes = collect(Client(), {'url': INDEX}, [binding()], TODAY, 1, '2026-08', '2026-09', text_extractor=lambda _: REPORT)
+        self.assertEqual([r['period'] for r in rows], ['2026-09'])
+        self.assertEqual(notes['missingMonths'], ['2026-08'])
+        self.assertEqual(notes['warnings'][-1]['kind'], 'MISSING_PERIODS')

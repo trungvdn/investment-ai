@@ -55,35 +55,25 @@ jobs:
         working-directory: apps/macro-collectors
       - run: python -m unittest discover -s tests -v
         working-directory: apps/macro-collectors
-      - name: Inspect public NHNN historical publisher
+      - name: Verify live NHNN deposit archive
         continue-on-error: true
         working-directory: apps/macro-collectors
         run: |
+          if ! command -v pdftotext >/dev/null; then sudo apt-get update && sudo apt-get install -y poppler-utils; fi
           python - <<'PY'
+          from macro_collectors.sbv_deposit import collect,INDEX
           from macro_collectors.http import HTTPClient
-          from macro_collectors.cpi_reports import ArticleHTML, fold
-          from macro_collectors.sbv_history import Tree,nodes,text
-          from urllib.parse import urlencode
-          import json,re
-          base='https://sbv.gov.vn/vi/thong-cao-bao-chi'
-          client=HTTPClient(deadline=120)
-          raw=client.get(base); tree=Tree();tree.feed(raw.decode('utf-8'))
-          ids=set()
-          for node in nodes(tree.root,'a'):
-              if 'dien bien lai suat' not in fold(text(node)):continue
-              parent=node
-              while parent:
-                  identity=parent.attrs.get('id','')
-                  match=re.search(r'AssetPublisherPortlet_INSTANCE_[a-zA-Z0-9]+',identity)
-                  if match:ids.add(match[0]);print(json.dumps({'publisher':match[0],'title':text(node)},ensure_ascii=False));break
-                  parent=parent.parent
-          for identity in sorted(ids):
-              prefix='com_liferay_asset_publisher_web_portlet_'+identity
-              u=base+'?'+urlencode({'p_p_id':prefix,'p_p_lifecycle':0,'p_p_state':'normal','p_p_mode':'view','_'+prefix+'_cur':2,'_'+prefix+'_delta':100})
+          from macro_collectors.mbs_history import pdf_text
+          from datetime import date
+          import json
+          config=[dict(id='sbv_deposit_6_12m',indicator_code='VN_DEPOSIT_RATE',series_id='SBV_VND_DEPOSIT_6_12M_RANGE',unit='%',frequency='MONTHLY',comparison_basis='RANGE',priority=100,extractor_key='sbv_deposit_v1')]
+          def extract(body):
+              content=pdf_text(body);print('NHNN_PDF '+content[:1300].replace('\n',' | '));return content
+          for page in [1,2,3]:
               try:
-                  raw=client.get(u);parser=ArticleHTML();parser.feed(raw.decode('utf-8'))
-                  print(json.dumps({'query':u,'links':[(href,label) for href,label in parser.links if 'dien bien lai suat' in fold(label)]},ensure_ascii=False))
-              except Exception as e:print(json.dumps({'query':u,'error':str(e)}))
+                  body,rows,notes=collect(HTTPClient(deadline=180),{'url':INDEX},config,date(2026,10,27),page,'2026-01','2026-09',text_extractor=extract)
+                  print('NHNN_BACKFILL '+json.dumps({'page':page,'rows':rows,'notes':notes},default=str,ensure_ascii=False))
+              except Exception as error: print('NHNN_BACKFILL '+json.dumps({'page':page,'error':str(error)}))
           PY
       - name: Validate collector deployment configuration
         run: |

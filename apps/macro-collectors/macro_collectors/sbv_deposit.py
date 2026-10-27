@@ -3,17 +3,24 @@ import base64
 import json
 import os
 import re
-from urllib.parse import unquote, urljoin
+from urllib.parse import unquote, urljoin, urlsplit, parse_qs, urlencode
+from pathlib import Path
+from .selection import periods_between
 
 from .cpi_reports import ArticleHTML, fold
 from .http import CollectionError
 from .mbs_history import pdf_text
-from .sbv_history import allowed, transport
+from .sbv_history import allowed, transport, Tree, nodes, text
 from .sdmx import month_end
 
 INDEX = 'https://sbv.gov.vn/vi/trang-chu'
 TITLE = r'dien bien lai suat cua to chuc tin dung doi voi khach hang\s+thang\s+(\d{1,2})\s*[/.-]\s*(20\d{2})'
 VERSION = 'sbv_deposit_v1'
+ARCHIVE = 'https://sbv.gov.vn/vi/thong-cao-bao-chi'
+
+
+def load_registry():
+    return json.loads(Path(__file__).with_name('sbv_deposit_reports.json').read_text())
 
 
 def parse_report(content, source_url, binding, today):
@@ -57,23 +64,82 @@ def collect(client, dataset, config, today, page=1, first=None, last=None, text_
     explicit = os.getenv('SBV_DEPOSIT_REPORT_URLS', '').split()
     if any(not allowed(url) for url in explicit):
         raise CollectionError('CONFIGURATION', 'Deposit report overrides must be public NHNN URLs')
-    try:
-        raw = capture(INDEX)
-        parser = ArticleHTML(); parser.feed(raw.decode('utf-8'))
-        for href, label in parser.links:
-            target = urljoin(INDEX, href)
-            if re.search(TITLE, fold(label)) and allowed(target) and target not in targets:
-                targets.append(target)
-    except CollectionError as error:
-        if not explicit:
-            raise
-        warnings.append({'kind': error.kind, 'message': 'Discovery unavailable; explicit reports only'})
-    targets = list(dict.fromkeys(explicit + targets))
+    expected = periods_between(first, last)[(page-1)*4:page*4] if first else None
+    if first and not expected:
+        raise CollectionError('CONFIGURATION', 'Page exceeds requested month interval')
+    wanted = set(expected or [])
+    discovered = {}
+    queue = [INDEX, ARCHIVE]
+    visited = set()
+    publishers = set()
+    source_paths = set()
+    limit = 10 if first else 2
+    while queue and len(visited) < limit:
+        index = queue.pop(0)
+        if index in visited:
+            continue
+        visited.add(index)
+        try:
+            raw = capture(index)
+            parser = ArticleHTML(); parser.feed(raw.decode('utf-8'))
+            for href, label in parser.links:
+                target = urljoin(index, href)
+                if not allowed(target):
+                    continue
+                match = re.search(TITLE, fold(label))
+                if match:
+                    period = f'{int(match[2]):04d}-{int(match[1]):02d}'
+                    if not first or period in wanted:
+                        key = (urlsplit(target).hostname.removeprefix('www.'), urlsplit(target).path)
+                        if key not in source_paths:
+                            discovered.setdefault(target, period)
+                            source_paths.add(key)
+                # Follow actual publisher pagination, never a guessed article slug.
+                parsed = urlsplit(target)
+                if first and parsed.path == urlsplit(ARCHIVE).path:
+                    query = parse_qs(parsed.query)
+                    cursors = [v[0] for k,v in query.items() if k.endswith('_cur')]
+                    if cursors and all(v.isdigit() and 1 <= int(v) <= 20 for v in cursors) and target not in visited and target not in queue:
+                        queue.append(target)
+            if first and urlsplit(index).path == urlsplit(ARCHIVE).path:
+                tree = Tree(); tree.feed(raw.decode('utf-8'))
+                for node in nodes(tree.root, 'a'):
+                    if not re.search(TITLE, fold(text(node))):
+                        continue
+                    parent = node
+                    while parent:
+                        match = re.search(r'AssetPublisherPortlet_INSTANCE_[A-Za-z0-9]+', parent.attrs.get('id',''))
+                        if match:
+                            identity = 'com_liferay_asset_publisher_web_portlet_' + match[0]
+                            if identity not in publishers:
+                                publishers.add(identity)
+                                # The normal page hides the older monthly releases
+                                # in a separate publisher without visible page links.
+                                query = {'p_p_id':identity,'p_p_lifecycle':0,'p_p_state':'normal','p_p_mode':'view',
+                                         '_'+identity+'_cur':1,'_'+identity+'_delta':100}
+                                queue.insert(0, ARCHIVE+'?'+urlencode(query))
+                            break
+                        parent = parent.parent
+            if wanted and wanted <= set(discovered.values()):
+                break
+        except (CollectionError, UnicodeError) as error:
+            warnings.append({'kind': getattr(error,'kind','DATA_QUALITY'), 'url': index, 'message': 'Deposit index unavailable'})
+    # Public PDF links independently verified when adding the archive support.
+    # These are source addresses, not seeded indicator values.
+    registry = load_registry()
+    if first:
+        for entry in registry:
+            if entry['period'] in wanted:
+                discovered.setdefault(entry['url'], entry['period'])
     if len(explicit) > 20:
         raise CollectionError('CONFIGURATION', 'At most 20 explicit deposit report URLs')
-    targets = targets[(page-1)*4:page*4]
-    if not targets:
-        raise CollectionError('NO_DATA', 'No NHNN monthly deposit reports discovered')
+    targets = list(dict.fromkeys(explicit + list(discovered)))
+    if not first:
+        targets = targets[(page-1)*4:page*4]
+    if len(targets) > 24:
+        raise CollectionError('CONFIGURATION', 'Too many candidate reports in bounded month batch')
+    if not targets and not first:
+        raise CollectionError('NO_DATA', 'No NHNN deposit reports found for requested months')
     rows = {}
     for target in targets:
         try:
@@ -93,7 +159,9 @@ def collect(client, dataset, config, today, page=1, first=None, last=None, text_
                     source = pdfs[0]
                     content = text_extractor(capture(source))
             row = parse_report(content, source, config[0], today)
-            if first and not first <= row['period'] <= last:
+            if target in discovered and row['period'] != discovered[target]:
+                raise CollectionError('DATA_QUALITY', 'PDF reference month differs from archive link')
+            if wanted and row['period'] not in wanted:
                 continue
             old = rows.get(row['period'])
             if old and (old['value'], old['upper_value']) != (row['value'], row['upper_value']):
@@ -103,4 +171,8 @@ def collect(client, dataset, config, today, page=1, first=None, last=None, text_
             if getattr(error, 'kind', '') == 'CONFLICT':
                 raise
             warnings.append({'url': target, 'kind': getattr(error, 'kind', 'DATA_QUALITY')})
-    return json.dumps({'documents': documents}, ensure_ascii=False).encode(), list(rows.values()), {'warnings': warnings, 'publishedRange': True}
+    missing = sorted(wanted - set(rows))
+    if missing:
+        warnings.append({'kind': 'MISSING_PERIODS', 'months': missing})
+    return json.dumps({'documents': documents}, ensure_ascii=False).encode(), list(rows.values()), {'warnings': warnings, 'publishedRange': True, 'requestedMonths': expected, 'missingMonths': missing}
+
