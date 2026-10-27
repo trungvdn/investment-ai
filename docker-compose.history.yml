@@ -1,0 +1,20 @@
+# Direct production ingestion; apply with docker-compose.macro.yml.
+services:
+  macro-history:
+    build: ./apps/macro-collectors
+    entrypoint: ["python", "-m", "macro_collectors.history"]
+    command: ["run", "--dataset", "all"]
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${HISTORY_DB_USER:-macro}
+      PGPASSWORD: ${HISTORY_DB_PASSWORD:-${MACRO_DB_PASSWORD:?Set MACRO_DB_PASSWORD}}
+      PGDATABASE: macro
+      PGSSLMODE: disable
+    depends_on:
+      macro-api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 210s

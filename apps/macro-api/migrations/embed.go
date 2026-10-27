@@ -19,3 +19,6 @@ var TradingEconomicsPMI string
 
 //go:embed 006_source_selection.sql
 var SourceSelection string
+
+//go:embed 007_pmi_history.sql
+var PMIHistory string
