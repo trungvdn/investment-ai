@@ -103,6 +103,12 @@ func (p *Postgres) Migrate(ctx context.Context) error {
 	if _, err = tx.Exec(ctx, `INSERT INTO macro_schema_migrations(version) VALUES(9) ON CONFLICT DO NOTHING`); err != nil {
 		return err
 	}
+	if _, err = tx.Exec(ctx, migrations.PolicyRates); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO macro_schema_migrations(version) VALUES(10) ON CONFLICT DO NOTHING`); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 func (p *Postgres) Close() { p.Pool.Close() }

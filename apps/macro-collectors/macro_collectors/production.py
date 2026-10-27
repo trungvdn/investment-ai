@@ -42,7 +42,7 @@ def validated(rows,config,today):
                 if not re.fullmatch(r"\d{4}-Q[1-4]",period):raise ValueError("Invalid quarter")
                 year,month=int(period[:4]),int(period[-1])*3
                 end=date(year,month,calendar.monthrange(year,month)[1])
-            elif b["frequency"]=="DAILY":
+            elif b["frequency"] in ("DAILY","EVENT"):
                 end=date.fromisoformat(period)
             else:raise ValueError("Unsupported frequency")
             if row["period_end"]!=end or end>today:raise ValueError("Invalid reference date")

@@ -85,6 +85,9 @@ func Validate(o Observation, now time.Time) error {
 	if !ok || !ind.Enabled {
 		return fmt.Errorf("unknown or disabled indicator %s", o.IndicatorCode)
 	}
+	if ind.Frequency == "EVENT" && (o.Value < 0 || o.Value > 100) {
+		return fmt.Errorf("policy rate outside bounds")
+	}
 	if math.IsNaN(o.Value) || math.IsInf(o.Value, 0) {
 		return fmt.Errorf("non-finite observation")
 	}
@@ -143,6 +146,15 @@ func Status(ind Indicator, latest *Observation, attempt *Attempt, now time.Time)
 			}
 		}
 		return "MISSING"
+	}
+	if ind.Frequency == "EVENT" {
+		if attempt == nil || now.Sub(attempt.CheckedAt) > time.Duration(ind.MaxAgeDays)*24*time.Hour {
+			return "STALE"
+		}
+		if !attempt.Success {
+			return "SOURCE_ERROR"
+		}
+		return "AVAILABLE"
 	}
 	if now.Sub(latest.PeriodEnd) > time.Duration(ind.MaxAgeDays)*24*time.Hour {
 		return "STALE"

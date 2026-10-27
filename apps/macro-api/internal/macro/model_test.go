@@ -85,3 +85,30 @@ func TestPMIPendingDoesNotHidePreviouslyStaleData(t *testing.T) {
 		t.Fatal("publication wait hid stale stored observation")
 	}
 }
+
+func TestPolicyRateFreshnessUsesCurrentSourceCheck(t *testing.T) {
+	now := time.Date(2026, 10, 27, 0, 0, 0, 0, time.UTC)
+	ind, _ := Find("VN_SBV_REFINANCING")
+	end := time.Date(2023, 6, 19, 0, 0, 0, 0, time.UTC)
+	o := Observation{IndicatorCode: ind.Code, Period: "2023-06-19", PeriodEnd: end, Value: 4.5, Unit: "%", Source: "SBV", SourceURL: "https://sbv.gov.vn/", SeriesID: "SBV_POLICY_REFINANCING", Method: "POLICY_RATE"}
+	if err := Validate(o, now); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		attempt *Attempt
+		want    string
+	}{
+		{nil, "STALE"},
+		{&Attempt{CheckedAt: now, Success: true}, "AVAILABLE"},
+		{&Attempt{CheckedAt: now, Success: false}, "SOURCE_ERROR"},
+		{&Attempt{CheckedAt: now.AddDate(0, 0, -8), Success: true}, "STALE"},
+	} {
+		if got := Status(ind, &o, tc.attempt, now); got != tc.want {
+			t.Fatalf("policy status %s, want %s", got, tc.want)
+		}
+	}
+	o.Value = -1
+	if Validate(o, now) == nil {
+		t.Fatal("negative policy rate accepted")
+	}
+}

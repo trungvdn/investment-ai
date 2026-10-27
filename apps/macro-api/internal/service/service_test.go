@@ -37,7 +37,7 @@ func TestPartialIngestionPreservesRawAndDoesNotFabricateMissingValues(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if dashboard.Mode != "live" || dashboard.Score != nil || dashboard.Enabled != 18 || len(dashboard.Indicators) != 18 || dashboard.Available != 1 {
+	if dashboard.Mode != "live" || dashboard.Score != nil || dashboard.Enabled != 21 || len(dashboard.Indicators) != 21 || dashboard.Available != 1 {
 		t.Fatalf("invalid partial dashboard %+v", dashboard)
 	}
 	for _, c := range dashboard.Indicators {

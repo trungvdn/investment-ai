@@ -11,13 +11,16 @@ from .pilot import connect, bindings
 from .production import claim, persist, validated, coverage, report
 from .selection import periods_between
 
-DATASETS = {"mbs_pmi_history","sbv_credit_history","sbv_interbank_history","fred_effr_history","fred_10y_history","nso_iip","nso_ppi_history","te_vietnam_pmi"}
+DATASETS = {"sbv_policy_rates","mbs_pmi_history","sbv_credit_history","sbv_interbank_history","fred_effr_history","fred_10y_history","nso_iip","nso_ppi_history","te_vietnam_pmi"}
 
 
 def collect(client, dataset, config, today, page, first, last):
     if dataset["id"] == "mbs_pmi_history":
         from .mbs_history import collect as adapter
         return adapter(client, dataset, config, today, page, first, last)
+    if dataset["id"] == "sbv_policy_rates":
+        from .sbv_policy import collect as adapter
+        return adapter(client,dataset,config,today,page,first,last)
     if dataset["id"].startswith("sbv_"):
         from .sbv_history import collect as adapter
         return adapter(client,dataset,config,today,page,first,last)

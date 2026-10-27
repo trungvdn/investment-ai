@@ -12,6 +12,7 @@ export const statusLabels: Record<string, string> = {
   NO_PUBLISHED_RATE: "Phiên không công bố lãi suất tín phiếu",
 };
 export const groupLabels: Record<string, string> = {
+  Policy: "Chính sách tiền tệ",
   Liquidity: "Thanh khoản",
   Credit: "Tín dụng",
   Inflation: "Lạm phát",
@@ -39,6 +40,10 @@ export function historyPoints(indicator: MacroIndicator, months: number) {
   const cutoff = new Date(last);
   cutoff.setUTCMonth(cutoff.getUTCMonth() - months);
   const chosen = history.filter((o) => new Date(o.periodEnd) >= cutoff);
+  if (indicator.frequency === "EVENT") {
+    const baseline = history.filter((o) => new Date(o.periodEnd) < cutoff).at(-1);
+    return [...(baseline ? [baseline] : []), ...chosen].map((o) => ({ period: o.period, value: o.value }));
+  }
   if (!["MONTHLY", "QUARTERLY"].includes(indicator.frequency))
     return chosen.map((o) => ({ period: o.period, value: o.value }));
   if (!chosen.length) return [];
@@ -83,6 +88,10 @@ export const changeUnit = (i: MacroIndicator) =>
       ? i.unit
       : "đơn vị";
 export function sourceMessage(i: MacroIndicator) {
+  if (i.frequency === "EVENT" && i.status === "SOURCE_ERROR")
+    return "Chưa xác minh được bảng lãi suất điều hành hiện hành. Giá trị là mức theo quyết định gần nhất đã thu thập; xem ngày hiệu lực và nguồn.";
+  if (i.frequency === "EVENT" && i.status === "STALE")
+    return "Đã quá hạn kiểm tra nguồn lãi suất điều hành. Ngày quyết định cũ không có nghĩa chính sách đã hết hiệu lực.";
   if (i.status === "NOT_CONFIGURED") return "Nguồn dữ liệu chưa được cấu hình.";
   return (
     i.lastAttempt?.message.replace(

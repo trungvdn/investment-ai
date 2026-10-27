@@ -250,3 +250,16 @@ it("distinguishes an unreachable proxy upstream from storage failure", async () 
     fetchImpl: async () => new Response("", { status: 502 }),
   })).rejects.toThrow("MACRO_API_URL");
 });
+
+it("accepts government policy republication only for NHNN policy indicators", () => {
+  const url = "https://xaydungchinhsach.chinhphu.vn/nhnn-tiep-tuc-dieu-chinh-lai-suat-dieu-hanh-119230616150218505.htm";
+  for (const code of ["VN_SBV_REFINANCING", "VN_SBV_DISCOUNT", "VN_SBV_OVERNIGHT"]) {
+    const value = pmiDashboard(url);
+    value.indicators[0].code = code;
+    value.indicators[0].latest.indicatorCode = code;
+    expect(validateMacroDashboard(value).indicators).toHaveLength(1);
+    value.indicators[0].latest.sourceUrl = url.replace("chinhphu.vn", "chinhphu.vn.evil.test");
+    expect(() => validateMacroDashboard(value)).toThrow(code);
+  }
+  expect(() => validateMacroDashboard(pmiDashboard(url))).toThrow("VN_PMI");
+});

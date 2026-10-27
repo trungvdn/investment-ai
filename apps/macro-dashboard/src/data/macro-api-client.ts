@@ -13,6 +13,10 @@ const safeURL = (value: unknown, code: string) => {
       "www.pmi.spglobal.com", "pmi.spglobal.com", "www.ice.com", "indices.ice.com",
     ].includes(u.hostname);
     if (primary) return true;
+    if (["VN_SBV_REFINANCING", "VN_SBV_DISCOUNT", "VN_SBV_OVERNIGHT"].includes(code)
+      && u.hostname === "xaydungchinhsach.chinhphu.vn"
+      && u.pathname === "/nhnn-tiep-tuc-dieu-chinh-lai-suat-dieu-hanh-119230616150218505.htm"
+      && !u.search && !u.hash) return true;
     if (code !== "VN_PMI") return false;
     if (["mbs.com.vn", "www.mbs.com.vn"].includes(u.hostname)) return true;
     return ["tradingeconomics.com", "www.tradingeconomics.com"].includes(u.hostname)

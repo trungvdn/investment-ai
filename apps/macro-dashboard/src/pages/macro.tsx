@@ -46,6 +46,7 @@ import {
 import { cn, formatDate, formatNumber } from "../lib/utils";
 import type { MacroIndicator } from "../lib/types";
 const icons: Record<string, typeof Activity> = {
+  Policy: Landmark,
   Liquidity: Wallet,
   Credit: Landmark,
   Inflation: Activity,
@@ -210,6 +211,18 @@ export default function Macro() {
               công bố tùy chỉ báo
             </span>
           </div>
+          <section className="card indicator-section" aria-label="Lãi suất điều hành NHNN">
+            <div className="card-heading"><h2>Lãi suất điều hành NHNN</h2><span className="badge green">%/năm · Theo quyết định</span></div>
+            <p className="detail-assessment">Tái cấp vốn, tái chiết khấu và cho vay qua đêm của NHNN. Ngày hiệu lực có thể giữ nguyên nhiều năm; trạng thái phản ánh lần kiểm tra nguồn hiện hành.</p>
+            <div className="table-scroll"><table className="indicator-table"><thead><tr><th>Lãi suất</th><th>Mức theo quyết định</th><th>Hiệu lực từ</th><th>Trạng thái nguồn</th></tr></thead><tbody>
+              {dashboard.indicators.filter((i) => i.group === "Policy").map((i) => <tr key={i.code}>
+                <td><button className="indicator-name" onClick={() => setSelectedCode(i.code)}>{i.name}</button></td>
+                <td className="indicator-value">{i.latest ? `${formatNumber(i.latest.value)}%` : "—"}</td>
+                <td>{i.latest?.period || "—"}{i.latest && <div className="source-cell"><a href={i.latest.sourceUrl} target="_blank" rel="noreferrer">Nguồn quyết định <ExternalLink size={9} /></a></div>}</td><td><Status indicator={i} /></td>
+              </tr>)}
+            </tbody></table></div>
+            {dashboard.indicators.some((i) => i.group === "Policy" && i.latest && i.status !== "AVAILABLE") && <p className="detail-assessment" role="status">Chưa xác minh được mức hiện hành. Các giá trị bên trên thuộc quyết định đã thu thập, theo ngày hiệu lực hiển thị.</p>}
+          </section>
           <div className="live-overview">
             <section className="macro-score-card">
               <div>
@@ -392,7 +405,8 @@ export default function Macro() {
                           />
                         )}
                         <Area
-                          type="linear"
+                          type={selected.frequency === "EVENT" ? "stepAfter" : "linear"}
+                          dot={selected.frequency === "EVENT" ? { r: 3 } : false}
                           connectNulls={false}
                           dataKey="value"
                           name={selected.unit}
@@ -406,7 +420,9 @@ export default function Macro() {
                   </div>
                   <div className="chart-foot">
                     <span>
-                      {selected.frequency === "MONTHLY"
+                      {selected.frequency === "EVENT"
+                        ? "Ngày hiệu lực quyết định · không tạo quan sát cho ngày không thay đổi"
+                        : selected.frequency === "MONTHLY"
                         ? "Chuỗi theo tháng · giữ nguyên khoảng thiếu"
                         : selected.frequency === "QUARTERLY"
                           ? "Chuỗi theo quý · giữ nguyên khoảng thiếu"
@@ -477,7 +493,7 @@ export default function Macro() {
                 </p>
               )}
               <p className="alert-note">
-                <Info size={13} /> Độ mới dựa trên kỳ thống kê, không dựa vào
+                <Info size={13} /> Lãi suất điều hành dùng ngày kiểm tra nguồn; các chỉ báo thống kê dùng kỳ dữ liệu, không dựa vào
                 việc vừa tải lại. Chỉ báo chưa sẵn sàng được giữ trống, không
                 thay bằng dữ liệu mẫu.
               </p>
@@ -663,6 +679,7 @@ export default function Macro() {
                     <dd>
                       {(
                         {
+                          EVENT: "Theo quyết định (ngày hiệu lực)",
                           DAILY: "Ngày",
                           MONTHLY: "Tháng",
                           QUARTERLY: "Quý",

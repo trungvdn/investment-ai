@@ -170,7 +170,7 @@ func (s *Service) Dashboard(ctx context.Context, now time.Time) (Dashboard, erro
 			}
 			cutoff := now.AddDate(-3, 0, 0)
 			for _, o := range all {
-				if !o.PeriodEnd.Before(cutoff) {
+				if ind.Frequency == "EVENT" || !o.PeriodEnd.Before(cutoff) {
 					card.History = append(card.History, o)
 				}
 			}

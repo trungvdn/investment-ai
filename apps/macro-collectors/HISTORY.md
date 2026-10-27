@@ -95,3 +95,43 @@ docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --r
 Merge/deploy the stacked PRs in order #12, #13, #14. All groups use this single
 production writer. Legacy pilot diagnostics remain optional and are not required
 by this worker.
+
+## NHNN policy rates
+
+`sbv_policy_rates` supplies three EVENT series: VN_SBV_REFINANCING,
+VN_SBV_DISCOUNT and VN_SBV_OVERNIGHT, in % per year. The last is the NHNN
+standing overnight lending rate, separate from VN_INTERBANK_ON market rates.
+Migration 010 registers bindings; all values/raw documents/scheduling use the
+existing production tables. No monthly/daily synthetic observations are added.
+
+The Python history worker checks the current NHNN rates table every 24 hours.
+It requires all three explicitly labelled rates and unambiguous effective dates.
+HTTP/parse failures use the government republication of decision 1123/QD-NHNN
+as a bounded historical fallback (4.5%, 3%, 5%, effective 2023-06-19). This fallback
+is lower priority, returns PARTIAL, and does not certify the current policy rate.
+It is not a complete decision archive. Future changes are read from the current
+NHNN table; if that page remains blocked/changes structure, the source stays
+unverified and alerts continue. No anti-bot bypass or guessed current values.
+
+Sources:
+- https://sbv.gov.vn/vi/lãi-suất1
+- https://xaydungchinhsach.chinhphu.vn/nhnn-tiep-tuc-dieu-chinh-lai-suat-dieu-hanh-119230616150218505.htm
+
+Deploy/rebuild API (migration 010), frontend, and Python worker, from repo root:
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml up -d --build macro-api macro-history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history run --dataset sbv_policy_rates --once --force
+```
+
+For a single policy indicator use `--indicator VN_SBV_REFINANCING`; the dataset
+fetches all three rates together. Reruns reuse the shared observation writer.
+`coverage --dataset sbv_policy_rates` reports decision events without asserting
+missing monthly periods. PARTIAL intentionally exits nonzero for operators;
+verified historical rows are still saved. If a scheduled run owns the lease,
+wait for it rather than trying to steal it.
+
+A decision from years ago can still be in effect. EVENT freshness therefore
+uses the last successful current-table check (7 days), not decision age. Failure
+retains the last observation but marks SOURCE_ERROR; stale/missing checks are
+shown as STALE. The UI labels effective dates and uses a step chart.
