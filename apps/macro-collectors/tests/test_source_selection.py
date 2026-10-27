@@ -57,8 +57,9 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(len(data), 20)
         self.assertTrue(all(item["observedRange"] is None for item in data))
         pmi = inventory("VN_PMI")["indicators"][0]
-        self.assertIsNone(pmi["historySource"])
-        self.assertEqual(pmi["historyStatus"], "UNRESOLVED")
+        self.assertEqual(pmi["historySource"], "https://www.mbs.com.vn/trien-vong-vi-mo/")
+        self.assertEqual(pmi["historyStatus"], "PARTIAL_ARCHIVE_ADAPTER_REQUIRES_COVERAGE")
+        self.assertIsNone(pmi["observedRange"])
 
     def test_archive_page_query_and_card_publication_year(self):
         calls = []
