@@ -325,3 +325,20 @@ class SourceSelectionDatabaseTests(PostgresPilotFixture):
             repeated_id = publish_value(self.db, current)
         self.assertEqual(repeated_id, original_id)
         self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"], initial)
+
+    def test_read_only_duplicate_diagnostics_separate_legacy_vintages_from_run_audit(self):
+        from pathlib import Path
+        self.seed()
+        self.save("gso_cpi_reports", self.rows["gso_cpi_reports"])
+        self.db.execute("""INSERT INTO macro_source_values(binding_id,period,period_end,revision,fingerprint,value,unit,method,source_url,published_at,evidence,raw_id,first_run_id)
+          SELECT binding_id,period,period_end,revision+1,'legacy-duplicate',value,unit,method,source_url,published_at,evidence,raw_id,first_run_id
+          FROM macro_source_values WHERE binding_id='gso_cpi_yoy' AND period=%s ORDER BY revision DESC LIMIT 1""", (self.months[-1],))
+        queries = (Path(__file__).resolve().parents[1] / "sql" / "check_duplicates.sql").read_text()
+        result = self.db.execute(queries, prepare=False)
+        source_duplicates = result.fetchall()
+        self.assertEqual(len(source_duplicates), 1)
+        self.assertEqual(source_duplicates[0]["period"], self.months[-1])
+        result.nextset()
+        self.assertFalse(result.fetchall())
+        result.nextset()
+        self.assertTrue(result.fetchall())
