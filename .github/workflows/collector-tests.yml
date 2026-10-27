@@ -5,6 +5,7 @@ on:
       - "apps/macro-collectors/**"
       - "docker-compose.collectors.yml"
       - "docker-compose.pilot.yml"
+      - "docker-compose.history.yml"
       - "apps/macro-api/migrations/**"
       - "apps/macro-api/cmd/sdmx-replay/**"
       - ".github/workflows/collector-tests.yml"
@@ -14,6 +15,7 @@ on:
       - "apps/macro-collectors/**"
       - "docker-compose.collectors.yml"
       - "docker-compose.pilot.yml"
+      - "docker-compose.history.yml"
       - "apps/macro-api/migrations/**"
       - "apps/macro-api/cmd/sdmx-replay/**"
       - ".github/workflows/collector-tests.yml"
@@ -57,9 +59,10 @@ jobs:
         run: |
           docker compose -f docker-compose.macro.yml -f docker-compose.collectors.yml config --quiet
           docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml config --quiet
+          docker compose -f docker-compose.macro.yml -f docker-compose.history.yml config --quiet
         env:
           MACRO_DB_PASSWORD: ci-test-only
       - name: Build and smoke-test collector runtime
         run: |
           docker build -t investment-ai-collectors:test apps/macro-collectors
-          docker run --rm --entrypoint sh investment-ai-collectors:test -c 'test -w /collector-data && command -v pdftotext && python -m macro_collectors --help && python -m macro_collectors.sources inventory --indicator VN_CPI_YOY >/dev/null && python -m macro_collectors.sources --help'
+          docker run --rm --entrypoint sh investment-ai-collectors:test -c 'test -w /collector-data && command -v pdftotext && python -m macro_collectors --help && python -m macro_collectors.sources inventory --indicator VN_CPI_YOY >/dev/null && python -m macro_collectors.sources --help && python -m macro_collectors.history --help'

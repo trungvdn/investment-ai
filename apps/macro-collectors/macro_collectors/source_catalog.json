@@ -150,12 +150,12 @@
       "frequency": "MONTHLY",
       "comparisonBasis": "LEVEL",
       "observedRange": null,
-      "historyStatus": "UNRESOLVED",
+      "historyStatus": "PARTIAL_ARCHIVE_ADAPTER_REQUIRES_COVERAGE",
       "pythonAdapter": "te_vietnam_pmi",
-      "historySource": null,
+      "historySource": "https://www.mbs.com.vn/trien-vong-vi-mo/",
       "updateSource": "https://tradingeconomics.com/vietnam/manufacturing-pmi",
       "access": "PUBLIC_PAGE_MAY_CHALLENGE",
-      "notes": "Current HTML adapter extracts one actual month only. A historical export/series source still requires verification and access. S&P Global is original producer; Trading Economics secondary publisher."
+      "notes": "MBS public report HTML/PDF historical candidates; full monthly coverage is unverified. Trading Economics remains latest-only; no full history is inferred from a chart."
     },
     {
       "code": "VN_IIP_YOY",
