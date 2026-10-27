@@ -34,7 +34,8 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(len(result["selected"]), 9)
         self.assertEqual(result["selected"][0]["binding"], "history")
         self.assertEqual(result["selected"][-1]["binding"], "update")
-        self.assertEqual(result["selected"][3]["value"], 3.01)
+        self.assertEqual(result["selected"][3]["value"], 3.0)
+        self.assertEqual(result["selected"][3]["binding"], "history")
 
     def test_conflicts_gaps_stale_wrong_unit_and_insufficient_overlap_block(self):
         cases = []
@@ -212,8 +213,55 @@ class SourceSelectionDatabaseTests(PostgresPilotFixture):
                     return ('<a href="' + URL + '">Chỉ số giá tiêu dùng tháng Chín năm 2026</a>').encode()
                 return article().encode()
 
-        backfill(self.db, "VN_CPI_YOY", "2026-09", "2026-09", 1, 1, Client)
+        backfill(self.db, "VN_CPI_YOY", "2026-09", "2026-09", 1, 1, Client, source="combined")
         before = self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"]
         backfill(self.db, "VN_CPI_YOY", "2026-09", "2026-09", 1, 1, Client)
         self.assertEqual(before, self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"])
         self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"], 0)
+
+    def test_sdmx_only_backfill_downloads_full_history_without_report_requests(self):
+        from macro_collectors.sources import backfill
+        from test_pilot import fixture
+        from macro_collectors.sdmx import parse
+        from macro_collectors.pilot import bindings
+        body = fixture()
+        config = bindings(self.db, "nso_cpi")
+        expected = parse(body, config, datetime.now(ZONE).date())
+        first, last = expected[0]["period"], expected[-1]["period"]
+        requested_urls = []
+
+        class Client:
+            def get(self, url):
+                requested_urls.append(url)
+                if not url.endswith("/CPIVNM.xml"):
+                    raise AssertionError("SDMX-only backfill must not fetch report HTML")
+                return body
+
+        # Report dataset stays disabled: historical loading must be independent.
+        result = backfill(self.db, "VN_CPI_YOY", last, last, 1, 3, Client)
+        summary = result[-1]
+        self.assertEqual(summary["status"], "BACKFILL_COMPLETE")
+        self.assertEqual((summary["availableFrom"], summary["availableTo"]), (first, last))
+        self.assertEqual(summary["storedPeriods"], len(expected))
+        self.assertEqual(summary["coveredRequestedPeriods"], 1)
+        self.assertEqual(len(requested_urls), 1)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"], len(expected))
+        backfill(self.db, "VN_CPI_YOY", last, last, 1, 3, Client)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"], len(expected))
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"], 0)
+
+    def test_sdmx_only_reports_requested_months_not_present_in_the_source(self):
+        from macro_collectors.sources import backfill
+        from test_pilot import fixture
+        body = fixture(lag=4)
+
+        class Client:
+            def get(self, url):
+                return body
+
+        today = datetime.now(ZONE).date()
+        end = today.year * 12 + today.month - 2
+        requested = f"{end // 12:04d}-{end % 12 + 1:02d}"
+        result = backfill(self.db, "VN_CPI_YOY", requested, requested, 1, 3, Client)
+        self.assertEqual(result[-1]["status"], "BACKFILL_INCOMPLETE")
+        self.assertEqual(result[-1]["missingRequestedMonths"], [requested])

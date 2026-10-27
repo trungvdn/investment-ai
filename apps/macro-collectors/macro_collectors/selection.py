@@ -51,7 +51,9 @@ def plan(rows, policy, today):
         longest, previous = max(longest, streak), number
     if longest < policy["min_overlap"]:
         issues.append({"kind": "INSUFFICIENT_OVERLAP", "required": policy["min_overlap"], "consecutive": longest})
-    chosen = {**history, **update}
+    # Keep the validated SDMX vintage wherever historical months overlap.
+    # Reports supply new periods and holes, never silently replace SDMX history.
+    chosen = {**update, **history}
     periods = sorted(chosen)
     gaps = sorted(set(periods_between(periods[0], periods[-1])) - chosen.keys()) if periods else []
     if gaps:

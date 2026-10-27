@@ -52,14 +52,32 @@ Migration 006 is applied by macro-api. The default policy maps
 percentage points and at least three consecutive overlapping months.
 The policy remains inactive on installation and on repeated migrations.
 
-Backfill first fetches SDMX through the existing validated adapter, then processes
-each requested CPI archive page as a separately committed, leased job:
+Backfill defaults to **SDMX only**, independently of report access or enabled archive datasets.
+It downloads and normalizes the complete available SDMX history using prior-year
+levels for YoY; it does not filter the upstream download to the requested dates.
+The requested range controls the completeness report:
 
 ```sh
-docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm --entrypoint python macro-pilot -m macro_collectors.sources backfill --indicator VN_CPI_YOY --from 2025-01 --to 2026-09 --start-page 1 --pages 3
+docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm --entrypoint python macro-pilot -m macro_collectors.sources backfill --indicator VN_CPI_YOY --source sdmx --from 2021-01 --to 2026-09
 ```
 
-The example dates are the inspected bridge/overlap window, not a permanent cutoff.
+The example dates are a requested historical range, not a claim that SDMX covers it.
+The result reports `availableFrom`, `availableTo`, `storedPeriods`,
+`coveredRequestedPeriods` and `missingRequestedMonths`. `BACKFILL_INCOMPLETE`
+returns a nonzero exit code when requested months are unavailable. An index month
+without its same-month prior-year level cannot yield YoY and is not fabricated.
+A stale SDMX source can still supply valid historical data; it does not certify
+that the latest month is current.
+
+To additionally scan national report archives for bridge/gap periods, explicitly
+select `--source combined`:
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.pilot.yml run --rm --entrypoint python macro-pilot -m macro_collectors.sources backfill --indicator VN_CPI_YOY --source combined --from 2025-01 --to 2026-09 --start-page 1 --pages 3
+```
+
+Combined mode fetches SDMX first and commits each archive page independently.
+
 Use the coverage report to choose the needed range and further archive pages.
 A job accepts 1–10 pages, within pages 1–100, and up to 12 article URLs per page.
 It does not guess article slugs or recursively crawl arbitrary hosts.
@@ -95,8 +113,8 @@ For the implemented national CPI YoY policy:
   the previous calendar month; future/nonfinite/wrong-unit values are rejected.
 - Both sources must have been checked today or yesterday, with no latest
   `SOURCE_ERROR` or `PARTIAL` result.
-- Reports are preferred for overlapping and newly published months; history
-  supplies other available months. Values are never averaged or interpolated.
+- SDMX history is preferred for every available historical month, including
+  overlaps. Reports supply newer periods or missing historical months. Values are never averaged or interpolated.
 
 After inspecting an eligible preview, the explicit activation command atomically
 publishes selected values with original raw provenance and pins the chosen

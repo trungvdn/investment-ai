@@ -49,16 +49,30 @@ def coverage(db, indicator="all", first=None, last=None):
     return result
 
 
-def backfill(db, indicator, first, last, start_page, pages, client_factory=HTTPClient):
+def backfill(db, indicator, first, last, start_page, pages, client_factory=HTTPClient, source="sdmx"):
     from .cpi_reports import collect_archive
     from .cpi_shadow import bind_metrics
     if indicator != "VN_CPI_YOY":
         raise ValueError("Historical backfill is implemented for CPI first; other indicators remain inventoried")
-    if not 1 <= pages <= 10 or not 1 <= start_page <= 100 or start_page + pages - 1 > 100:
+    if source not in ("sdmx", "combined"):
+        raise ValueError("Unknown CPI historical source")
+    if source == "combined" and (not 1 <= pages <= 10 or not 1 <= start_page <= 100 or start_page + pages - 1 > 100):
         raise ValueError("Use 1-10 pages per bounded job, within archive pages 1-100")
     periods_between(first, last)
     results = run(db, "nso_cpi", True, client_factory)
     if results[0]["status"] in ("SOURCE_ERROR", "NOT_DUE_OR_BUSY"):
+        return results
+    if source == "sdmx":
+        rows = db.execute("""SELECT DISTINCT period FROM macro_source_values WHERE binding_id='nso_cpi_yoy' ORDER BY period""").fetchall()
+        available = [row["period"] for row in rows]
+        requested = periods_between(first, last)
+        missing = sorted(set(requested) - set(available))
+        results.append({"dataset": "nso_cpi", "status": "BACKFILL_INCOMPLETE" if missing else "BACKFILL_COMPLETE",
+                        "source": "sdmx", "series": "PCPI_IX", "requestedFrom": first, "requestedTo": last,
+                        "availableFrom": available[0] if available else None, "availableTo": available[-1] if available else None,
+                        "storedPeriods": len(available), "coveredRequestedPeriods": len(requested) - len(missing),
+                        "missingRequestedMonths": missing,
+                        "note": "All available transformed SDMX history is retained; requested dates bound the completeness check, not the upstream download. Missing prior-year levels cannot produce YoY."})
         return results
     dataset = db.execute("SELECT * FROM macro_datasets WHERE id='gso_cpi_reports' AND enabled").fetchone()
     if not dataset or dataset["ingestion_owner"] != "go":
@@ -90,6 +104,7 @@ def main():
     parser.add_argument("--indicator", default="all")
     parser.add_argument("--from", dest="first")
     parser.add_argument("--to", dest="last")
+    parser.add_argument("--source", choices=("sdmx", "combined"), default="sdmx", help="Historical CPI source: SDMX only by default; combined also scans report archives")
     parser.add_argument("--start-page", type=int, default=1)
     parser.add_argument("--pages", type=int, default=3)
     args = parser.parse_args()
@@ -115,7 +130,7 @@ def main():
                 if args.action == "coverage":
                     result = coverage(db, args.indicator, args.first, args.last)
                 elif args.action == "backfill":
-                    result = backfill(db, args.indicator, args.first, args.last, args.start_page, args.pages)
+                    result = backfill(db, args.indicator, args.first, args.last, args.start_page, args.pages, source=args.source)
                 elif args.action == "preview":
                     with db.transaction():
                         db.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
@@ -126,7 +141,7 @@ def main():
                     result = deactivate(db, args.indicator)
         print(json.dumps(result, default=str, ensure_ascii=False), flush=True)
         if isinstance(result, list) and args.action == "backfill":
-            return 1 if any(row["status"] in ("SOURCE_ERROR", "PARTIAL", "NOT_DUE_OR_BUSY") for row in result) else 0
+            return 1 if any(row["status"] in ("SOURCE_ERROR", "PARTIAL", "NOT_DUE_OR_BUSY", "BACKFILL_INCOMPLETE") for row in result) else 0
         if args.action == "activate" and result.get("mode") != "active":
             return 1
         return 0
