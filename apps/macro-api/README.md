@@ -206,3 +206,50 @@ date,value,symbol
 The row above is a schema example, not seeded market data. The feed must export the actual daily spot-index observation for the stated date. Duplicate dates, other symbols, nonfinite/nonpositive values and future dates fail quality checks. The backend retains the raw export and publishes ICE's index-definition source URL, never the credential-bearing feed URL. An unconfigured feed is `NOT_CONFIGURED`; there is no fabricated substitute. Live DXY ingestion cannot be verified until an authorized endpoint is provided. Official definition: https://www.ice.com/fixed-income-data-services/index-solutions/currency-indices .
 
 After deployment: verify `/api/macro/operations`, inspect source errors, supply the DXY feed if needed, and check a successful next-due run from the deployment host. A 403 remains a source-access failure; scheduling/retry handling does not claim to remove SBV/S&P access restrictions.
+
+## Resolving PMI HTTP 403
+
+A 403 is an access denial before parsing; it is not caused by the headline parser or DXY configuration. Both the public S&P release index and a specific release URL returned 403 during investigation. Those responses do not establish whether the blocking layer is S&P or a network intermediary. Merely setting `PMI_RELEASE_URLS` does not fix access when the document URL is denied too. The connector now identifies `release index` versus `release document` in errors and preserves `ACCESS_DENIED` classification and cooldowns. It does not retry 403 inline or send DXY credentials to S&P.
+
+Three independent PMI transport modes, in precedence order:
+
+1. **Authorized export:** `PMI_FEED_URL` plus optional `PMI_FEED_TOKEN`. This mode does not request the public index or PDF URLs. The token is sent only to the configured export endpoint, and credential-bearing endpoint URLs are not published in provenance or errors. `PMI_FEED_TOKEN` without `PMI_FEED_URL` is a configuration error. DXY variables have no effect on this mode.
+2. **Official local PDFs:** `PMI_RELEASE_FILES` is a JSON array of absolute local paths and original official release URLs. The worker uses the existing PDF/headline/date checks, retains the exact PDF as raw provenance, and makes no S&P HTTP request. Files must be regular, readable PDFs of at most 16 MiB, one vintage per report month (maximum 36). The files must be obtained from a permitted source; no sample observations are seeded.
+3. **Public HTTP:** existing explicit release URLs or automatic index discovery. This continues to report actionable errors if public access is denied. There is no silent third-party scrape, index substitution, or guessed release ID.
+
+Authorized export contract (illustrative schema, not a production data seed):
+
+```json
+{
+  "seriesId": "SPGLOBAL_VN_MANUFACTURING_PMI",
+  "country": "VN",
+  "frequency": "MONTHLY",
+  "observations": [{
+    "period": "2026-09",
+    "value": 51.9,
+    "publishedAt": "2026-10-01T00:30:00Z",
+    "sourceUrl": "https://www.pmi.spglobal.com/Public/Home/PressRelease/dba8ca68ce13403591b68cb3e07175d9"
+  }]
+}
+```
+
+The export must contain the actual seasonally adjusted Vietnam manufacturing headline, original report month, original publication/embargo timestamp and official release provenance. Other countries/series/frequencies, duplicate months, missing values, values outside 0–100, future observations, contradictory publication dates, trailing JSON and unknown fields are rejected. The feed itself must use HTTPS; authentication and the conversion to this export schema belong to the configured data provider/integration. This is not a generic parser for arbitrary vendors' API responses. Last good observations remain unchanged when a feed fails or returns invalid data.
+
+Local-PDF deployment example:
+
+```sh
+export PMI_PDF_DIR=/absolute/host/path/pmi
+export PMI_RELEASE_FILES='[{"path":"/data/pmi/release.pdf","sourceUrl":"https://www.pmi.spglobal.com/Public/Home/PressRelease/dba8ca68ce13403591b68cb3e07175d9"}]'
+docker compose -f docker-compose.macro.yml -f docker-compose.pmi-local.example.yml up -d --build macro-api
+docker compose -f docker-compose.macro.yml -f docker-compose.pmi-local.example.yml exec macro-api ingest -source spglobal:pmi:vn -due
+```
+
+Use the original URL corresponding to the PDF you actually downloaded, not an unrelated sample URL. The container's `macro` user must be able to read the directory/files; the example mounts the directory read-only. When adding a new monthly release or revision, update the file/URL mapping and recreate the container. For an export, set `PMI_FEED_URL` and `PMI_FEED_TOKEN` on the ordinary compose service instead. Then requeue with `ingest -source spglobal:pmi:vn -due`: restarting alone preserves the existing six-hour access-denial cooldown. Check `/api/macro/operations` and the indicator's source/period after the run. Requeue refuses to steal an active lease.
+
+Regression tests reproduce 403 at both public stages, verify classification/no retry/no credential leakage, and ingest the same headline through an authenticated export or a locally supplied PDF without contacting the denied public host. Live export ingestion still requires a configured endpoint; live local ingestion requires the actual release file. This change provides those working ingestion paths; it does not claim to unblock the public website.
+
+### Scheduled Python collection (no manual PDF download)
+
+Use `docker-compose.collectors.yml` with the base compose file to start `apps/macro-collectors`. It checks the official PMI release index, downloads the expected month's PDF, and atomically publishes a manifest on a shared volume. `PMI_RELEASE_MANIFEST` selects this bridge after an explicit feed and before manually configured PDFs. The collector schedules day 1 at 07:30 Vietnam time and retries normal publication delays through day 10. It bootstraps on first startup and persists state/locks across restarts. See `apps/macro-collectors/README.md` for deployment and adding source plugins.
+
+The Go bridge reads upstream status before using cached artifacts: PENDING is `AWAITING_RELEASE`, ERROR propagates to source alerts, and missed next-due timestamps are detected. READY imports the immutable PDF with the existing headline/date validation and requires its actual period to match the manifest target. A Python HTTP 403 remains an access failure; this service automates discovery/download, not publisher access authorization.

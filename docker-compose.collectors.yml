@@ -1,0 +1,32 @@
+# Add to the base compose file to enable automatic public PMI collection.
+services:
+  macro-collector-init:
+    build: ./apps/macro-collectors
+    user: "0:0"
+    entrypoint: ["sh", "-c", "chown 1000:1000 /collector-data && chmod 0755 /collector-data"]
+    volumes:
+      - macro-collector-data:/collector-data
+    restart: "no"
+  macro-collectors:
+    build: ./apps/macro-collectors
+    depends_on:
+      macro-collector-init:
+        condition: service_completed_successfully
+    environment:
+      PMI_RELEASE_INDEX_URL: ${PMI_RELEASE_INDEX_URL:-}
+    volumes:
+      - macro-collector-data:/collector-data
+    stop_grace_period: 210s
+    restart: unless-stopped
+  macro-api:
+    environment:
+      PMI_FEED_URL: ""
+      PMI_FEED_TOKEN: ""
+      PMI_RELEASE_MANIFEST: /collector-data/vn_pmi/manifest.json
+    volumes:
+      - macro-collector-data:/collector-data:ro
+    depends_on:
+      macro-collectors:
+        condition: service_started
+volumes:
+  macro-collector-data:

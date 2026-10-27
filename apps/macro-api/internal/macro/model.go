@@ -121,6 +121,12 @@ func Status(ind Indicator, latest *Observation, attempt *Attempt, now time.Time)
 	if !ind.Enabled {
 		return "NOT_IMPLEMENTED"
 	}
+	if attempt != nil && !attempt.Success && strings.HasPrefix(attempt.Message, "AWAITING_RELEASE:") {
+		if latest != nil && now.Sub(latest.PeriodEnd) > time.Duration(ind.MaxAgeDays)*24*time.Hour {
+			return "STALE"
+		}
+		return "AWAITING_RELEASE"
+	}
 	if attempt != nil && !attempt.Success && strings.HasPrefix(attempt.Message, "NO_PUBLISHED_RATE:") {
 		return "NO_PUBLISHED_RATE"
 	}

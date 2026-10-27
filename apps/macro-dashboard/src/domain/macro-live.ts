@@ -8,6 +8,7 @@ export const statusLabels: Record<string, string> = {
   ERROR: "Chưa lấy được dữ liệu",
   NOT_IMPLEMENTED: "Chưa tích hợp",
   NOT_COMPARABLE: "Chưa đủ kỳ cùng phương pháp",
+  AWAITING_RELEASE: "Chờ công bố kỳ mới",
   NO_PUBLISHED_RATE: "Phiên không công bố lãi suất tín phiếu",
 };
 export const groupLabels: Record<string, string> = {
@@ -85,7 +86,7 @@ export function sourceMessage(i: MacroIndicator) {
   if (i.status === "NOT_CONFIGURED") return "Nguồn dữ liệu chưa được cấu hình.";
   return (
     i.lastAttempt?.message.replace(
-      /^(?:NOT_COMPARABLE|NO_PUBLISHED_RATE):\s*/,
+      /^(?:NOT_COMPARABLE|NO_PUBLISHED_RATE|AWAITING_RELEASE):\s*/,
       "",
     ) || "Chờ thu thập từ nguồn chính thức."
   );

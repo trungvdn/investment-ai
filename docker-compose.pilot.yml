@@ -1,0 +1,20 @@
+# Shadow-only pilot: no ingestion ownership changes and no writes to production observations.
+services:
+  macro-pilot:
+    build: ./apps/macro-collectors
+    entrypoint: ["python", "-m", "macro_collectors.pilot"]
+    command: ["run"]
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${PILOT_DB_USER:-macro}
+      PGPASSWORD: ${PILOT_DB_PASSWORD:-${MACRO_DB_PASSWORD:?Set MACRO_DB_PASSWORD}}
+      PGDATABASE: macro
+      PGSSLMODE: disable
+    depends_on:
+      macro-api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 210s
+    restart: unless-stopped

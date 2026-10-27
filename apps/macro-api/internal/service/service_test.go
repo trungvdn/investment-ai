@@ -90,3 +90,21 @@ func TestBillsNoPublishedRateIsNotFailedIngestion(t *testing.T) {
 		}
 	}
 }
+
+func TestExpectedPMIPublicationDelayIsNotFailedCollection(t *testing.T) {
+	repo := &testutil.Memory{}
+	s := Service{Repo: repo, Providers: []providers.Provider{fakeProvider{code: "VN_PMI", batch: macro.Batch{Document: macro.RawDocument{Source: "S&P Global", URL: "https://www.pmi.spglobal.com/", Body: []byte("pending manifest"), FetchedAt: time.Now()}, Unavailable: map[string]string{"VN_PMI": "AWAITING_RELEASE: expected month has not been published"}}}}}
+	run, err := s.Ingest(context.Background())
+	if err != nil || run.Failed != 0 || run.Saved != 0 {
+		t.Fatalf("publication delay misclassified %+v %v", run, err)
+	}
+	d, err := s.Dashboard(context.Background(), time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, card := range d.Indicators {
+		if card.Code == "VN_PMI" && (card.Status != "AWAITING_RELEASE" || card.Latest != nil) {
+			t.Fatal("pending PMI fabricated a value or outage")
+		}
+	}
+}
