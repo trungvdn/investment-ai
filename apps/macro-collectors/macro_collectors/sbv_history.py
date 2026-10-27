@@ -206,7 +206,8 @@ def collect(client,dataset,config,today,page=1,first=None,last=None):
         except CollectionError as denied:
             if denied.kind!="ACCESS_DENIED":raise
             raw=client.get(CREDIT);documents.append({"url":CREDIT,"html":raw.decode("utf-8")})
-            rows=parse_credit_html(raw,config,today)
+            try:rows=parse_credit_html(raw,config,today)
+            except CollectionError as error:error.payload=raw;raise
             notes["warnings"].append({"kind":"API_ACCESS_DENIED","fallback":"public national credit HTML; archive may be incomplete"})
             binding=config[0]
             result=[{**r,"binding_id":binding["id"],"indicator_code":binding["indicator_code"],"unit":binding["unit"],"series_id":binding["series_id"],"priority":binding["priority"],"method":"SOURCE_TOTAL_CREDIT_YTD_NOT_YOY"} for r in rows if not first or first<=r["period"]<=last]
@@ -218,6 +219,8 @@ def collect(client,dataset,config,today,page=1,first=None,last=None):
                 raise ValueError("Invalid archive pagination")
             rows,warnings=parse_credit(data,config,today)
             notes.update(lastPage=data["lastPage"],totalCount=data.get("totalCount"),warnings=warnings)
+        except CollectionError as error:
+            error.payload=raw;raise
         except (ValueError,KeyError,TypeError):
             error=CollectionError("DATA_QUALITY","Invalid SBV credit archive response");error.payload=raw;raise error from None
         method="SOURCE_TOTAL_CREDIT_YTD_NOT_YOY"
