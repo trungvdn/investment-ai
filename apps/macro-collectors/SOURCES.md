@@ -193,3 +193,9 @@ identical source/production vintages from expected collection-run snapshots.
 The patch prevents new metadata-only duplicates; it does not delete existing
 source revisions, raw evidence, or immutable canonical batches. No production DB
 inspection or destructive cleanup has been performed from development.
+
+Canonical activation also retries the whole transaction (up to three attempts) on
+serialization/deadlock/unique-revision races. A Go writer can otherwise commit a
+revision after Python's repeatable-read snapshot but before its value lock. Each
+retry rolls back the incomplete batch and reads a fresh snapshot; it does not
+skip the gate, steal leases, or retry one INSERT against a stale snapshot.

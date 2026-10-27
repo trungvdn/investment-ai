@@ -344,3 +344,39 @@ class SourceSelectionDatabaseTests(PostgresPilotFixture):
         self.assertFalse(result.fetchall())
         result.nextset()
         self.assertTrue(result.fetchall())
+
+    def test_concurrent_go_revision_retries_the_entire_canonical_transaction(self):
+        from unittest.mock import patch
+        from macro_collectors import selection
+        today = self.seed()
+        initial_batch = selection.activate(self.db, "VN_CPI_YOY", today)["activeBatchId"]
+        values = copy.deepcopy(self.rows["gso_cpi_reports"])
+        values[-1]["value"] = 3.7
+        self.save("gso_cpi_reports", values)
+        publish = selection.publish_value
+        raced = []
+        other = self.connection()
+
+        def publish_after_go_commit(db, value):
+            if value["period"] == self.months[-1] and not raced:
+                raced.append(True)
+                with other.transaction():
+                    lock_key = value["indicator_code"] + "|" + value["period"] + "|" + value["series_id"]
+                    other.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (lock_key,))
+                    other.execute("""INSERT INTO macro_observations(indicator_code,period,period_end,value,unit,source,source_url,series_id,method,priority,published_at,first_seen_at,collected_at,revision,raw_id)
+                      SELECT indicator_code,period,period_end,%s,unit,source,source_url,series_id,method,priority,published_at,now(),now(),revision+1,raw_id
+                      FROM macro_observations WHERE indicator_code='VN_CPI_YOY' AND period=%s AND series_id=%s
+                      ORDER BY revision DESC LIMIT 1""", (value["value"], value["period"], value["series_id"]))
+            return publish(db, value)
+
+        try:
+            with patch.object(selection, "publish_value", side_effect=publish_after_go_commit):
+                result = selection.activate(self.db, "VN_CPI_YOY", today)
+        finally:
+            other.close()
+        self.assertTrue(raced)
+        self.assertEqual(result["mode"], "active")
+        self.assertNotEqual(initial_batch, result["activeBatchId"])
+        revisions = self.db.execute("SELECT revision,value FROM macro_observations WHERE indicator_code='VN_CPI_YOY' AND period=%s AND series_id=%s ORDER BY revision", (self.months[-1], values[-1]["series_id"])).fetchall()
+        self.assertEqual([row["revision"] for row in revisions], [1, 2])
+        self.assertEqual(revisions[-1]["value"], 3.7)

@@ -148,6 +148,18 @@ def publish_value(db, row):
 
 
 def activate(db, code, today, automatic=False):
+    # Go may commit a new production revision after our repeatable-read snapshot
+    # but before we acquire its value lock. Retry the entire rolled-back selection
+    # with a fresh snapshot, never just the conflicting INSERT.
+    for attempt in range(3):
+        try:
+            return _activate(db, code, today, automatic)
+        except Exception as error:
+            if getattr(error, "sqlstate", None) not in ("40001", "40P01", "23505") or attempt == 2:
+                raise
+
+
+def _activate(db, code, today, automatic=False):
     from psycopg.types.json import Jsonb
     with db.transaction():
         db.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
