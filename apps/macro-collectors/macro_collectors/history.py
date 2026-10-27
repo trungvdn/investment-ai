@@ -1,4 +1,4 @@
-"""Bounded historical ingestion; raw and source vintages only, no publication."""
+"""Historical and scheduled ingestion share the existing production tables."""
 import argparse
 import json
 import signal
@@ -7,11 +7,11 @@ from datetime import datetime
 
 from .core import ZONE
 from .http import CollectionError, HTTPClient
-from .pilot import connect, bindings, claim, persist
+from .pilot import connect, bindings
+from .production import claim, persist, validated, coverage, report
 from .selection import periods_between
-from .sources import coverage
 
-DATASETS = {"mbs_pmi_history","sbv_credit_history","sbv_interbank_history","fred_effr_history","fred_10y_history","nso_iip","nso_ppi_history"}
+DATASETS = {"mbs_pmi_history","sbv_credit_history","sbv_interbank_history","fred_effr_history","fred_10y_history","nso_iip","nso_ppi_history","te_vietnam_pmi"}
 
 
 def collect(client, dataset, config, today, page, first, last):
@@ -27,6 +27,10 @@ def collect(client, dataset, config, today, page, first, last):
     if dataset["id"] in ("nso_iip","nso_ppi_history"):
         from .nso_history import collect as adapter
         return adapter(client,dataset,config,today,page,first,last)
+    if dataset["id"]=="te_vietnam_pmi":
+        from .te_pmi import normalize
+        body,rows=normalize(client,dataset,config,today)
+        return body,rows,{"warnings":[],"latestOnly":True}
     raise CollectionError("CONFIGURATION", "Unsupported historical dataset")
 
 
@@ -34,24 +38,26 @@ def ingest(db, dataset_id, force=False, page=1, first=None, last=None, client_fa
     if dataset_id not in DATASETS:
         raise ValueError("Unknown historical dataset")
     dataset = db.execute("SELECT * FROM macro_datasets WHERE id=%s AND enabled", (dataset_id,)).fetchone()
-    if not dataset or dataset["ingestion_owner"] != "go":
+    if not dataset:
         return {"dataset": dataset_id, "status": "DISABLED_OR_OTHER_OWNER"}
     config = bindings(db, dataset_id)
     if not config:
         raise ValueError("Historical dataset has no enabled bindings")
-    token = claim(db, dataset_id, force)
+    token = claim(db, dataset["go_provider_id"], force)
     if not token:
         return {"dataset": dataset_id, "status": "NOT_DUE_OR_BUSY"}
     body, rows, failure, notes = None, [], None, {}
     try:
         body, rows, notes = collect(client_factory(), dataset, config, datetime.now(ZONE).date(), page, first, last)
+        rows=validated(rows,config,datetime.now(ZONE).date())
         if not rows:
             failure = CollectionError("NO_DATA", "No verified historical observations in this bounded job")
     except CollectionError as error:
         failure, body = error, getattr(error, "payload", body)
-    status = persist(db, dataset, token, body, rows, config, failure, notes)
-    return {"dataset": dataset_id, "status": status, "importedObservations": len(rows), "page": page,
-            "warnings": notes.get("warnings", []), "mode": "shadow", "publication": "NOT_PERFORMED"}
+        rows=[]
+    notes["page"]=page
+    result = persist(db, dataset, token, body, rows, config, failure, notes)
+    return {**result,"dataset":dataset_id,"importedObservations":len(rows),"page":page,"publication":"DIRECT"}
 
 
 
@@ -95,11 +101,9 @@ def main():
         try:
             with connect() as db:
                 if args.action=="coverage":
-                    result = coverage(db, args.indicator, args.first, args.last)
+                    result = coverage(db, selected_datasets(db,args.dataset,args.indicator), args.first, args.last)
                 elif args.action=="report":
-                    result = db.execute("""SELECT DISTINCT ON(dataset_id) dataset_id,checked_at,status,report
-                      FROM macro_pilot_runs WHERE dataset_id=ANY(%s) ORDER BY dataset_id,checked_at DESC,id DESC""",
-                      (selected_datasets(db,args.dataset,args.indicator),)).fetchall()
+                    result = report(db,selected_datasets(db,args.dataset,args.indicator))
                 else:
                     result=[]
                     for dataset in selected_datasets(db,args.dataset,args.indicator):

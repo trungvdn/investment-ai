@@ -57,7 +57,7 @@
       "historySource": "https://sbv.gov.vn/vi/du-no-tin-dung-doi-voi-nen-kt-dttktt",
       "updateSource": "https://sbv.gov.vn/vi/du-no-tin-dung-doi-voi-nen-kt-dttktt",
       "access": "DEPLOYMENT_ACCESS_TO_VERIFY",
-      "notes": "Existing Go SBV adapter; historical coverage/access requires audit. Preserve the catalog definition and unit. Historical worker is shadow-only; coverage is measured from imported data, not inferred from source URLs."
+      "notes": "Existing Go SBV adapter; historical coverage/access requires audit. Preserve the catalog definition and unit. Historical worker is direct to macro_observations; coverage is measured from imported data, not inferred from source URLs."
     },
     {
       "code": "VN_INTERBANK_ON",
@@ -71,7 +71,7 @@
       "historySource": "https://sbv.gov.vn/vi/lãi-suất1",
       "updateSource": "https://sbv.gov.vn/vi/lãi-suất1",
       "access": "DEPLOYMENT_ACCESS_TO_VERIFY",
-      "notes": "Existing Go SBV adapter; historical coverage/access requires audit. Preserve the catalog definition and unit. Historical worker is shadow-only; coverage is measured from imported data, not inferred from source URLs."
+      "notes": "Existing Go SBV adapter; historical coverage/access requires audit. Preserve the catalog definition and unit. Historical worker is direct to macro_observations; coverage is measured from imported data, not inferred from source URLs."
     },
     {
       "code": "VN_SBV_TBILL",
@@ -141,7 +141,7 @@
       "pythonAdapter": "nso_ppi_history",
       "updateSource": "https://nsdp.nso.gov.vn/GSO-chung/SDMXFiles/GSO/PPIVNM.xml",
       "historySource": "https://nsdp.nso.gov.vn/GSO-chung/SDMXFiles/GSO/PPIVNM.xml",
-      "notes": "Industrial B–E quarterly same-quarter-previous-year=100 index minus 100; not monthly CPI or index-level YoY calculation. Historical worker is shadow-only; coverage is measured from imported data, not inferred from source URLs."
+      "notes": "Industrial B–E quarterly same-quarter-previous-year=100 index minus 100; not monthly CPI or index-level YoY calculation. Historical worker is direct to macro_observations; coverage is measured from imported data, not inferred from source URLs."
     },
     {
       "code": "VN_PMI",
@@ -155,7 +155,7 @@
       "historySource": "https://www.mbs.com.vn/trien-vong-vi-mo/",
       "updateSource": "https://tradingeconomics.com/vietnam/manufacturing-pmi",
       "access": "PUBLIC_PAGE_MAY_CHALLENGE",
-      "notes": "MBS public report HTML/PDF historical candidates; full monthly coverage is unverified. Trading Economics remains latest-only; no full history is inferred from a chart."
+      "notes": "MBS public report HTML/PDF historical collection; full monthly coverage is unverified. Trading Economics remains latest-only; no full history is inferred from a chart."
     },
     {
       "code": "VN_IIP_YOY",
@@ -168,7 +168,7 @@
       "pythonAdapter": "nso_iip",
       "updateSource": "https://nsdp.nso.gov.vn/GSO-chung/SDMXFiles/GSO/IIPVNM.xml",
       "historySource": "https://nsdp.nso.gov.vn/GSO-chung/SDMXFiles/GSO/IIPVNM.xml",
-      "notes": "Existing Go SDMX adapter; exact month coverage must come from database observations, not the existence of a URL. Historical worker is shadow-only; coverage is measured from imported data, not inferred from source URLs."
+      "notes": "Existing Go SDMX adapter; exact month coverage must come from database observations, not the existence of a URL. Historical worker is direct to macro_observations; coverage is measured from imported data, not inferred from source URLs."
     },
     {
       "code": "VN_RETAIL_YOY",

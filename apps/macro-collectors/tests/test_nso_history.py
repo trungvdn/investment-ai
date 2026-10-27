@@ -64,8 +64,8 @@ class NSOHistoryDatabaseTests(PostgresPilotFixture):
             def get(self,url):return body
         for _ in range(2):
             self.assertEqual(ingest(self.db,"nso_ppi_history",True,client_factory=Client)["importedObservations"],2)
-        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"],2)
-        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"],0)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_source_values").fetchone()["n"],0)
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"],2)
 
     def test_iip_uses_full_prior_year_levels_and_existing_go_parity(self):
         from macro_collectors.history import ingest,selected_datasets
@@ -75,6 +75,8 @@ class NSOHistoryDatabaseTests(PostgresPilotFixture):
         class Client:
             def get(self,url):return body
         result=ingest(self.db,"nso_iip",True,first="2026-01",last="2026-09",client_factory=Client)
-        self.assertEqual(result["status"],"MATCH")
+        self.assertEqual(result["status"],"WRITTEN")
+        self.assertEqual(result["inserted"],0)
+        self.assertEqual(result["unchanged"],24)
         self.assertEqual(result["importedObservations"],24)
         self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"],before)
