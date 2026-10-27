@@ -75,3 +75,34 @@ docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --r
 Inspect lastPage/totalCount to choose further credit pages. All original reports
 are retained. A successful bounded job is not a declaration of complete history.
 No source is activated for dashboard publication in this phase.
+
+## IIP and quarterly industrial PPI
+
+Migration 009 registers `nso_ppi_history`; `nso_iip` reuses its existing registry
+and shared lease, including when the pilot daemon is already running. IIP parses
+the complete XML before deriving monthly YoY from the same series/prior-year month.
+Missing denominators are not fabricated. PPI selects only national industry B–E,
+quarterly frequency, zero unit multiplier and the same-quarter-prior-year=100
+basis; the published index is reduced by 100 exactly once.
+
+Both SDMX imports retain the entire available transformed history. --from/--to
+provides a requested coverage window, never removes required IIP denominator data.
+Coverage understands quarterly periods; it does not manufacture monthly PPI.
+The replay CLI supports `nso_ppi_history` so CI executes the actual Go parser on
+the same captured XML and checks Python values/periods. This verifies parsing,
+not live source availability or completeness.
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset nso_iip
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset nso_ppi_history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history coverage --indicator VN_IIP_YOY --from 2020-01 --to 2026-09
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history coverage --indicator VN_PPI_YOY --from 2020-01 --to 2026-09
+```
+
+Merge/deploy these stacked changes in order: PMI worker, rates/credit, IIP/PPI.
+All groups use semantic source-vintage deduplication, independent raw/run audit,
+persistent scheduling/leases and partial-source diagnostics. The development
+execution environment is unavailable; GitHub Actions runs Python/PostgreSQL/Go
+tests and Docker smoke checks. No production backfill or source activation was
+performed. PMI 12-month real coverage and a complete NHNN daily O/N archive remain
+source-verification work, explicitly visible through missing-period reports.

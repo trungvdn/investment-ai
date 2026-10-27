@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/trungvdn/investment-ai/apps/macro-api/internal/macro"
 	"github.com/trungvdn/investment-ai/apps/macro-api/internal/providers"
 	"io"
 	"os"
 )
 
 func main() {
-	dataset := flag.String("dataset", "", "nso_cpi or nso_iip")
+	dataset := flag.String("dataset", "", "nso_cpi, nso_iip or nso_ppi_history")
 	file := flag.String("file", "", "captured XML path")
 	flag.Parse()
 	code, series, name := "VN_CPI_YOY", "PCPI_IX", "CPIVNM"
@@ -20,6 +21,8 @@ func main() {
 	case "nso_cpi":
 	case "nso_iip":
 		code, series, name = "VN_IIP_YOY", "AIP_ISIC4_IX", "IIPVNM"
+	case "nso_ppi_history":
+		code, series, name = "VN_PPI_YOY", providers.PPISeries, "PPIVNM"
 	default:
 		fmt.Fprintln(os.Stderr, "unsupported pilot dataset")
 		os.Exit(1)
@@ -35,7 +38,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, "captured XML unreadable or too large")
 		os.Exit(1)
 	}
-	rows, err := providers.ParseSDMX(body, code, series, providers.NSDPBase+name+".xml")
+	parse := func() ([]macro.Observation, error) {
+		if *dataset == "nso_ppi_history" {
+			return providers.ParsePPI(body, providers.NSDPBase+name+".xml")
+		}
+		return providers.ParseSDMX(body, code, series, providers.NSDPBase+name+".xml")
+	}
+	rows, err := parse()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Go parser rejected captured XML")
 		os.Exit(1)

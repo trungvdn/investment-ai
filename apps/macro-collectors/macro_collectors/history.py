@@ -11,7 +11,7 @@ from .pilot import connect, bindings, claim, persist
 from .selection import periods_between
 from .sources import coverage
 
-DATASETS = {"mbs_pmi_history","sbv_credit_history","sbv_interbank_history","fred_effr_history","fred_10y_history"}
+DATASETS = {"mbs_pmi_history","sbv_credit_history","sbv_interbank_history","fred_effr_history","fred_10y_history","nso_iip","nso_ppi_history"}
 
 
 def collect(client, dataset, config, today, page, first, last):
@@ -23,6 +23,9 @@ def collect(client, dataset, config, today, page, first, last):
         return adapter(client,dataset,config,today,page,first,last)
     if dataset["id"].startswith("fred_"):
         from .fred_history import collect as adapter
+        return adapter(client,dataset,config,today,page,first,last)
+    if dataset["id"] in ("nso_iip","nso_ppi_history"):
+        from .nso_history import collect as adapter
         return adapter(client,dataset,config,today,page,first,last)
     raise CollectionError("CONFIGURATION", "Unsupported historical dataset")
 
