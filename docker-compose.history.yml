@@ -5,6 +5,8 @@ services:
     entrypoint: ["python", "-m", "macro_collectors.history"]
     command: ["run", "--dataset", "all"]
     environment:
+      FRED_API_KEY: ${FRED_API_KEY:-}
+      SBV_INTERBANK_HISTORY_URLS: ${SBV_INTERBANK_HISTORY_URLS:-}
       PGHOST: postgres
       PGPORT: "5432"
       PGUSER: ${HISTORY_DB_USER:-macro}

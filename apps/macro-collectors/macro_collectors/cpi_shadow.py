@@ -42,7 +42,12 @@ def compare(db,dataset,rows,config,today):
         match=reference["unit"]==row["unit"] and math.isfinite(reference["value"]) and abs(row["value"]-reference["value"])<=tolerance
         checks.append({"indicator":code,"period":row["period"],"status":"CROSS_SOURCE_VALUE_MATCH" if match else "VALUE_MISMATCH","go":reference["value"],"python":row["value"],"goSource":reference["source_url"]})
     latest=max(row["period_end"] for row in rows)
-    stale=(today-latest).days>60
+    age_limits={binding["indicator_code"]:binding["validation"].get("max_age_days",60) for binding in config}
+    latest_by_code={}
+    for row in rows:
+        code=row["indicator_code"]
+        latest_by_code[code]=max(latest_by_code.get(code,row["period_end"]),row["period_end"])
+    stale=any((today-end).days>age_limits[code] for code,end in latest_by_code.items())
     status="STALE" if stale else "CROSS_SOURCE_MISMATCH" if any(c["status"]=="VALUE_MISMATCH" for c in checks) else "CROSS_SOURCE_REVIEW"
     candidates=[{key:(value.isoformat() if hasattr(value,"isoformat") else value) for key,value in row.items() if key in ("indicator_code","period","value","unit","basis","source_url","published_at","evidence")} for row in rows]
     missing=[binding["indicator_code"] for binding in config if binding["indicator_code"] not in {row["indicator_code"] for row in rows}]

@@ -57,3 +57,24 @@ not been established. Coverage must expose gaps instead of inferring values from
 charts or forecasts. Exact PDF/HTML evidence remains in raw documents.
 
 No production deployment or DB cleanup has been performed from development.
+
+## Rates and credit
+
+NHNN credit uses national month-end total YTD values, never regional, mid-month or
+YoY values. Archive pages use validated real pagination. An API access denial may
+fall back to a public NHNN total table, explicitly marked PARTIAL. O/N imports
+only dated VND overnight rows; starred rows use the stated prior reference date.
+A complete daily NHNN archive is unverified. Public historical table URLs may be
+configured with SBV_INTERBANK_HISTORY_URLS; no guessed date-query is used.
+
+FRED_API_KEY is required for EFFR and US 10Y. History requests start in 1900 and
+retain available responses, not just the Go adapter's default five-year window.
+Missing "." values stay missing; API credentials are not stored in provenance.
+Daily coverage lists unobserved weekdays without pretending all are trading days.
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_credit_history --from 2020-01 --to 2026-09 --start-page 1 --pages 5
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_interbank_history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset fred_effr_history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset fred_10y_history
+```
