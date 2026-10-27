@@ -20,6 +20,7 @@ type Indicator struct {
 	Description string `json:"description"`
 }
 type Observation struct {
+	UpperValue    *float64   `json:"upperValue,omitempty"`
 	IndicatorCode string     `json:"indicatorCode"`
 	Period        string     `json:"period"`
 	PeriodEnd     time.Time  `json:"periodEnd"`
@@ -85,9 +86,6 @@ func Validate(o Observation, now time.Time) error {
 	if !ok || !ind.Enabled {
 		return fmt.Errorf("unknown or disabled indicator %s", o.IndicatorCode)
 	}
-	if ind.Frequency == "EVENT" && (o.Value < 0 || o.Value > 100) {
-		return fmt.Errorf("policy rate outside bounds")
-	}
 	if math.IsNaN(o.Value) || math.IsInf(o.Value, 0) {
 		return fmt.Errorf("non-finite observation")
 	}
@@ -96,6 +94,13 @@ func Validate(o Observation, now time.Time) error {
 	}
 	if (o.IndicatorCode == "VN_PMI" && (o.Value < 0 || o.Value > 100)) || ((o.IndicatorCode == "US_DXY" || o.IndicatorCode == "US_BROAD_USD" || o.IndicatorCode == "VN_USD_VND" || o.IndicatorCode == "VN_M2_LEVEL") && o.Value <= 0) || ((ind.Basis == "YoY" || ind.Basis == "YTD") && o.Value < -100) {
 		return fmt.Errorf("observation outside definition bounds")
+	}
+	if ind.Basis == "RANGE" {
+		if o.UpperValue == nil || math.IsNaN(*o.UpperValue) || math.IsInf(*o.UpperValue, 0) || o.Value < 0 || *o.UpperValue > 100 || o.Value > *o.UpperValue {
+			return fmt.Errorf("invalid deposit rate range")
+		}
+	} else if o.UpperValue != nil {
+		return fmt.Errorf("upper bound on non-range indicator")
 	}
 	var end time.Time
 	var err error
@@ -146,15 +151,6 @@ func Status(ind Indicator, latest *Observation, attempt *Attempt, now time.Time)
 			}
 		}
 		return "MISSING"
-	}
-	if ind.Frequency == "EVENT" {
-		if attempt == nil || now.Sub(attempt.CheckedAt) > time.Duration(ind.MaxAgeDays)*24*time.Hour {
-			return "STALE"
-		}
-		if !attempt.Success {
-			return "SOURCE_ERROR"
-		}
-		return "AVAILABLE"
 	}
 	if now.Sub(latest.PeriodEnd) > time.Duration(ind.MaxAgeDays)*24*time.Hour {
 		return "STALE"

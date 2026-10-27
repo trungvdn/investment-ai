@@ -51,6 +51,7 @@ export type AnalysisRequest = {
 };
 
 export type MacroObservation = {
+  upperValue?: number;
   indicatorCode: string;
   period: string;
   periodEnd: string;

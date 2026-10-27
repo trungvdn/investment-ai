@@ -96,42 +96,52 @@ Merge/deploy the stacked PRs in order #12, #13, #14. All groups use this single
 production writer. Legacy pilot diagnostics remain optional and are not required
 by this worker.
 
-## NHNN policy rates
+## Lãi suất huy động VND, kỳ hạn 6–12 tháng
 
-`sbv_policy_rates` supplies three EVENT series: VN_SBV_REFINANCING,
-VN_SBV_DISCOUNT and VN_SBV_OVERNIGHT, in % per year. The last is the NHNN
-standing overnight lending rate, separate from VN_INTERBANK_ON market rates.
-Migration 010 registers bindings; all values/raw documents/scheduling use the
-existing production tables. No monthly/daily synthetic observations are added.
+Dataset `sbv_deposit_rates` supplies one `VN_DEPOSIT_RATE` monthly indicator:
+NHNN's published range of average VND deposit rates for state-owned and joint
+stock commercial banks, new and existing deposits, term 6–12 months. It is not
+a regulatory ceiling, standing policy rate, individual bank quote, or midpoint.
 
-The Python history worker checks the current NHNN rates table every 24 hours.
-It requires all three explicitly labelled rates and unambiguous effective dates.
-HTTP/parse failures use the government republication of decision 1123/QD-NHNN
-as a bounded historical fallback (4.5%, 3%, 5%, effective 2023-06-19). This fallback
-is lower priority, returns PARTIAL, and does not certify the current policy rate.
-It is not a complete decision archive. Future changes are read from the current
-NHNN table; if that page remains blocked/changes structure, the source stays
-unverified and alerts continue. No anti-bot bypass or guessed current values.
+The Python worker checks https://sbv.gov.vn/vi/trang-chu daily, discovers links
+named “Diễn biến lãi suất của tổ chức tín dụng đối với khách hàng tháng M/YYYY”,
+then reads the HTML or downloads the report's PDF attachment and uses the
+existing Poppler runtime. Reference month comes from the report heading, not
+the publication/download date. The parser restricts VND, bank population,
+new/existing deposits and exact 6–12 month tenor. USD, lending rates, shorter
+terms, conflicting bounds and future months fail validation.
 
-Sources:
-- https://sbv.gov.vn/vi/lãi-suất1
-- https://xaydungchinhsach.chinhphu.vn/nhnn-tiep-tuc-dieu-chinh-lai-suat-dieu-hanh-119230616150218505.htm
+For example, NHNN's September 2026 report, published 22 October 2026, reports
+6.6–8.1%/year for this definition. Discovery supports four reports per bounded
+job/page; this is not a complete historical archive. For older reports or when
+the index is inaccessible, configure `SBV_DEPOSIT_REPORT_URLS` as a space-separated
+list of explicit HTTPS NHNN article/PDF URLs (maximum 20). These still require
+successful retrieval and the same validation. Access/parse failures remain
+visible through existing retries and source alerts; there is no static-value
+fallback. Index failure with explicit reports returns PARTIAL and retains valid
+observations without claiming latest discovery succeeded.
 
-Deploy/rebuild API (migration 010), frontend, and Python worker, from repo root:
+Migration 010 adds nullable `upper_value` to existing `macro_observations`, and
+registers one dataset/binding. `value` stores the published lower bound,
+`upper_value` the upper bound. Scalar indicators omit `upperValue` in API JSON.
+A shared range-writer wrapper retains both lower-only and upper-only revisions
+and the existing lock/idempotency/raw provenance rules. No new data table.
+
+Indicator Monitor displays “lower–upper %”, and its chart plots both bounds.
+No standalone interest-rate section or three standing-policy indicators remain.
+Previous-period scalar changes are not calculated for ranges. The prior draft
+policy dataset is disabled if present; its stored audit data is preserved.
+
+Deploy from the repository root, after merging:
 
 ```sh
 docker compose -f docker-compose.macro.yml -f docker-compose.history.yml up -d --build macro-api macro-history
-docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history run --dataset sbv_policy_rates --once --force
+# Wait for Macro API /healthz (migration 010), then trigger collection:
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history run --dataset sbv_deposit_rates --once --force
 ```
 
-For a single policy indicator use `--indicator VN_SBV_REFINANCING`; the dataset
-fetches all three rates together. Reruns reuse the shared observation writer.
-`coverage --dataset sbv_policy_rates` reports decision events without asserting
-missing monthly periods. PARTIAL intentionally exits nonzero for operators;
-verified historical rows are still saved. If a scheduled run owns the lease,
-wait for it rather than trying to steal it.
-
-A decision from years ago can still be in effect. EVENT freshness therefore
-uses the last successful current-table check (7 days), not decision age. Failure
-retains the last observation but marks SOURCE_ERROR; stale/missing checks are
-shown as STALE. The UI labels effective dates and uses a step chart.
+Rebuild the frontend for production, or restart `npm run dev`. The range field
+requires the API, Python collector and frontend changes to be deployed together.
+Reruns do not create duplicate observations. A busy lease must finish before
+another manual run can claim it. PARTIAL exits nonzero to keep discovery/source
+issues visible, even when valid older reports were saved.

@@ -1,4 +1,5 @@
-import type { MacroIndicator } from "../lib/types";
+import { formatNumber } from "../lib/utils";
+import type { MacroObservation, MacroIndicator } from "../lib/types";
 export const statusLabels: Record<string, string> = {
   AVAILABLE: "Có dữ liệu",
   STALE: "Kỳ dữ liệu đã cũ",
@@ -12,7 +13,6 @@ export const statusLabels: Record<string, string> = {
   NO_PUBLISHED_RATE: "Phiên không công bố lãi suất tín phiếu",
 };
 export const groupLabels: Record<string, string> = {
-  Policy: "Chính sách tiền tệ",
   Liquidity: "Thanh khoản",
   Credit: "Tín dụng",
   Inflation: "Lạm phát",
@@ -33,34 +33,35 @@ function periodKey(date: Date, frequency: string) {
     ? `${date.getUTCFullYear()}-Q${Math.floor(date.getUTCMonth() / 3) + 1}`
     : date.toISOString().slice(0, 7);
 }
-export function historyPoints(indicator: MacroIndicator, months: number) {
+export function historyPoints(indicator: MacroIndicator, months: number): { period: string; value: number | null; upperValue?: number | null }[] {
   const history = indicator.history;
   if (!history.length) return [];
   const last = new Date(history.at(-1)!.periodEnd);
   const cutoff = new Date(last);
   cutoff.setUTCMonth(cutoff.getUTCMonth() - months);
   const chosen = history.filter((o) => new Date(o.periodEnd) >= cutoff);
-  if (indicator.frequency === "EVENT") {
-    const baseline = history.filter((o) => new Date(o.periodEnd) < cutoff).at(-1);
-    return [...(baseline ? [baseline] : []), ...chosen].map((o) => ({ period: o.period, value: o.value }));
-  }
   if (!["MONTHLY", "QUARTERLY"].includes(indicator.frequency))
     return chosen.map((o) => ({ period: o.period, value: o.value }));
   if (!chosen.length) return [];
   const byPeriod = new Map(chosen.map((o) => [o.period, o.value]));
-  const out: { period: string; value: number | null }[] = [];
+  const out: { period: string; value: number | null; upperValue?: number | null }[] = [];
   const date = periodStart(chosen[0].period, indicator.frequency);
   if (!date) return [];
   const stop = chosen.at(-1)!.period;
   const step = indicator.frequency === "QUARTERLY" ? 3 : 1;
   while (periodKey(date, indicator.frequency) <= stop) {
     const period = periodKey(date, indicator.frequency);
-    out.push({ period, value: byPeriod.get(period) ?? null });
+    out.push({ period, value: byPeriod.get(period) ?? null,
+      ...(indicator.comparisonBasis === "RANGE" ? { upperValue: chosen.find((o) => o.period === period)?.upperValue ?? null } : {}),
+    });
     date.setUTCMonth(date.getUTCMonth() + step);
   }
   return out;
 }
+export const observationValue = (o: MacroObservation) =>
+  o.upperValue === undefined ? formatNumber(o.value) : `${formatNumber(o.value)}–${formatNumber(o.upperValue)}`;
 export function previousChange(i: MacroIndicator) {
+  if (i.comparisonBasis === "RANGE") return null;
   if (i.code === "VN_SBV_TBILL") return null; // The tenor basket can change between auctions.
   const h = i.history;
   if (h.length < 2) return null;
@@ -88,10 +89,6 @@ export const changeUnit = (i: MacroIndicator) =>
       ? i.unit
       : "đơn vị";
 export function sourceMessage(i: MacroIndicator) {
-  if (i.frequency === "EVENT" && i.status === "SOURCE_ERROR")
-    return "Chưa xác minh được bảng lãi suất điều hành hiện hành. Giá trị là mức theo quyết định gần nhất đã thu thập; xem ngày hiệu lực và nguồn.";
-  if (i.frequency === "EVENT" && i.status === "STALE")
-    return "Đã quá hạn kiểm tra nguồn lãi suất điều hành. Ngày quyết định cũ không có nghĩa chính sách đã hết hiệu lực.";
   if (i.status === "NOT_CONFIGURED") return "Nguồn dữ liệu chưa được cấu hình.";
   return (
     i.lastAttempt?.message.replace(

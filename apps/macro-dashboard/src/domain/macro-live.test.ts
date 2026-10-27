@@ -74,18 +74,18 @@ it("shows a normal publication delay without exposing the manifest status prefix
   expect(statusLabels.AWAITING_RELEASE).toBe("Chờ công bố kỳ mới");
 });
 
-it("preserves policy decision events without inventing monthly or daily values", () => {
+it("plots both deposit range bounds with monthly gaps and no scalar change", () => {
   const indicator = {
-    frequency: "EVENT",
+    frequency: "MONTHLY", comparisonBasis: "RANGE",
     history: [
-      { period: "2022-10-25", periodEnd: "2022-10-25", value: 6 },
-      { period: "2023-04-03", periodEnd: "2023-04-03", value: 5.5 },
-      { period: "2023-06-19", periodEnd: "2023-06-19", value: 4.5 },
+      { period: "2026-07", periodEnd: "2026-07-31", value: 6.1, upperValue: 7.6 },
+      { period: "2026-09", periodEnd: "2026-09-30", value: 6.6, upperValue: 8.1 },
     ],
   } as MacroIndicator;
-  expect(historyPoints(indicator, 1)).toEqual([
-    { period: "2023-04-03", value: 5.5 },
-    { period: "2023-06-19", value: 4.5 },
+  expect(historyPoints(indicator, 12)).toEqual([
+    { period: "2026-07", value: 6.1, upperValue: 7.6 },
+    { period: "2026-08", value: null, upperValue: null },
+    { period: "2026-09", value: 6.6, upperValue: 8.1 },
   ]);
-  expect(sourceMessage({ ...indicator, status: "SOURCE_ERROR" })).toContain("Chưa xác minh");
+  expect(previousChange(indicator)).toBeNull();
 });

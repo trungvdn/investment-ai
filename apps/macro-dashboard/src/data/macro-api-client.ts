@@ -17,10 +17,6 @@ const safeURL = (value: unknown, code: string) => {
       && u.hostname === "github.com"
       && u.pathname === "/trungvdn/investment-ai/blob/main/apps/macro-api/data/manual/2026-10-27.sql"
       && !u.search && !u.hash) return true;
-    if (["VN_SBV_REFINANCING", "VN_SBV_DISCOUNT", "VN_SBV_OVERNIGHT"].includes(code)
-      && u.hostname === "xaydungchinhsach.chinhphu.vn"
-      && u.pathname === "/nhnn-tiep-tuc-dieu-chinh-lai-suat-dieu-hanh-119230616150218505.htm"
-      && !u.search && !u.hash) return true;
     if (code !== "VN_PMI") return false;
     if (["mbs.com.vn", "www.mbs.com.vn"].includes(u.hostname)) return true;
     return ["tradingeconomics.com", "www.tradingeconomics.com"].includes(u.hostname)
@@ -33,6 +29,9 @@ const validObservation = (o: MacroObservation, ind: MacroIndicator) =>
   o &&
   o.indicatorCode === ind.code &&
   Number.isFinite(o.value) &&
+  (ind.comparisonBasis === "RANGE"
+    ? Number.isFinite(o.upperValue) && o.value >= 0 && o.value <= o.upperValue! && o.upperValue! <= 100
+    : o.upperValue === undefined || o.upperValue === null) &&
   o.unit === ind.unit &&
   typeof o.period === "string" &&
   Number.isFinite(Date.parse(o.periodEnd)) &&

@@ -2,9 +2,7 @@ package macro
 
 func Catalog() []Indicator {
 	return []Indicator{
-		{"VN_SBV_REFINANCING", "Lãi suất điều hành · Tái cấp vốn", "Policy", "VN", "%", "EVENT", "LEVEL", true, 7, "NHNN: lãi suất tái cấp vốn (%/năm), lưu theo ngày hiệu lực quyết định. Độ mới dựa trên lần kiểm tra bảng hiện hành, không phải tuổi quyết định."},
-		{"VN_SBV_DISCOUNT", "Lãi suất điều hành · Tái chiết khấu", "Policy", "VN", "%", "EVENT", "LEVEL", true, 7, "NHNN: lãi suất tái chiết khấu (%/năm), lưu theo ngày hiệu lực quyết định."},
-		{"VN_SBV_OVERNIGHT", "Lãi suất điều hành · Cho vay qua đêm", "Policy", "VN", "%", "EVENT", "LEVEL", true, 7, "NHNN: cho vay qua đêm trong thanh toán điện tử liên ngân hàng và bù đắp thiếu hụt vốn. Đây là lãi suất NHNN quy định, khác lãi suất O/N giao dịch trên thị trường liên ngân hàng."},
+		{"VN_DEPOSIT_RATE", "Lãi suất huy động VND · 6–12 tháng", "Liquidity", "VN", "%", "MONTHLY", "RANGE", true, 75, "NHNN: khoảng lãi suất tiền gửi VND bình quân của nhóm NHTM nhà nước và NHTM cổ phần, khoản tiền gửi mới và cũ, kỳ hạn từ 6 đến 12 tháng. Hiển thị cận dưới–cận trên (%/năm), không tính trung điểm."},
 		{"VN_M2_GROWTH", "Tăng trưởng M2", "Liquidity", "VN", "% YoY", "MONTHLY", "YoY", true, 75, "NHNN: YoY chỉ khi có cùng tháng năm trước theo phương pháp từ 10/2025; không so qua mốc đổi phương pháp."},
 		{"VN_M2_LEVEL", "Tổng phương tiện thanh toán M2", "Liquidity", "VN", "tỷ đồng", "MONTHLY", "LEVEL", true, 75, "NHNN: số dư tổng phương tiện thanh toán theo phương pháp từ 10/2025. Không nối với chuỗi cũ."},
 		{"VN_M2_YTD", "Tăng trưởng M2 từ đầu năm", "Liquidity", "VN", "% YTD", "MONTHLY", "YTD", true, 75, "NHNN: mức tăng được công bố so cuối năm trước; không gán nhãn YoY."},

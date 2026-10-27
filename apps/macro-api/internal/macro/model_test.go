@@ -86,29 +86,21 @@ func TestPMIPendingDoesNotHidePreviouslyStaleData(t *testing.T) {
 	}
 }
 
-func TestPolicyRateFreshnessUsesCurrentSourceCheck(t *testing.T) {
-	now := time.Date(2026, 10, 27, 0, 0, 0, 0, time.UTC)
-	ind, _ := Find("VN_SBV_REFINANCING")
-	end := time.Date(2023, 6, 19, 0, 0, 0, 0, time.UTC)
-	o := Observation{IndicatorCode: ind.Code, Period: "2023-06-19", PeriodEnd: end, Value: 4.5, Unit: "%", Source: "SBV", SourceURL: "https://sbv.gov.vn/", SeriesID: "SBV_POLICY_REFINANCING", Method: "POLICY_RATE"}
-	if err := Validate(o, now); err != nil {
+func TestDepositRangeValidation(t *testing.T) {
+	end, _ := MonthEnd("2026-09")
+	upper := 8.1
+	o := Observation{IndicatorCode: "VN_DEPOSIT_RATE", Period: "2026-09", PeriodEnd: end, Value: 6.6, UpperValue: &upper, Unit: "%", Source: "SBV", SourceURL: "https://sbv.gov.vn/report.pdf", SeriesID: "SBV_VND_DEPOSIT_6_12M_RANGE", Method: "PUBLISHED_RANGE"}
+	if err := Validate(o, time.Date(2026, 10, 27, 0, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
 	}
-	for _, tc := range []struct {
-		attempt *Attempt
-		want    string
-	}{
-		{nil, "STALE"},
-		{&Attempt{CheckedAt: now, Success: true}, "AVAILABLE"},
-		{&Attempt{CheckedAt: now, Success: false}, "SOURCE_ERROR"},
-		{&Attempt{CheckedAt: now.AddDate(0, 0, -8), Success: true}, "STALE"},
-	} {
-		if got := Status(ind, &o, tc.attempt, now); got != tc.want {
-			t.Fatalf("policy status %s, want %s", got, tc.want)
+	for _, v := range []float64{6.5, math.NaN(), math.Inf(1), 101} {
+		o.UpperValue = &v
+		if Validate(o, time.Now()) == nil {
+			t.Fatal("invalid upper bound accepted")
 		}
 	}
-	o.Value = -1
-	if Validate(o, now) == nil {
-		t.Fatal("negative policy rate accepted")
+	o.UpperValue = nil
+	if Validate(o, time.Now()) == nil {
+		t.Fatal("missing upper bound accepted")
 	}
 }

@@ -37,6 +37,7 @@ import {
 import {
   groupLabels,
   historyPoints,
+  observationValue,
   previousChange,
   statusLabels,
   changeUnit,
@@ -46,7 +47,6 @@ import {
 import { cn, formatDate, formatNumber } from "../lib/utils";
 import type { MacroIndicator } from "../lib/types";
 const icons: Record<string, typeof Activity> = {
-  Policy: Landmark,
   Liquidity: Wallet,
   Credit: Landmark,
   Inflation: Activity,
@@ -322,11 +322,11 @@ export default function Macro() {
                 <>
                   <div className="macro-chart-summary">
                     <strong>
-                      {formatNumber(selected.latest.value)}
+                      {observationValue(selected.latest)}
                       <small>{selected.unit}</small>
                     </strong>
                     <span className="subtle-copy">
-                      Kỳ {selected.latest.period} · {selected.comparisonBasis}
+                      Kỳ {selected.latest.period} · {selected.comparisonBasis === "RANGE" ? "Khoảng công bố" : selected.comparisonBasis}
                     </span>
                   </div>
                   <div className="macro-area-chart">
@@ -393,24 +393,26 @@ export default function Macro() {
                           />
                         )}
                         <Area
-                          type={selected.frequency === "EVENT" ? "stepAfter" : "linear"}
-                          dot={selected.frequency === "EVENT" ? { r: 3 } : false}
+                          type="linear"
                           connectNulls={false}
                           dataKey="value"
-                          name={selected.unit}
+                          name={selected.comparisonBasis === "RANGE" ? "Cận dưới (%/năm)" : selected.unit}
                           stroke="#1f9d84"
                           strokeWidth={2}
                           fill="url(#liveMacroFill)"
                           isAnimationActive={false}
                         />
+                        {selected.comparisonBasis === "RANGE" && <Area
+                          type="linear" dataKey="upperValue" name="Cận trên (%/năm)"
+                          stroke="#d49732" strokeWidth={2} fill="none" connectNulls={false}
+                          isAnimationActive={false}
+                        />}
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="chart-foot">
                     <span>
-                      {selected.frequency === "EVENT"
-                        ? "Ngày hiệu lực quyết định · không tạo quan sát cho ngày không thay đổi"
-                        : selected.frequency === "MONTHLY"
+                      {selected.frequency === "MONTHLY"
                         ? "Chuỗi theo tháng · giữ nguyên khoảng thiếu"
                         : selected.frequency === "QUARTERLY"
                           ? "Chuỗi theo quý · giữ nguyên khoảng thiếu"
@@ -481,7 +483,7 @@ export default function Macro() {
                 </p>
               )}
               <p className="alert-note">
-                <Info size={13} /> Lãi suất điều hành dùng ngày kiểm tra nguồn; các chỉ báo thống kê dùng kỳ dữ liệu, không dựa vào
+                <Info size={13} /> Độ mới dựa trên kỳ thống kê, không dựa vào
                 việc vừa tải lại. Chỉ báo chưa sẵn sàng được giữ trống, không
                 thay bằng dữ liệu mẫu.
               </p>
@@ -587,7 +589,7 @@ export default function Macro() {
                           </div>
                         </td>
                         <td className="indicator-value">
-                          {i.latest ? formatNumber(i.latest.value) : "—"}{" "}
+                          {i.latest ? observationValue(i.latest) : "—"}{" "}
                           <small>{i.unit}</small>
                         </td>
                         <td>{i.latest?.period || "—"}</td>
@@ -659,7 +661,7 @@ export default function Macro() {
                   <div>
                     <dt>Kỳ thống kê / Cơ sở so sánh</dt>
                     <dd>
-                      {selected.latest.period} / {selected.comparisonBasis}
+                      {selected.latest.period} / {selected.comparisonBasis === "RANGE" ? "Khoảng công bố" : selected.comparisonBasis}
                     </dd>
                   </div>
                   <div>
@@ -667,7 +669,6 @@ export default function Macro() {
                     <dd>
                       {(
                         {
-                          EVENT: "Theo quyết định (ngày hiệu lực)",
                           DAILY: "Ngày",
                           MONTHLY: "Tháng",
                           QUARTERLY: "Quý",
