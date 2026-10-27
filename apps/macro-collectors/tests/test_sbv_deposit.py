@@ -105,3 +105,41 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual([r['period'] for r in rows], ['2026-09'])
         self.assertEqual(notes['missingMonths'], ['2026-08'])
         self.assertEqual(notes['warnings'][-1]['kind'], 'MISSING_PERIODS')
+
+    def test_hidden_publisher_can_be_expanded_without_visible_pagination_links(self):
+        from urllib.parse import parse_qs, urlsplit
+        class HiddenClient:
+            def get(self, url):
+                if url == INDEX: return b'<html></html>'
+                if url == ARCHIVE:
+                    return b'<section id="portlet_com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_old"><a href="https://sbv.gov.vn/report/9">Dien bien lai suat cua to chuc tin dung doi voi khach hang thang 9/2026</a></section>'
+                if url.startswith(ARCHIVE+'?'):
+                    query = parse_qs(urlsplit(url).query)
+                    self_test.assertEqual(query['_com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_old_delta'], ['100'])
+                    return b'<a href="https://sbv.gov.vn/report/1">Dien bien lai suat cua to chuc tin dung doi voi khach hang thang 1/2026</a>'
+                return ('<h1>Diễn biến lãi suất của tổ chức tín dụng đối với khách hàng tháng 1/2026</h1><p>'+REPORT.replace('THÁNG 9/2026','THÁNG 1/2026')+'</p>').encode()
+        self_test = self
+        with patch.dict(os.environ, {'SBV_DEPOSIT_REPORT_URLS': ''}), patch('macro_collectors.sbv_deposit.load_registry', return_value=[]):
+            _, rows, notes = collect(HiddenClient(), {'url': INDEX}, [binding()], TODAY, 1, '2026-01', '2026-01')
+        self.assertEqual([r['period'] for r in rows], ['2026-01'])
+        self.assertFalse(notes['missingMonths'])
+
+    def test_zero_matches_still_reports_each_missing_requested_month(self):
+        with patch.dict(os.environ, {'SBV_DEPOSIT_REPORT_URLS': ''}), patch('macro_collectors.sbv_deposit.load_registry', return_value=[]):
+            _, rows, notes = collect(Client(), {'url': INDEX}, [binding()], TODAY, 1, '2026-01', '2026-04')
+        self.assertEqual(rows, [])
+        self.assertEqual(notes['missingMonths'], ['2026-01','2026-02','2026-03','2026-04'])
+
+    def test_registered_month_downloads_directly_and_skips_successful_alternate(self):
+        registry = [{'period':'2026-01','url':PDF},{'period':'2026-01','url':ARTICLE}]
+        calls = []
+        class DirectClient:
+            def get(self, url):
+                calls.append(url)
+                if url != PDF: raise AssertionError('Unexpected index/alternate request')
+                return b'%PDF-fixture'
+        with patch.dict(os.environ, {'SBV_DEPOSIT_REPORT_URLS': ''}), patch('macro_collectors.sbv_deposit.load_registry', return_value=registry):
+            _, rows, notes = collect(DirectClient(), {'url': INDEX}, [binding()], TODAY, 1, '2026-01', '2026-01', text_extractor=lambda _: REPORT.replace('THÁNG 9/2026','THÁNG 1/2026'))
+        self.assertEqual(calls, [PDF])
+        self.assertEqual([r['period'] for r in rows], ['2026-01'])
+        self.assertFalse(notes['warnings'])

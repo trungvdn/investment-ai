@@ -145,3 +145,39 @@ requires the API, Python collector and frontend changes to be deployed together.
 Reruns do not create duplicate observations. A busy lease must finish before
 another manual run can claim it. PARTIAL exits nonzero to keep discovery/source
 issues visible, even when valid older reports were saved.
+
+### Backfill deposit rates from January 2026
+
+The homepage only exposes the newest release. The collector now also inspects
+NHNN's press archive at https://sbv.gov.vn/vi/thong-cao-bao-chi, identifies the
+publishers containing monthly interest-rate releases, and requests their first
+100 published items. This is needed because older monthly reports reside in a
+separate publisher without visible pagination links. Published pagination links
+are also followed, within a 10-index-page job limit. Article slugs are not guessed.
+The checked-in `sbv_deposit_reports.json` is a registry of published public article/PDF
+addresses, not stored values; each file must still download and pass parsing.
+
+With `--from/--to`, each `--pages` unit processes four requested months. January
+through September therefore needs three bounded jobs, not the default one page.
+After updating and rebuilding the Python image, from the repository root:
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml build macro-history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_deposit_rates --from 2026-01 --to 2026-09 --pages 3
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history coverage --dataset sbv_deposit_rates --from 2026-01 --to 2026-09
+```
+
+A complete result has 9 stored periods and `missingRequestedPeriods: []`.
+`MISSING_PERIODS` reports individual missing months in a collection batch, even
+when none of its requested months could be found. Partial retrieval exits nonzero
+while retaining valid ranges. Run coverage to inspect what is actually stored;
+do not treat a successful September update as proof the historical interval is
+complete. Repeated backfill reuses existing revisions, including September.
+
+Known 2026 report addresses (January–September) are registered from NHNN's own
+archive, so backfill for that interval can go directly to the reports without
+repeated index requests. Source downloads are paced at one request per two
+seconds. PDF alternates are skipped once that month's report has succeeded.
+Live verification reached the April PDF, but several other downloads returned
+HTTP 403; address discovery is not proof those values have been ingested.
+Coverage and source errors must still be checked after running on the target host.

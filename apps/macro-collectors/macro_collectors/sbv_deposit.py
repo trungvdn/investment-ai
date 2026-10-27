@@ -3,12 +3,13 @@ import base64
 import json
 import os
 import re
+import time
 from urllib.parse import unquote, urljoin, urlsplit, parse_qs, urlencode
 from pathlib import Path
 from .selection import periods_between
 
 from .cpi_reports import ArticleHTML, fold
-from .http import CollectionError
+from .http import CollectionError, HTTPClient
 from .mbs_history import pdf_text
 from .sbv_history import allowed, transport, Tree, nodes, text
 from .sdmx import month_end
@@ -57,7 +58,12 @@ def collect(client, dataset, config, today, page=1, first=None, last=None, text_
     if dataset['url'] != INDEX or len(config) != 1 or config[0]['indicator_code'] != 'VN_DEPOSIT_RATE' or config[0]['extractor_key'] != VERSION or config[0]['frequency'] != 'MONTHLY' or config[0]['unit'] != '%' or config[0]['comparison_basis'] != 'RANGE':
         raise CollectionError('CONFIGURATION', 'Unexpected deposit dataset definition')
     documents = []; targets = []; warnings = []
+    last_request = 0.0
     def capture(url):
+        nonlocal last_request
+        if isinstance(client, HTTPClient):
+            time.sleep(max(0, last_request + 2 - time.monotonic()))
+        last_request = time.monotonic()
         raw = client.get(transport(url))
         documents.append({'url': url, 'bodyBase64': base64.b64encode(raw).decode('ascii')})
         return raw
@@ -68,8 +74,10 @@ def collect(client, dataset, config, today, page=1, first=None, last=None, text_
     if first and not expected:
         raise CollectionError('CONFIGURATION', 'Page exceeds requested month interval')
     wanted = set(expected or [])
-    discovered = {}
-    queue = [INDEX, ARCHIVE]
+    registry = load_registry()
+    registered = {entry['url']: entry['period'] for entry in registry if first and entry['period'] in wanted}
+    discovered = dict(registered)
+    queue = [] if wanted and wanted <= set(registered.values()) else [INDEX, ARCHIVE]
     visited = set()
     publishers = set()
     source_paths = set()
@@ -124,13 +132,6 @@ def collect(client, dataset, config, today, page=1, first=None, last=None, text_
                 break
         except (CollectionError, UnicodeError) as error:
             warnings.append({'kind': getattr(error,'kind','DATA_QUALITY'), 'url': index, 'message': 'Deposit index unavailable'})
-    # Public PDF links independently verified when adding the archive support.
-    # These are source addresses, not seeded indicator values.
-    registry = load_registry()
-    if first:
-        for entry in registry:
-            if entry['period'] in wanted:
-                discovered.setdefault(entry['url'], entry['period'])
     if len(explicit) > 20:
         raise CollectionError('CONFIGURATION', 'At most 20 explicit deposit report URLs')
     targets = list(dict.fromkeys(explicit + list(discovered)))
@@ -142,6 +143,8 @@ def collect(client, dataset, config, today, page=1, first=None, last=None, text_
         raise CollectionError('NO_DATA', 'No NHNN deposit reports found for requested months')
     rows = {}
     for target in targets:
+        if target in registered and registered[target] in rows:
+            continue  # Alternate address for a report already downloaded successfully.
         try:
             raw = capture(target)
             source = target

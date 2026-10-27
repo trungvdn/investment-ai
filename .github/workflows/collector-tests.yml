@@ -55,21 +55,6 @@ jobs:
         working-directory: apps/macro-collectors
       - run: python -m unittest discover -s tests -v
         working-directory: apps/macro-collectors
-      - name: Inspect published NHNN month addresses
-        continue-on-error: true
-        working-directory: apps/macro-collectors
-        run: |
-          python - <<'PY'
-          from macro_collectors.http import HTTPClient
-          from macro_collectors.cpi_reports import ArticleHTML, fold
-          from urllib.parse import urlencode
-          import json,re,time
-          identity='com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_lzzn'
-          url='https://sbv.gov.vn/vi/thong-cao-bao-chi?'+urlencode({'p_p_id':identity,'p_p_lifecycle':0,'p_p_state':'normal','p_p_mode':'view','_'+identity+'_cur':1,'_'+identity+'_delta':100})
-          raw=HTTPClient(deadline=90).get(url)
-          parser=ArticleHTML();parser.feed(raw.decode('utf-8'))
-          print('NHNN_DISCOVERY '+json.dumps([(href,label) for href,label in parser.links if 'dien bien lai suat' in fold(label) and '2026' in label],ensure_ascii=False))
-          PY
       - name: Validate collector deployment configuration
         run: |
           docker compose -f docker-compose.macro.yml -f docker-compose.collectors.yml config --quiet
