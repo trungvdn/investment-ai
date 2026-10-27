@@ -3,24 +3,20 @@ import type {
   MacroIndicator,
   MacroObservation,
 } from "../lib/types";
-const safeURL = (value: unknown) => {
+const safeURL = (value: unknown, code: string) => {
   try {
     const u = new URL(String(value));
-    return (
-      u.protocol === "https:" &&
-      [
-        "fred.stlouisfed.org",
-        "nsdp.nso.gov.vn",
-        "nso.gov.vn",
-        "www.nso.gov.vn",
-        "sbv.gov.vn",
-        "www.sbv.gov.vn",
-        "www.pmi.spglobal.com",
-        "pmi.spglobal.com",
-        "www.ice.com",
-        "indices.ice.com",
-      ].includes(u.hostname)
-    );
+    if (u.protocol !== "https:" || u.username || u.password) return false;
+    const primary = [
+      "fred.stlouisfed.org", "nsdp.nso.gov.vn", "nso.gov.vn", "www.nso.gov.vn",
+      "gso.gov.vn", "www.gso.gov.vn", "sbv.gov.vn", "www.sbv.gov.vn",
+      "www.pmi.spglobal.com", "pmi.spglobal.com", "www.ice.com", "indices.ice.com",
+    ].includes(u.hostname);
+    if (primary) return true;
+    if (code !== "VN_PMI") return false;
+    if (["mbs.com.vn", "www.mbs.com.vn"].includes(u.hostname)) return true;
+    return ["tradingeconomics.com", "www.tradingeconomics.com"].includes(u.hostname)
+      && u.pathname.replace(/\/$/, "") === "/vietnam/manufacturing-pmi";
   } catch {
     return false;
   }
@@ -32,7 +28,7 @@ const validObservation = (o: MacroObservation, ind: MacroIndicator) =>
   o.unit === ind.unit &&
   typeof o.period === "string" &&
   Number.isFinite(Date.parse(o.periodEnd)) &&
-  safeURL(o.sourceUrl);
+  safeURL(o.sourceUrl, ind.code);
 export function validateMacroDashboard(value: unknown): MacroDashboard {
   const d = value as MacroDashboard;
   if (
@@ -44,19 +40,22 @@ export function validateMacroDashboard(value: unknown): MacroDashboard {
     !Number.isFinite(d.enabled)
   )
     throw new Error("Macro API trả về định dạng không hợp lệ.");
-  if (
-    d.indicators.some(
-      (i) =>
-        !i ||
-        typeof i.code !== "string" ||
-        typeof i.name !== "string" ||
-        typeof i.enabled !== "boolean" ||
-        !Array.isArray(i.history) ||
-        (i.latest !== null && !validObservation(i.latest, i)) ||
-        i.history.some((o) => !validObservation(o, i)),
-    )
-  )
-    throw new Error("Dữ liệu chỉ báo không hợp lệ hoặc thiếu nguồn gốc.");
+  const invalidIndex = d.indicators.findIndex(
+    (i) =>
+      !i ||
+      typeof i.code !== "string" ||
+      typeof i.name !== "string" ||
+      typeof i.enabled !== "boolean" ||
+      !Array.isArray(i.history) ||
+      (i.latest !== null && !validObservation(i.latest, i)) ||
+      i.history.some((o) => !validObservation(o, i)),
+  );
+  if (invalidIndex >= 0) {
+    const code = d.indicators[invalidIndex]?.code;
+    throw new Error(
+      `Dữ liệu chỉ báo ${typeof code === "string" ? code : ""} không hợp lệ hoặc thiếu nguồn gốc.`,
+    );
+  }
   return d;
 }
 export async function fetchMacroDashboard({
@@ -82,7 +81,9 @@ export async function fetchMacroDashboard({
     throw new Error(
       response.status === 503
         ? "Kho dữ liệu vĩ mô chưa sẵn sàng. Kiểm tra kết nối PostgreSQL và Macro API."
-        : `Không tải được dữ liệu vĩ mô (HTTP ${response.status}).`,
+        : response.status === 502
+          ? "Proxy chưa kết nối được Macro API. Kiểm tra dịch vụ cổng 3000 và MACRO_API_URL, sau đó khởi động lại Vite."
+          : `Không tải được dữ liệu vĩ mô (HTTP ${response.status}).`,
     );
   if (!response.headers.get("content-type")?.includes("application/json"))
     throw new Error("Macro API chưa được cấu hình tại /api/macro.");
