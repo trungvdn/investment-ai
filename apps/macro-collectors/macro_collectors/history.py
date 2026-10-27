@@ -54,6 +54,19 @@ def ingest(db, dataset_id, force=False, page=1, first=None, last=None, client_fa
             "warnings": notes.get("warnings", []), "mode": "shadow", "publication": "NOT_PERFORMED"}
 
 
+
+def selected_datasets(db,dataset="all",indicator="all"):
+    if indicator!="all":
+        ids=[row["dataset_id"] for row in db.execute("""SELECT DISTINCT b.dataset_id FROM macro_indicator_bindings b
+          JOIN macro_datasets d ON d.id=b.dataset_id WHERE b.indicator_code=%s AND b.enabled AND d.enabled
+          AND b.dataset_id=ANY(%s) ORDER BY b.dataset_id""",
+          (indicator,sorted(DATASETS) if dataset=="all" else [dataset])).fetchall()]
+        if not ids:raise ValueError("No enabled history binding for indicator")
+        return ids
+    if dataset!="all":return [dataset]
+    return [row["id"] for row in db.execute("SELECT id FROM macro_datasets WHERE id=ANY(%s) AND enabled ORDER BY id",(sorted(DATASETS),)).fetchall()]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("run", "backfill", "coverage", "report"))
@@ -86,10 +99,10 @@ def main():
                 elif args.action=="report":
                     result = db.execute("""SELECT DISTINCT ON(dataset_id) dataset_id,checked_at,status,report
                       FROM macro_pilot_runs WHERE dataset_id=ANY(%s) ORDER BY dataset_id,checked_at DESC,id DESC""",
-                      (sorted(DATASETS) if args.dataset=="all" else [args.dataset],)).fetchall()
+                      (selected_datasets(db,args.dataset,args.indicator),)).fetchall()
                 else:
                     result=[]
-                    for dataset in (sorted(DATASETS) if args.dataset=="all" else [args.dataset]):
+                    for dataset in selected_datasets(db,args.dataset,args.indicator):
                         for page in range(args.start_page,args.start_page+args.pages):
                             item=ingest(db,dataset,args.force or args.action=="backfill",page,args.first,args.last)
                             result.append(item)
@@ -97,7 +110,7 @@ def main():
                             if item["status"]=="NOT_DUE_OR_BUSY":break
             print(json.dumps(result,default=str,ensure_ascii=False),flush=True)
             if args.action!="run" or args.once:
-                return int(any(row.get("status") in ("SOURCE_ERROR","PARTIAL","NOT_DUE_OR_BUSY") for row in result))
+                return int(any(row.get("status") in ("SOURCE_ERROR","PARTIAL","NOT_DUE_OR_BUSY","DISABLED_OR_OTHER_OWNER") for row in result))
         except Exception as error:
             print(json.dumps({"status":"ERROR","kind":type(error).__name__,"sqlstate":getattr(error,"sqlstate",None),
                               "message":"Historical ingestion unavailable; check migration, permissions and source report"}),flush=True)

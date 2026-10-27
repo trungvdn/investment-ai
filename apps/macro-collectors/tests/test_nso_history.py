@@ -31,6 +31,21 @@ class NSOHistoryTests(unittest.TestCase):
                     ppi().replace(b'104.75',b'NaN'),ppi().replace(b'2025-Q1',b'2027-Q1'),b'<!DOCTYPE x>'+ppi()):
             with self.assertRaises(CollectionError):parse_ppi(bad,[binding()],date(2026,10,27))
 
+    def test_daily_baselines_are_fetched_in_one_query(self):
+        from macro_collectors.cpi_shadow import compare
+        calls=[]
+        class DB:
+            def execute(self,query,params):
+                calls.append(query)
+                return self
+            def fetchall(self):return []
+        rows=[{"indicator_code":"US_EFFR","period":f"2025-01-{day:02d}","period_end":date(2025,1,day),"value":3,"unit":"%"} for day in range(1,29)]
+        cfg=[{"indicator_code":"US_EFFR","validation":{"tolerance":0.001,"max_age_days":7}}]
+        status,result=compare(DB(),{},rows,cfg,date(2026,10,27))
+        self.assertEqual(len(calls),1)
+        self.assertEqual(len(result["checks"]),28)
+        self.assertEqual(status,"STALE")
+
     def test_frequency_coverage_does_not_invent_monthly_ppi(self):
         self.assertEqual(expected_periods("QUARTERLY","2025-01","2025-09"),["2025-Q1","2025-Q2","2025-Q3"])
         self.assertEqual(expected_periods("MONTHLY","2025-01","2025-03"),["2025-01","2025-02","2025-03"])
@@ -53,7 +68,8 @@ class NSOHistoryDatabaseTests(PostgresPilotFixture):
         self.assertEqual(self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"],0)
 
     def test_iip_uses_full_prior_year_levels_and_existing_go_parity(self):
-        from macro_collectors.history import ingest
+        from macro_collectors.history import ingest,selected_datasets
+        self.assertEqual(selected_datasets(self.db,indicator="VN_IIP_YOY"),["nso_iip"])
         body=self.baseline("nso_iip")
         before=self.db.execute("SELECT count(*) AS n FROM macro_observations").fetchone()["n"]
         class Client:
