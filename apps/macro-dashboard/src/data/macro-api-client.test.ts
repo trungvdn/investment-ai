@@ -263,3 +263,32 @@ it("accepts government policy republication only for NHNN policy indicators", ()
   }
   expect(() => validateMacroDashboard(pmiDashboard(url))).toThrow("VN_PMI");
 });
+
+const manualGapURL = "https://github.com/trungvdn/investment-ai/blob/main/apps/macro-api/data/manual/2026-10-27.sql";
+it("loads manual CPI and credit with their actual units alongside policy indicators", async () => {
+  const indicators = [
+    { code: "VN_CREDIT_GROWTH", unit: "% YTD", period: "2026-09", periodEnd: "2026-09-30", value: 11.59 },
+    { code: "VN_CPI_YOY", unit: "% YoY", period: "2026-03", periodEnd: "2026-03-31", value: 4.65 },
+  ].map(({ code, ...data }) => {
+    const observation = { ...data, indicatorCode: code, sourceUrl: manualGapURL };
+    return { code, name: code, enabled: true, unit: data.unit, latest: observation, history: [observation] };
+  });
+  const dashboard = { ...empty, available: 2, indicators };
+  const result = await fetchMacroDashboard({
+    fetchImpl: async () => new Response(JSON.stringify(dashboard), { headers: { "Content-Type": "application/json" } }),
+  });
+  expect(result.indicators[0].latest?.value).toBe(11.59);
+  expect(result.indicators[1].latest?.value).toBe(4.65);
+  for (const url of [
+    manualGapURL.replace("github.com", "github.com.evil.test"),
+    manualGapURL.replace("investment-ai", "other-repo"),
+    manualGapURL + "?redirect=1",
+    manualGapURL.replace("https:", "http:"),
+    manualGapURL.replace("https://", "https://user:password@"),
+  ]) {
+    const bad = structuredClone(dashboard);
+    bad.indicators[0].latest.sourceUrl = url;
+    expect(() => validateMacroDashboard(bad)).toThrow("VN_CREDIT_GROWTH");
+  }
+  expect(() => validateMacroDashboard(pmiDashboard(manualGapURL))).toThrow("VN_PMI");
+});
