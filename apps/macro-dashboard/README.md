@@ -15,7 +15,7 @@ npm ci --prefix apps/macro-dashboard
 npm run dev
 ```
 
-Run `go run ./cmd/server` separately from `apps/stock-analysis`. Vite proxies `/api` to `http://localhost:8081`; override with the `STOCK_API_URL` environment variable. Real stock data is the backend default. For offline inspection only, explicitly run `MARKET_DATA_PROVIDER=demo go run ./cmd/server`; report banners identify synthetic data. Provider failures never trigger a silent demo fallback.
+Run `go run ./cmd/server` separately from `apps/stock-analysis`. Vite proxies `/api` to `http://127.0.0.1:8081`; override with the `STOCK_API_URL` environment variable. Real stock data is the backend default. For offline inspection only, explicitly run `MARKET_DATA_PROVIDER=demo go run ./cmd/server`; report banners identify synthetic data. Provider failures never trigger a silent demo fallback.
 
 ## Production
 
@@ -26,7 +26,7 @@ cd apps/stock-analysis
 go run ./cmd/server
 ```
 
-Open `http://localhost:8081`. Go serves the built `../macro-dashboard/dist` directory and the stock API together. Override the directory with `DASHBOARD_DIR` (relative to the server process working directory). Build before starting the production server; source TSX files cannot be served directly.
+Open `http://127.0.0.1:8081`. Go serves the built `../macro-dashboard/dist` directory and the stock API together. Override the directory with `DASHBOARD_DIR` (relative to the server process working directory). Build before starting the production server; source TSX files cannot be served directly.
 
 For separate frontend hosting, serve `dist`, proxy `/api/stocks/` to Go, and rewrite `/macro` to `index.html`. API and missing asset requests must return their real statuses rather than the SPA entry point.
 
@@ -64,3 +64,36 @@ The NHNN/PPI extension adds central FX, VND overnight interbank rates, aggregate
 Phase 5 adds the PMI 50-point reference line and S&P Global source links. NHNN bill yields are weighted by awarded volumes; changing tenor baskets are not displayed as a comparable daily yield change. A valid OMO result without a published bill yield displays `NO_PUBLISHED_RATE`, preserving any previous observation with its own date. PMI public release URLs are configured on the backend, not in the browser. See the Macro API README for source setup and live-access limitations.
 
 The operations extension adds a persisted per-source schedule/status panel (Vietnam time), safe source-error details, consecutive failure counts and overdue-worker warnings from `/api/macro/operations`. The catalog contains 18 definitions: actual ICE spot DXY is separate from FRED Broad USD and requires a configured authorized export. PMI now discovers explicit Vietnam manufacturing links from S&P's public release index; explicit release URLs remain an override. See the Macro API operations section for source cadences, retries and access limitations.
+
+## Troubleshoot Macro API while running npm run dev
+
+The browser calls the Vite origin at /api/macro/dashboard. Vite forwards that
+request to MACRO_API_URL (default http://127.0.0.1:3000), matching the IPv4 Docker
+port binding. npm run dev does not start PostgreSQL or Macro API.
+
+From the repository root:
+
+```sh
+docker compose -f docker-compose.macro.yml up -d --build postgres macro-api
+curl -i http://127.0.0.1:3000/healthz
+curl -i http://127.0.0.1:3000/api/macro/dashboard
+MACRO_API_URL=http://127.0.0.1:3000 npm run dev
+```
+
+Set MACRO_DB_PASSWORD in the environment/root .env before Compose. If the API
+does not answer, inspect `docker compose -f docker-compose.macro.yml ps` and
+`docker compose -f docker-compose.macro.yml logs --tail=80 macro-api`.
+Through Vite, test http://127.0.0.1:5173/api/macro/dashboard (use Vite's actual port).
+If direct API works but Vite does not, check/restart the Vite proxy configuration.
+
+MACRO_API_URL and STOCK_API_URL may also be set in
+apps/macro-dashboard/.env.local; shell settings take precedence. Restart Vite
+after changing these server-only values. Do not expose API credentials via VITE_
+variables. In a container, use the backend's reachable service name instead of
+that container's own loopback address.
+
+A fetch/network error differs from HTTP 502 (proxy cannot reach API), HTTP 503
+(storage unavailable), and a provenance-validation error. New PMI observations
+from MBS and Trading Economics are recognized for VN_PMI; primary GSO/NSO aliases
+are supported. HTTPS and exact-host validation remain enabled, without mock
+fallback. Validation errors identify the offending indicator.

@@ -188,3 +188,65 @@ it("rejects malformed operations payloads without treating them as healthy sourc
     vi.unstubAllGlobals();
   }
 });
+
+const pmiDashboard = (sourceUrl: string) => {
+  const observation = {
+    indicatorCode: "VN_PMI", value: 49.3, unit: "index", period: "2025-01",
+    periodEnd: "2025-01-31T00:00:00Z", sourceUrl,
+  };
+  return {
+    ...empty, available: 1,
+    indicators: [{
+      code: "VN_PMI", name: "PMI sản xuất", enabled: true, unit: "index",
+      latest: observation, history: [observation],
+    }],
+  };
+};
+
+it("loads newly ingested MBS and Trading Economics PMI provenance", async () => {
+  for (const source of [
+    "https://www.mbs.com.vn/media/fixture/report.pdf",
+    "https://mbs.com.vn/bao-cao-trien-vong-vi-mo-thang-2-2025/",
+    "https://tradingeconomics.com/vietnam/manufacturing-pmi",
+  ]) {
+    const result = await fetchMacroDashboard({
+      fetchImpl: async () => new Response(JSON.stringify(pmiDashboard(source)), {
+        headers: { "Content-Type": "application/json" },
+      }),
+    });
+    expect(result.indicators[0].latest?.sourceUrl).toBe(source);
+  }
+});
+
+it("still rejects lookalikes, credential-bearing URLs and unrelated PMI pages", () => {
+  for (const source of [
+    "https://www.mbs.com.vn.evil.example/report.pdf",
+    "https://tradingeconomics.com.evil.example/vietnam/manufacturing-pmi",
+    "https://tradingeconomics.com/china/manufacturing-pmi",
+    "http://www.mbs.com.vn/report.pdf",
+    "https://user:secret@www.mbs.com.vn/report.pdf",
+  ]) {
+    expect(() => validateMacroDashboard(pmiDashboard(source))).toThrow("VN_PMI");
+  }
+});
+
+it("does not allow PMI secondary publishers for an unrelated indicator", () => {
+  const value = pmiDashboard("https://www.mbs.com.vn/report.pdf");
+  const indicator = value.indicators[0];
+  indicator.code = "VN_CPI_YOY";
+  indicator.latest.indicatorCode = "VN_CPI_YOY";
+  expect(() => validateMacroDashboard(value)).toThrow("VN_CPI_YOY");
+});
+
+it("accepts GSO provenance and rejects null/undefined indicator entries", () => {
+  const value = pmiDashboard("https://www.gso.gov.vn/report/");
+  expect(validateMacroDashboard(value).indicators).toHaveLength(1);
+  expect(() => validateMacroDashboard({ ...empty, indicators: [null] })).toThrow();
+  expect(() => validateMacroDashboard({ ...empty, indicators: [undefined] })).toThrow();
+});
+
+it("distinguishes an unreachable proxy upstream from storage failure", async () => {
+  await expect(fetchMacroDashboard({
+    fetchImpl: async () => new Response("", { status: 502 }),
+  })).rejects.toThrow("MACRO_API_URL");
+});
