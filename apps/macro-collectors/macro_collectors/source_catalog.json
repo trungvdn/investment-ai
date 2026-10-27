@@ -155,7 +155,7 @@
       "historySource": "https://www.mbs.com.vn/trien-vong-vi-mo/",
       "updateSource": "https://tradingeconomics.com/vietnam/manufacturing-pmi",
       "access": "PUBLIC_PAGE_MAY_CHALLENGE",
-      "notes": "MBS public report HTML/PDF historical candidates; full monthly coverage is unverified. Trading Economics remains latest-only; no full history is inferred from a chart."
+      "notes": "MBS public report HTML/PDF historical collection; full monthly coverage is unverified. Trading Economics remains latest-only; no full history is inferred from a chart."
     },
     {
       "code": "VN_IIP_YOY",
