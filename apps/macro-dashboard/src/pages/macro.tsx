@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
-  AreaChart,
+  ComposedChart,
+  Line,
+  Legend,
   CartesianGrid,
   ResponsiveContainer,
   ReferenceLine,
@@ -331,7 +333,7 @@ export default function Macro() {
                   </div>
                   <div className="macro-area-chart">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart
+                      <ComposedChart
                         data={points}
                         margin={{ top: 10, right: 12, bottom: 0, left: -12 }}
                       >
@@ -392,27 +394,30 @@ export default function Macro() {
                             label="50 · Không thay đổi"
                           />
                         )}
-                        <Area
-                          type="linear"
-                          connectNulls={false}
-                          dataKey="value"
-                          name={selected.comparisonBasis === "RANGE" ? "Cận dưới (%/năm)" : selected.unit}
-                          stroke="#1f9d84"
-                          strokeWidth={2}
-                          fill="url(#liveMacroFill)"
-                          isAnimationActive={false}
-                        />
-                        {selected.comparisonBasis === "RANGE" && <Area
-                          type="linear" dataKey="upperValue" name="Cận trên (%/năm)"
-                          stroke="#d49732" strokeWidth={2} fill="none" connectNulls={false}
-                          isAnimationActive={false}
-                        />}
-                      </AreaChart>
+                        {selected.comparisonBasis === "RANGE" && <Legend wrapperStyle={{ fontSize: 11 }} />}
+                        {selected.comparisonBasis === "RANGE" && <Line
+                              type="linear" dataKey="value" name="Cận dưới (%/năm)"
+                              stroke="#1f9d84" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }}
+                              connectNulls isAnimationActive={false}
+                            />}
+                        {selected.comparisonBasis === "RANGE" && <Line
+                              type="linear" dataKey="upperValue" name="Cận trên (%/năm)"
+                              stroke="#d49732" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }}
+                              connectNulls isAnimationActive={false}
+                            />}
+                        {selected.comparisonBasis !== "RANGE" && <Area
+                            type="linear" connectNulls={false} dataKey="value" name={selected.unit}
+                            stroke="#1f9d84" strokeWidth={2} fill="url(#liveMacroFill)"
+                            isAnimationActive={false}
+                          />}
+                      </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="chart-foot">
                     <span>
-                      {selected.frequency === "MONTHLY"
+                      {selected.comparisonBasis === "RANGE"
+                        ? "Nối các kỳ có số liệu · tháng thiếu chưa có quan sát"
+                        : selected.frequency === "MONTHLY"
                         ? "Chuỗi theo tháng · giữ nguyên khoảng thiếu"
                         : selected.frequency === "QUARTERLY"
                           ? "Chuỗi theo quý · giữ nguyên khoảng thiếu"

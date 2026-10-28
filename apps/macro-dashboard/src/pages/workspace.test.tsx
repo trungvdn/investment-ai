@@ -27,6 +27,7 @@ vi.mock("../components/price-chart", () => ({
 vi.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
   AreaChart: () => <div>Biểu đồ vĩ mô</div>,
+  ComposedChart: () => <div>Biểu đồ vĩ mô</div>,
   LineChart: () => <div>Lịch sử chỉ báo</div>,
   Area: () => null,
   ReferenceLine: () => null,
