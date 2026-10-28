@@ -148,3 +148,7 @@ momentum, deflation penalties, methodology changes, deduplication across workers
 immutable old vintages, Friday/day buckets and no retrospective gap fabrication.
 Frontend tests cover schema consistency, missing storage, frequency selection,
 and keeping indicator data independent of score failures.
+
+
+### Seven-day reconstructed preview
+The daily endpoint fills missing dates in the seven-calendar-day window ending at the current snapshot (Vietnam time, 18:00 cutoff capped at current time). Real daily snapshots take precedence. Missing dates are recalculated using stored revisions whose publication date is no later than the cutoff; unknown publication dates fall back to first_seen_at. These points have `reconstructed: true`, are not persisted, and may change with backfills, revisions or canonical source policy changes. They are not point-in-time backtest results. Original first-seen timestamps remain in component inputs. Missing inputs retain null scores; no interpolation or synthetic variation is added.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -99,8 +100,13 @@ func (p *Postgres) RefreshMacroScore(ctx context.Context, now time.Time) error {
 func (p *Postgres) MacroScores(ctx context.Context, frequency string) (scoring.Response, error) {
 	model := scoring.DefaultModel()
 	out := scoring.Response{Model: model, Frequency: frequency, History: []scoring.Point{}}
-	// One SQL statement keeps current and history on the same database snapshot.
-	rows, err := p.Pool.Query(ctx, `WITH latest AS (
+	// Freeze snapshots and all reconstruction inputs for this response.
+	tx, err := p.Pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
+	if err != nil {
+		return out, err
+	}
+	defer tx.Rollback(ctx)
+	rows, err := tx.Query(ctx, `WITH latest AS (
  SELECT id FROM macro_score_snapshots WHERE model_hash=$1 ORDER BY as_of DESC,id DESC LIMIT 1
  ), history AS (
  SELECT id FROM macro_score_snapshots WHERE model_hash=$1 AND kind=$2 ORDER BY as_of DESC,id DESC LIMIT 365
@@ -129,5 +135,56 @@ func (p *Postgres) MacroScores(ctx context.Context, frequency string) (scoring.R
 			out.History = append(out.History, scoring.Point{Kind: kind, Snapshot: s})
 		}
 	}
-	return out, rows.Err()
+	if err = rows.Err(); err != nil {
+		return out, err
+	}
+	rows.Close()
+	if frequency == "daily" && out.Current != nil {
+		zone := time.FixedZone("Asia/Ho_Chi_Minh", 7*60*60)
+		local := out.Current.AsOf.In(zone)
+		present := map[string]bool{}
+		for _, point := range out.History {
+			present[point.AsOf.In(zone).Format("2006-01-02")] = true
+		}
+		for offset := -6; offset <= 0; offset++ {
+			day := local.AddDate(0, 0, offset)
+			if present[day.Format("2006-01-02")] {
+				continue
+			}
+			cutoff := time.Date(day.Year(), day.Month(), day.Day(), 18, 0, 0, 0, zone)
+			if cutoff.After(out.Current.AsOf) {
+				cutoff = out.Current.AsOf
+			}
+			data := map[string][]macro.Observation{}
+			// Each cutoff selects its own published revision; unknown publication dates
+			// fall back to first_seen_at. Reconstructed points never enter snapshot storage.
+			inputRows, e := tx.Query(ctx, `SELECT DISTINCT ON (indicator_code,period_end) `+observationColumns+`
+    FROM macro_observations o WHERE period_end <= $1 AND COALESCE(published_at,first_seen_at) <= $1
+    AND period_end >= ($1::timestamptz - interval '2 years')
+    AND (series_id='MANUAL_USER_20261027' OR NOT EXISTS
+    (SELECT 1 FROM macro_source_policies p WHERE p.indicator_code=o.indicator_code AND p.active_batch_id IS NOT NULL)
+    OR id IN (SELECT l.observation_id FROM macro_canonical_links l JOIN macro_source_policies p ON p.active_batch_id=l.batch_id WHERE p.indicator_code=o.indicator_code))
+    ORDER BY indicator_code,period_end,priority DESC,revision DESC,collected_at DESC`, cutoff)
+			if e != nil {
+				return out, e
+			}
+			for inputRows.Next() {
+				var o macro.Observation
+				e = inputRows.Scan(&o.IndicatorCode, &o.Period, &o.PeriodEnd, &o.Value, &o.Unit, &o.Source, &o.SourceURL, &o.SeriesID, &o.Method, &o.Priority, &o.PublishedAt, &o.FirstSeenAt, &o.CollectedAt, &o.Revision, &o.RawID, &o.UpperValue)
+				if e != nil {
+					inputRows.Close()
+					return out, e
+				}
+				data[o.IndicatorCode] = append(data[o.IndicatorCode], o)
+			}
+			e = inputRows.Err()
+			inputRows.Close()
+			if e != nil {
+				return out, e
+			}
+			out.History = append(out.History, scoring.Point{Kind: "DAILY", Reconstructed: true, Snapshot: scoring.Reconstruct(model, data, cutoff)})
+		}
+		sort.Slice(out.History, func(i, j int) bool { return out.History[i].AsOf.Before(out.History[j].AsOf) })
+	}
+	return out, nil
 }

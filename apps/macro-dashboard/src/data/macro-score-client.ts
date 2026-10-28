@@ -13,7 +13,7 @@ export type ScoreSnapshot = {
 export type ScoreResponse = {
   model: { version: string; hash: string; minCoverage: number; rules: { code: string; weight: number; critical: boolean; mode: string }[] };
   frequency: "daily" | "weekly"; current: ScoreSnapshot | null;
-  history: (ScoreSnapshot & { kind: "DAILY" | "WEEKLY" })[];
+  history: (ScoreSnapshot & { kind: "DAILY" | "WEEKLY"; reconstructed?: boolean })[];
 };
 const bounded = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 100;
 const nullable = (v: unknown) => v === null || bounded(v);

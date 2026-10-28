@@ -109,7 +109,8 @@ type Snapshot struct {
 	Groups       []Group     `json:"groups"`
 }
 type Point struct {
-	Kind string `json:"kind"`
+	Reconstructed bool   `json:"reconstructed,omitempty"`
+	Kind          string `json:"kind"`
 	Snapshot
 }
 type Response struct {
@@ -136,6 +137,15 @@ func mean(v []float64) float64 {
 // Calculate receives canonical, one-per-period observations. Every input vintage is
 // frozen in the result; subsequent source revisions cannot rewrite old snapshots.
 func Calculate(m Model, data map[string][]macro.Observation, now time.Time) Snapshot {
+	return calculate(m, data, now, false)
+}
+
+// Reconstruct uses stored revisions and their publication dates, not historical knowledge.
+func Reconstruct(m Model, data map[string][]macro.Observation, now time.Time) Snapshot {
+	return calculate(m, data, now, true)
+}
+
+func calculate(m Model, data map[string][]macro.Observation, now time.Time, reconstructed bool) Snapshot {
 	out := Snapshot{AsOf: now.UTC(), ModelVersion: m.Version, ModelHash: m.Hash, Status: "INSUFFICIENT", Components: []Component{}, Groups: []Group{}}
 	critical := true
 	groupValues := map[string][]float64{}
@@ -147,7 +157,7 @@ func Calculate(m Model, data map[string][]macro.Observation, now time.Time) Snap
 		usable := []macro.Observation{}
 		invalid := false
 		for _, o := range all {
-			if o.IndicatorCode != r.Code || o.PeriodEnd.After(now) || o.FirstSeenAt.After(now) || (o.PublishedAt != nil && o.PublishedAt.After(now)) {
+			if o.IndicatorCode != r.Code || o.PeriodEnd.After(now) || (!reconstructed && o.FirstSeenAt.After(now)) || (reconstructed && o.PublishedAt == nil && o.FirstSeenAt.After(now)) || (o.PublishedAt != nil && o.PublishedAt.After(now)) {
 				continue
 			}
 			if err := macro.Validate(o, now); err != nil || o.RawID <= 0 || o.Revision <= 0 || o.FirstSeenAt.IsZero() {

@@ -7,8 +7,8 @@ import { fetchMacroScore } from "../data/macro-score-client";
 vi.mock("../data/macro-score-client", () => ({ fetchMacroScore: vi.fn() }));
 vi.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-  LineChart: ({ data, children }: any) => <div data-testid="score-chart" data-points={JSON.stringify(data)}>{children}</div>,
-  Line: () => null, XAxis: () => null, YAxis: () => null, CartesianGrid: () => null, Tooltip: () => null,
+  AreaChart: ({ data, children }: any) => <div data-testid="score-chart" data-points={JSON.stringify(data)}>{children}</div>,
+  Area: () => null, ReferenceLine: () => null, XAxis: () => null, YAxis: () => null, CartesianGrid: () => null, Tooltip: () => null,
 }));
 function scoreData(history: any[] = []) {
   return {
@@ -72,4 +72,14 @@ describe("macro score panel", () => {
     expect(points.map((p: any) => p.isCurrent)).toEqual([false, false, true]);
   });
 
+  it("labels reconstructed history and displays the period change", async () => {
+    vi.mocked(fetchMacroScore).mockResolvedValue(scoreData([
+      { asOf: "2026-10-22T11:00:00Z", score: 60, reconstructed: true },
+      { asOf: "2026-10-27T11:00:00Z", score: 63 },
+    ]));
+    renderPanel(); await screen.findByTestId("score-chart");
+    expect(screen.getByText(/Có điểm tính lại/)).toBeInTheDocument();
+    expect(screen.getByText("+5")).toBeInTheDocument();
+    expect(screen.getByText("60 / 65")).toBeInTheDocument();
+  });
 });

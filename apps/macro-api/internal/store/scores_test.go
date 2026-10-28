@@ -80,10 +80,18 @@ func TestScoreSnapshotsPreserveVintagesAndSchedule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if response.Current == nil || response.Current.Score == nil || len(response.History) != 1 {
+	if response.Current == nil || response.Current.Score == nil || len(response.History) != 7 {
 		t.Fatalf("snapshot missing: %+v", response)
 	}
-	original := response.History[0]
+	original := response.History[len(response.History)-1]
+	if original.Reconstructed {
+		t.Fatal("real daily snapshot replaced")
+	}
+	for _, point := range response.History[:6] {
+		if !point.Reconstructed {
+			t.Fatal("missing reconstruction label")
+		}
+	}
 	if original.Coverage != 20 {
 		t.Fatal("unexpected coverage")
 	}
@@ -109,7 +117,7 @@ func TestScoreSnapshotsPreserveVintagesAndSchedule(t *testing.T) {
 	if response.Current.InputHash == original.InputHash || *response.Current.Score == *original.Score {
 		t.Fatal("new vintage not scored")
 	}
-	if response.History[0].InputHash != original.InputHash || *response.History[0].Score != *original.Score {
+	if response.History[len(response.History)-1].InputHash != original.InputHash || *response.History[len(response.History)-1].Score != *original.Score {
 		t.Fatal("old snapshot rewritten")
 	}
 	// Competing replicas and identical input must not duplicate events or buckets.
@@ -133,7 +141,7 @@ func TestScoreSnapshotsPreserveVintagesAndSchedule(t *testing.T) {
 	// A downtime gap creates only the actual new day, never missed historical days.
 	refresh(now.AddDate(0, 0, 4))
 	response, err = p.MacroScores(ctx, "daily")
-	if err != nil || len(response.History) != 2 {
+	if err != nil || len(response.History) != 7 {
 		t.Fatal("invented missing-day snapshots", err)
 	}
 }

@@ -207,3 +207,37 @@ func TestEFFRCalendarMonthAnchor(t *testing.T) {
 		t.Fatal("anchor gap over seven days accepted")
 	}
 }
+
+func TestReconstructionUsesPublicationWithoutChangingVintage(t *testing.T) {
+	at := time.Date(2026, 10, 26, 11, 0, 0, 0, time.UTC)
+	published := at.AddDate(0, 0, -2)
+	data := map[string][]macro.Observation{"VN_PMI": {}}
+	for _, month := range []time.Month{6, 9} {
+		end := time.Date(2026, month+1, 0, 0, 0, 0, 0, time.UTC)
+		data["VN_PMI"] = append(data["VN_PMI"], macro.Observation{IndicatorCode: "VN_PMI", Period: end.Format("2006-01"), PeriodEnd: end, Value: 51, Unit: "index", Source: "test", SourceURL: "https://example.com", SeriesID: "test", Method: "test", Revision: 1, RawID: 1, FirstSeenAt: at.AddDate(0, 0, 1), PublishedAt: &published})
+	}
+	model := DefaultModel()
+	if Calculate(model, data, at).Score != nil {
+		t.Fatal("live calculation used future first-seen data")
+	}
+	rebuilt := Reconstruct(model, data, at)
+	if rebuilt.Score == nil {
+		t.Fatal("published data missing from reconstruction")
+	}
+	if !rebuilt.Components[1].Inputs[0].FirstSeenAt.After(at) {
+		t.Fatal("original vintage changed")
+	}
+	future := at.Add(time.Hour)
+	for i := range data["VN_PMI"] {
+		data["VN_PMI"][i].PublishedAt = &future
+	}
+	if Reconstruct(model, data, at).Score != nil {
+		t.Fatal("used future release")
+	}
+	for i := range data["VN_PMI"] {
+		data["VN_PMI"][i].PublishedAt = nil
+	}
+	if Reconstruct(model, data, at).Score != nil {
+		t.Fatal("unknown publication bypassed first-seen cutoff")
+	}
+}
