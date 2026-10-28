@@ -64,10 +64,14 @@ func (p *Postgres) RefreshMacroScore(ctx context.Context, now time.Time) error {
 		return err
 	}
 	var lastHash string
-	err = tx.QueryRow(ctx, `SELECT input_hash FROM macro_score_snapshots WHERE model_hash=$1 ORDER BY as_of DESC,id DESC LIMIT 1`, model.Hash).Scan(&lastHash)
+	var lastAsOf time.Time
+	err = tx.QueryRow(ctx, `SELECT input_hash,as_of FROM macro_score_snapshots WHERE model_hash=$1 ORDER BY as_of DESC,id DESC LIMIT 1`, model.Hash).Scan(&lastHash, &lastAsOf)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return err
 	}
+	if now.Before(lastAsOf) {
+		return nil
+	} // A delayed replica must not append an older calculation.
 	insert := func(kind, bucket string) error {
 		_, err := tx.Exec(ctx, `INSERT INTO macro_score_snapshots(model_version,model_hash,kind,bucket,as_of,input_hash,payload) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(model_hash,kind,bucket) DO NOTHING`, model.Version, model.Hash, kind, bucket, now, snapshot.InputHash, payload)
 		return err

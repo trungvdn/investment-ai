@@ -166,3 +166,44 @@ func TestIncompatibleHistoryExcluded(t *testing.T) {
 		t.Fatal("methodology break crossed")
 	}
 }
+
+func TestZeroIsObservedValueAndManualProvenanceIsVisible(t *testing.T) {
+	d := full()
+	d["VN_PMI"][5].Value = 0
+	d["VN_CPI_YOY"][5].Method = "USER_SUPPLIED_GAP_FILL; NOT_INDEPENDENTLY_VERIFIED"
+	s := Calculate(DefaultModel(), d, testNow)
+	pmi := find(s, "VN_PMI")
+	if pmi.Score == nil || *pmi.Score != 0 || s.Coverage != 100 {
+		t.Fatal("observed zero confused with missing data")
+	}
+	cpi := find(s, "VN_CPI_YOY")
+	if len(cpi.Warnings) != 1 || cpi.Warnings[0] != "USER_SUPPLIED_UNVERIFIED" {
+		t.Fatal("manual provenance hidden")
+	}
+}
+func TestMethodProvenanceTagsAndFreshnessFingerprint(t *testing.T) {
+	d := full()
+	d["VN_M2_GROWTH"][2].Method = "TEST; ARTICLE_ID=old; PARSER=old"
+	d["VN_M2_GROWTH"][5].Method = "TEST; ARTICLE_ID=new; DENOMINATOR_ARTICLE_ID=base; PARSER=new"
+	m := DefaultModel()
+	s := Calculate(m, d, testNow)
+	if find(s, "VN_M2_GROWTH").Score == nil {
+		t.Fatal("provenance confused with methodology")
+	}
+	expired := Calculate(m, d, testNow.AddDate(0, 3, 0))
+	if s.InputHash == expired.InputHash {
+		t.Fatal("expiry did not change fingerprint")
+	}
+}
+func TestEFFRCalendarMonthAnchor(t *testing.T) {
+	all := []macro.Observation{observation("US_EFFR", "2026-02-27", 4.5), observation("US_EFFR", "2026-05-31", 4)}
+	r := DefaultModel().Rules[5]
+	_, score, err := component(r, all)
+	if err != nil || score != 62.5 {
+		t.Fatalf("clamped calendar anchor: %v %v", score, err)
+	}
+	all[0] = observation("US_EFFR", "2026-02-20", 4.5)
+	if _, _, err = component(r, all); err == nil {
+		t.Fatal("anchor gap over seven days accepted")
+	}
+}

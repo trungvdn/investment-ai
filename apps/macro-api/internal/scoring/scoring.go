@@ -63,6 +63,9 @@ func (m Model) Validate() error {
 		default:
 			return fmt.Errorf("unknown scoring mode")
 		}
+		if (r.Mode == "credit" || r.Mode == "iip") && (r.Months < 2 || r.Months%2 != 0) {
+			return fmt.Errorf("rolling window must be even")
+		}
 		if r.Mode == "band" && r.Low > r.High {
 			return fmt.Errorf("invalid band")
 		}
@@ -163,7 +166,15 @@ func Calculate(m Model, data map[string][]macro.Observation, now time.Time) Snap
 				c.Reason = "STALE"
 			} else {
 				inputs, score, err := component(r, usable)
-				c.Inputs = inputs
+				c.Inputs = []macro.Observation{}
+				seenInputs := map[string]bool{}
+				for _, input := range inputs {
+					key := fmt.Sprintf("%s|%s|%d", input.Period, input.SeriesID, input.Revision)
+					if !seenInputs[key] {
+						c.Inputs = append(c.Inputs, input)
+						seenInputs[key] = true
+					}
+				}
 				if err != nil {
 					c.Reason = err.Error()
 				} else {
@@ -269,7 +280,7 @@ func component(r Rule, all []macro.Observation) ([]macro.Observation, float64, e
 	}
 	if r.Mode == "credit" || r.Mode == "iip" {
 		values := []float64{}
-		for offset := 0; offset < 6; offset++ {
+		for offset := 0; offset < r.Months; offset++ {
 			o, ok := get(-offset)
 			if !ok {
 				return fail("INSUFFICIENT_HISTORY")
@@ -299,7 +310,8 @@ func component(r Rule, all []macro.Observation) ([]macro.Observation, float64, e
 			}
 			values = append(values, value)
 		}
-		a, b := mean(values[:3]), mean(values[3:])
+		half := r.Months / 2
+		a, b := mean(values[:half]), mean(values[half:])
 		momentum := clamp(50 + (a-b)*r.Slope)
 		if r.Mode == "credit" {
 			return inputs, momentum, nil
