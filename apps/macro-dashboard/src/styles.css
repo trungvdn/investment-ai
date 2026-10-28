@@ -2849,3 +2849,24 @@ footer > span:first-child {
     padding: 23px;
   }
 }
+
+.macro-score-panel { margin: 24px 0; padding: 24px; }
+.macro-score-heading,.score-summary { display: flex; justify-content: space-between; gap: 24px; align-items: center; }
+.macro-score-heading h2 { margin-top: 8px; }
+.score-frequency { display: flex; gap: 4px; }
+.score-frequency button { background: transparent; color: inherit; border: 1px solid #51607555; border-radius: 8px; padding: 8px 16px; cursor: pointer; }
+.score-frequency button[aria-pressed=true] { background: #38bfa122; border-color: #38bfa1; }
+.score-summary { margin: 24px 0; }
+.score-summary p,.score-notice { color: var(--muted-foreground, #8899ac); max-width: 550px; font-size: 13px; }
+.score-groups { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin: 20px 0; }
+.score-groups>div { border: 1px solid #51607544; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.score-groups strong { font-size: 26px; }.score-groups small { font-size: 12px; font-weight: normal; }
+.score-history { margin: 24px 0; }.score-component-table { overflow-x: auto; }
+.score-component-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.score-component-table th,.score-component-table td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #51607533; vertical-align: top; }
+.score-component-table th { font-weight: 500; color: #8899ac; }
+.score-component-table summary { cursor: pointer; }.score-component-table summary small { display: block; margin-top: 5px; color: #8899ac; }
+.score-component-table td:first-child { min-width: 260px; }.score-component-table details p { max-width: 660px; overflow-wrap: anywhere; }
+.score-method { margin-top: 20px; font-size: 13px; line-height: 1.6; }.score-method summary { cursor: pointer; font-weight: 600; }
+@media(max-width:700px) { .macro-score-heading,.score-summary { align-items: flex-start; flex-direction: column; }.score-groups { grid-template-columns: 1fr; }.macro-score-panel { padding: 16px; } }
+.live-overview { grid-template-columns: 1fr; }

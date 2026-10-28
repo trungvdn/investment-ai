@@ -12,6 +12,7 @@ import {
   fetchMacroOperations,
 } from "../data/macro-api-client";
 import type { MacroDashboard } from "../lib/types";
+vi.mock("../data/macro-score-client", () => ({ fetchMacroScore: vi.fn().mockResolvedValue({ current: null, history: [] }) }));
 vi.mock("../data/stock-api-client.js", () => ({ fetchStockReport: vi.fn() }));
 vi.mock("../data/macro-api-client", () => ({
   fetchMacroDashboard: vi.fn(),
@@ -247,11 +248,11 @@ describe("React workspace", () => {
     );
   });
 
-  it("loads live macro data, filters missing sources and shows provenance without a market score", async () => {
+  it("loads live macro data, filters missing sources and shows provenance alongside the experimental score panel", async () => {
     const user = userEvent.setup();
     renderWorkspace("/macro");
     await screen.findByText("Hiển thị 2 / 2 chỉ báo");
-    expect(screen.getByText("MACRO SCORE TẠM ẨN")).toBeInTheDocument();
+    expect(screen.getByText("MACRO SCORE · THỬ NGHIỆM")).toBeInTheDocument();
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Nhóm chỉ báo" }),
       "Inflation",

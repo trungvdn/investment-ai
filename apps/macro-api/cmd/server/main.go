@@ -71,6 +71,24 @@ func main() {
 		}
 	}()
 
+	scoreDone := make(chan struct{})
+	go func() {
+		defer close(scoreDone)
+		for {
+			scoreCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			err := repo.RefreshMacroScore(scoreCtx, time.Now().UTC())
+			cancel()
+			if err != nil && !errors.Is(err, context.Canceled) {
+				logger.Error("macro score refresh failed", "error", err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Minute):
+			}
+		}
+	}()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
@@ -88,4 +106,5 @@ func main() {
 	defer cancel()
 	_ = server.Shutdown(shutdown)
 	<-workerDone
+	<-scoreDone
 }

@@ -1,8 +1,10 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/trungvdn/investment-ai/apps/macro-api/internal/macro"
+	"github.com/trungvdn/investment-ai/apps/macro-api/internal/scoring"
 	"github.com/trungvdn/investment-ai/apps/macro-api/internal/service"
 	"net/http"
 	"strings"
@@ -18,6 +20,29 @@ func write(w http.ResponseWriter, status int, payload any) {
 func New(s *service.Service) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { write(w, 200, map[string]string{"status": "ok"}) })
+	mux.HandleFunc("GET /api/macro/score", func(w http.ResponseWriter, r *http.Request) {
+		frequency := r.URL.Query().Get("frequency")
+		if frequency == "" {
+			frequency = "daily"
+		}
+		if frequency != "daily" && frequency != "weekly" {
+			write(w, 400, map[string]string{"error": "INVALID_FREQUENCY"})
+			return
+		}
+		repo, ok := s.Repo.(interface {
+			MacroScores(context.Context, string) (scoring.Response, error)
+		})
+		if !ok {
+			write(w, 503, map[string]string{"error": "STORAGE_UNAVAILABLE"})
+			return
+		}
+		result, err := repo.MacroScores(r.Context(), frequency)
+		if err != nil {
+			write(w, 503, map[string]string{"error": "STORAGE_UNAVAILABLE"})
+			return
+		}
+		write(w, 200, result)
+	})
 	mux.HandleFunc("GET /api/macro/operations", func(w http.ResponseWriter, r *http.Request) {
 		result, err := s.Operations(r.Context(), time.Now().UTC())
 		if err != nil {

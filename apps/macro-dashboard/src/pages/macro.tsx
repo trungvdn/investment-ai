@@ -1,3 +1,4 @@
+import { MacroScorePanel } from "../components/macro-score-panel";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -227,19 +228,9 @@ export default function Macro() {
               </div>
               <Database size={43} className="coverage-icon" />
             </section>
-            <section className="card score-disabled">
-              <ShieldCheck size={22} />
-              <div>
-                <span className="section-kicker">MACRO SCORE TẠM ẨN</span>
-                <h2>Ưu tiên dữ liệu có thể kiểm chứng</h2>
-                <p>
-                  Chưa chấm điểm hoặc gán trạng thái thị trường cho dữ liệu
-                  thật. Quy tắc tổng hợp và trọng số sẽ được xây dựng, kiểm thử
-                  riêng.
-                </p>
-              </div>
-            </section>
+
           </div>
+          <MacroScorePanel />
           <div className="section-title">
             <div>
               <span className="section-kicker">CÁC NHÓM CHỈ BÁO</span>
