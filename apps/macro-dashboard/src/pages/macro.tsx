@@ -1,5 +1,6 @@
 import { MacroScorePanel } from "../components/macro-score-panel";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -15,6 +16,7 @@ import {
 } from "recharts";
 import {
   Activity,
+  Download,
   ArrowDownRight,
   ArrowUpRight,
   ChevronDown,
@@ -49,13 +51,6 @@ import {
 } from "../domain/macro-live";
 import { cn, formatDate, formatNumber } from "../lib/utils";
 import type { MacroIndicator } from "../lib/types";
-const icons: Record<string, typeof Activity> = {
-  Liquidity: Wallet,
-  Credit: Landmark,
-  Inflation: Activity,
-  Growth: TrendingUp,
-  External: Globe2,
-};
 function Status({ indicator }: { indicator: MacroIndicator }) {
   return (
     <span
@@ -108,6 +103,26 @@ export default function Macro() {
     [selectedCode, setSelectedCode] = useState("VN_CPI_YOY"),
     [range, setRange] = useState("12");
   const dashboard = query.data;
+  const { hash, key: locationKey } = useLocation();
+  const scrolledLocation = useRef("");
+  useEffect(() => {
+    if (!hash || !dashboard || scrolledLocation.current === locationKey) return;
+    const target = document.getElementById(hash.slice(1));
+    if (target) { target.scrollIntoView({ behavior: "smooth", block: "start" }); scrolledLocation.current = locationKey; }
+  }, [hash, locationKey, dashboard]);
+  const highlights = [
+    { code: "VN_DEPOSIT_RATE", label: "Lãi suất huy động", icon: Landmark },
+    { code: "VN_CPI_YOY", label: "Lạm phát CPI", icon: Activity },
+    { code: "VN_PMI", label: "PMI sản xuất", icon: TrendingUp },
+    { code: "VN_CREDIT_GROWTH", label: "Tăng trưởng tín dụng", icon: Wallet },
+  ];
+  const exportData = () => {
+    if (!dashboard) return;
+    const escape = (v: unknown) => `"${String(v ?? "").replaceAll('"', '""')}"`;
+    const records = [["Chỉ báo", "Kỳ", "Giá trị", "Cận trên", "Đơn vị", "Nguồn", "URL", "Trạng thái"], ...rows.map(i => [i.name, i.latest?.period, i.latest?.value, i.latest?.upperValue, i.unit, i.latest?.source, i.latest?.sourceUrl, i.status])];
+    const url = URL.createObjectURL(new Blob(["\ufeff" + records.map(r => r.map(escape).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = "investment-ai-macro.csv"; link.click(); URL.revokeObjectURL(url);
+  };
   const selected =
     dashboard?.indicators.find((i) => i.code === selectedCode) ||
     dashboard?.indicators.find((i) => i.latest) ||
@@ -136,18 +151,15 @@ export default function Macro() {
     (i) => i.enabled && i.status !== "AVAILABLE",
   );
   return (
-    <div className="page macro-page">
+    <div className="page macro-page macro-lens-page" id="macro-overview">
       <div className="page-heading">
         <div>
           <p className="eyebrow">VIETNAM MACRO INTELLIGENCE</p>
-          <h1>
-            Bối cảnh lớn. <span>Dữ liệu có nguồn.</span>
-          </h1>
-          <p className="page-description">
-            Theo dõi các kỳ công bố chính thức, độ mới và lịch sử điều chỉnh dữ
-            liệu.
-          </p>
+          <h1>Bức tranh kinh tế</h1>
+          <p className="page-description">Theo dõi những chuyển động lớn, từ một góc nhìn rõ ràng.</p>
         </div>
+        <div className="macro-heading-actions"><span className="macro-country"><Globe2 size={14}/> Việt Nam</span>
+        <Button variant="outline" size="sm" disabled={!dashboard} onClick={exportData}><Download size={13}/> Xuất dữ liệu</Button>
         <Button
           variant="outline"
           size="sm"
@@ -160,7 +172,7 @@ export default function Macro() {
             <RefreshCw size={13} />
           )}{" "}
           Tải lại
-        </Button>
+        </Button></div>
       </div>
       {query.isPending && (
         <div className="loading-report" role="status">
@@ -201,78 +213,165 @@ export default function Macro() {
       )}
       {dashboard && (
         <>
-          <div className="live-source-banner">
-            <span>
-              <Database size={14} />
-              <strong>
-                Nguồn thực tế: FRED + NSO + NHNN + S&P Global + ICE
-              </strong>
-            </span>
-            <span>
-              API cập nhật lúc{" "}
-              {new Date(dashboard.generatedAt).toLocaleString("vi-VN")} · Lịch
-              công bố tùy chỉ báo
-            </span>
-          </div>
-          <div className="live-overview">
-            <section className="macro-score-card">
-              <div>
-                <span className="section-kicker">ĐỘ PHỦ DỮ LIỆU</span>
-                <div className="macro-score">
-                  <strong>{dashboard.available}</strong>
-                  <span>/ {dashboard.enabled} chỉ báo đang tích hợp</span>
-                </div>
-                <p>
-                  Có quan sát được lưu · Độ mới hiển thị riêng theo từng kỳ.
-                </p>
-              </div>
-              <Database size={43} className="coverage-icon" />
-            </section>
-
-          </div>
+          <div className="macro-ribbon"><span className="macro-ribbon-icon"><Globe2 size={23}/></span><div><strong>Dữ liệu tạo nên góc nhìn.</strong><p>Khám phá lạm phát, sản xuất và dòng vốn trong cùng một không gian.</p></div><div className="macro-data-health"><span className="health-dot"/>{dashboard.available}/{dashboard.enabled} chỉ báo có dữ liệu<small>Cập nhật {new Date(dashboard.generatedAt).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit" })} · {formatDate(dashboard.generatedAt)}</small></div></div>
+          <div className="macro-highlights" aria-label="Các chỉ báo trọng tâm">{highlights.map(({code,label,icon:Icon}) => {
+            const indicator = dashboard.indicators.find(i => i.code === code);
+            const change = indicator ? previousChange(indicator) : null;
+            return <button className="macro-highlight-card" key={code} onClick={() => {setSelectedCode(code); document.getElementById("macro-history")?.scrollIntoView({behavior:"smooth"});}} disabled={!indicator}>
+              <div className="highlight-label"><span>{label}</span><Icon size={16}/></div>
+              <div className="highlight-value">{indicator?.latest ? observationValue(indicator.latest) : "—"}<small>{indicator?.unit ?? (code === "VN_PMI" ? "điểm" : "%")}</small></div>
+              <div className="highlight-bottom"><span className="highlight-change">{change === null ? "Chưa đủ kỳ so sánh" : <>{change < 0 ? <ArrowDownRight size={12}/> : <ArrowUpRight size={12}/>} {change > 0 ? "+" : ""}{formatNumber(change)} {indicator ? changeUnit(indicator) : ""}</>}<small>{indicator?.latest ? `Kỳ ${indicator.latest.period}` : "Chưa có dữ liệu"}</small></span><MiniTrend indicator={indicator}/></div>
+              {indicator && indicator.status !== "AVAILABLE" && <span className="highlight-status">{statusLabels[indicator.status] || indicator.status}</span>}
+            </button>;
+          })}</div>
           <MacroScorePanel />
-          <div className="section-title">
-            <div>
-              <span className="section-kicker">CÁC NHÓM CHỈ BÁO</span>
-              <h2>Độ phủ theo từng động lực thị trường</h2>
-            </div>
-            <span className="subtle-copy">
-              Không thay dữ liệu thiếu bằng số minh họa
-            </span>
-          </div>
-          <div className="group-grid">
-            {Object.entries(groupLabels).map(([key, name]) => {
-              const Icon = icons[key];
-              const members = dashboard.indicators.filter(
-                (i) => i.group === key,
-              );
-              return (
-                <button
-                  key={key}
-                  className={cn("card group-card", group === key && "selected")}
-                  aria-pressed={group === key}
-                  onClick={() => setGroup(group === key ? "all" : key)}
-                >
-                  <div className="group-card-top">
-                    <span className="group-icon">
-                      <Icon size={18} />
-                    </span>
-                    <ArrowUpRight size={15} />
-                  </div>
-                  <span className="group-name">{name}</span>
-                  <div className="group-score">
-                    <strong>{members.filter((i) => i.latest).length}</strong>
-                    <span>/ {members.length} có dữ liệu</span>
-                  </div>
-                  <span className="group-count">
-                    {members.filter((i) => i.enabled).length} chỉ báo đã có
-                    connector
+          <section className="card indicator-section" id="macro-indicators">
+            <div className="card-heading">
+              <div>
+                <span className="section-kicker">INDICATOR MONITOR</span>
+                <h2>
+                  Các chỉ số kinh tế{" "}
+                  <span className="tab-count">
+                    {dashboard.indicators.length}
                   </span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="macro-chart-grid">
+                </h2>
+              </div>
+              <span className="badge green">Dữ liệu thực tế</span>
+            </div>
+            <div className="indicator-filters">
+              <div className="table-search">
+                <Search size={16} />
+                <input
+                  aria-label="Tìm chỉ báo"
+                  placeholder="Tìm tên hoặc mã chỉ báo…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <label className="filter-select">
+                <SlidersHorizontal size={14} />
+                <select
+                  aria-label="Nhóm chỉ báo"
+                  value={group}
+                  onChange={(e) => setGroup(e.target.value)}
+                >
+                  <option value="all">Tất cả nhóm</option>
+                  {Object.entries(groupLabels).map(([key, name]) => (
+                    <option key={key} value={key}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="filter-select">
+                <select
+                  aria-label="Trạng thái dữ liệu"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="available">Đã có quan sát</option>
+                  <option value="attention">Cần chú ý</option>
+                </select>
+              </label>
+              <label className="filter-select">
+                <select
+                  aria-label="Sắp xếp chỉ báo"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                >
+                  <option value="default">Thứ tự mặc định</option>
+                  <option value="name">Theo tên</option>
+                  <option value="period">Kỳ mới nhất</option>
+                </select>
+              </label>
+            </div>
+            <div className="table-scroll">
+              <table className="indicator-table">
+                <thead>
+                  <tr>
+                    <th>Chỉ báo / Nguồn</th>
+                    <th>Giá trị</th>
+                    <th>Kỳ thống kê</th>
+                    <th>Thay đổi</th>
+                    <th>Trạng thái</th>
+                    <th>Thu thập gần nhất</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((i) => {
+                    const change = previousChange(i);
+                    return (
+                      <tr key={i.code}>
+                        <td>
+                          <button
+                            className="indicator-name"
+                            onClick={() => { setSelectedCode(i.code); document.getElementById("macro-history")?.scrollIntoView({behavior:"smooth"}); }}
+                          >
+                            {i.name}
+                          </button>
+                          <div className="source-cell">
+                            {i.latest ? (
+                              <a
+                                href={i.latest.sourceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {i.latest.source} <ExternalLink size={9} />
+                              </a>
+                            ) : (
+                              i.description
+                            )}
+                          </div>
+                        </td>
+                        <td className="indicator-value">
+                          {i.latest ? observationValue(i.latest) : "—"}{" "}
+                          <small>{i.unit}</small>
+                        </td>
+                        <td>{i.latest?.period || "—"}</td>
+                        <td>
+                          {change === null ? (
+                            "—"
+                          ) : (
+                            <span className="observation-change">
+                              {change < 0 ? (
+                                <ArrowDownRight size={12} />
+                              ) : (
+                                <ArrowUpRight size={12} />
+                              )}{" "}
+                              {change > 0 ? "+" : ""}
+                              {formatNumber(change)}
+                              <small>{changeUnit(i)}</small>
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <Status indicator={i} />
+                        </td>
+                        <td>
+                          {i.latest ? formatDate(i.latest.collectedAt) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {!rows.length && (
+                <div className="tab-empty">
+                  Không có chỉ báo phù hợp với bộ lọc.
+                </div>
+              )}
+            </div>
+            <div className="table-footer">
+              <span>
+                Hiển thị {rows.length} / {dashboard.indicators.length} chỉ báo
+              </span>
+              <span>
+                Biến động tăng/giảm không tự động đồng nghĩa với tốt/xấu.
+              </span>
+            </div>
+          </section>
+          <div className="macro-chart-grid" id="macro-history">
             <section className="card macro-chart">
               <div className="card-heading">
                 <div>
@@ -429,7 +528,7 @@ export default function Macro() {
                 </div>
               )}
             </section>
-            <section className="card alerts-card" aria-label="Vận hành thu thập">
+            <div className="macro-source-stack" id="macro-operations"><section className="card alerts-card" aria-label="Vận hành thu thập">
  <div className="card-heading"><h2>Lịch thu thập & trạng thái nguồn</h2></div>
  {operations.isError ? <p role="alert">Không tải được trạng thái vận hành nguồn.</p> : operations.data?.sources.length ? (
  <div className="macro-alerts" style={{maxHeight:360,overflowY:"auto"}}>
@@ -460,7 +559,7 @@ export default function Macro() {
                     <button
                       key={i.code}
                       className="macro-alert"
-                      onClick={() => setSelectedCode(i.code)}
+                      onClick={() => { setSelectedCode(i.code); document.getElementById("macro-history")?.scrollIntoView({behavior:"smooth"}); }}
                     >
                       <span className="alert-dot" />
                       <div>
@@ -483,154 +582,8 @@ export default function Macro() {
                 việc vừa tải lại. Chỉ báo chưa sẵn sàng được giữ trống, không
                 thay bằng dữ liệu mẫu.
               </p>
-            </section>
+            </section></div>
           </div>
-          <section className="card indicator-section">
-            <div className="card-heading">
-              <div>
-                <span className="section-kicker">INDICATOR MONITOR</span>
-                <h2>
-                  Bảng theo dõi chỉ báo{" "}
-                  <span className="tab-count">
-                    {dashboard.indicators.length}
-                  </span>
-                </h2>
-              </div>
-              <span className="badge green">Dữ liệu thực tế</span>
-            </div>
-            <div className="indicator-filters">
-              <div className="table-search">
-                <Search size={16} />
-                <input
-                  aria-label="Tìm chỉ báo"
-                  placeholder="Tìm tên hoặc mã chỉ báo…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <label className="filter-select">
-                <SlidersHorizontal size={14} />
-                <select
-                  aria-label="Nhóm chỉ báo"
-                  value={group}
-                  onChange={(e) => setGroup(e.target.value)}
-                >
-                  <option value="all">Tất cả nhóm</option>
-                  {Object.entries(groupLabels).map(([key, name]) => (
-                    <option key={key} value={key}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="filter-select">
-                <select
-                  aria-label="Trạng thái dữ liệu"
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="available">Đã có quan sát</option>
-                  <option value="attention">Cần chú ý</option>
-                </select>
-              </label>
-              <label className="filter-select">
-                <select
-                  aria-label="Sắp xếp chỉ báo"
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                >
-                  <option value="default">Thứ tự mặc định</option>
-                  <option value="name">Theo tên</option>
-                  <option value="period">Kỳ mới nhất</option>
-                </select>
-              </label>
-            </div>
-            <div className="table-scroll">
-              <table className="indicator-table">
-                <thead>
-                  <tr>
-                    <th>Chỉ báo / Nguồn</th>
-                    <th>Giá trị</th>
-                    <th>Kỳ thống kê</th>
-                    <th>Thay đổi</th>
-                    <th>Trạng thái</th>
-                    <th>Thu thập gần nhất</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((i) => {
-                    const change = previousChange(i);
-                    return (
-                      <tr key={i.code}>
-                        <td>
-                          <button
-                            className="indicator-name"
-                            onClick={() => setSelectedCode(i.code)}
-                          >
-                            {i.name}
-                          </button>
-                          <div className="source-cell">
-                            {i.latest ? (
-                              <a
-                                href={i.latest.sourceUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {i.latest.source} <ExternalLink size={9} />
-                              </a>
-                            ) : (
-                              i.description
-                            )}
-                          </div>
-                        </td>
-                        <td className="indicator-value">
-                          {i.latest ? observationValue(i.latest) : "—"}{" "}
-                          <small>{i.unit}</small>
-                        </td>
-                        <td>{i.latest?.period || "—"}</td>
-                        <td>
-                          {change === null ? (
-                            "—"
-                          ) : (
-                            <span className="observation-change">
-                              {change < 0 ? (
-                                <ArrowDownRight size={12} />
-                              ) : (
-                                <ArrowUpRight size={12} />
-                              )}{" "}
-                              {change > 0 ? "+" : ""}
-                              {formatNumber(change)}
-                              <small>{changeUnit(i)}</small>
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <Status indicator={i} />
-                        </td>
-                        <td>
-                          {i.latest ? formatDate(i.latest.collectedAt) : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {!rows.length && (
-                <div className="tab-empty">
-                  Không có chỉ báo phù hợp với bộ lọc.
-                </div>
-              )}
-            </div>
-            <div className="table-footer">
-              <span>
-                Hiển thị {rows.length} / {dashboard.indicators.length} chỉ báo
-              </span>
-              <span>
-                Biến động tăng/giảm không tự động đồng nghĩa với tốt/xấu.
-              </span>
-            </div>
-          </section>
           {selected && (
             <section
               className="card indicator-detail"
@@ -738,4 +691,13 @@ export default function Macro() {
       )}
     </div>
   );
+}
+
+function MiniTrend({ indicator }: { indicator?: MacroIndicator }) {
+  const observations = indicator?.history.filter(o => Number.isFinite(o.value)).slice(-12) ?? [];
+  if (observations.length < 2) return <span className="mini-trend-empty">—</span>;
+  const values = observations.map(o => o.value);
+  const lo = Math.min(...values), span = Math.max(...values) - lo || 1;
+  const path = values.map((v,i) => `${i ? "L" : "M"}${3+i*80/(values.length-1)},${30-(v-lo)/span*25}`).join(" ");
+  return <svg className="highlight-sparkline" viewBox="0 0 86 36" role="img" aria-label={`${indicator?.name}: xu hướng ${values.length} kỳ có dữ liệu${indicator?.comparisonBasis === "RANGE" ? ", cận dưới" : ""}`}><path d={path} stroke="currentColor" strokeWidth="2" fill="none"/><circle cx="83" cy={30-(values.at(-1)!-lo)/span*25} r="2.5" fill="currentColor"/></svg>;
 }

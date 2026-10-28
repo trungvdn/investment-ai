@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, waitFor } from "@testing-library/react";
+import { render, screen, cleanup, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MacroScorePanel } from "./macro-score-panel";
@@ -72,6 +72,18 @@ describe("macro score panel", () => {
     expect(points.map((p: any) => p.isCurrent)).toEqual([false, false, true]);
   });
 
+  it("selects a historical period and reveals its frozen components", async () => {
+    const data = scoreData();
+    const old = { ...data.current, asOf: "2026-10-26T11:00:00Z", score: 60, coverage: 80, kind: "DAILY", reconstructed: true,
+      components: [{ ...data.current.components[0], name: "PMI kỳ cũ", score: 40 }] };
+    vi.mocked(fetchMacroScore).mockResolvedValue({ ...data, history: [old] });
+    renderPanel(); await screen.findByTestId("score-chart");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Kỳ điểm vĩ mô" }), old.asOf);
+    expect(within(screen.getByRole("complementary", { name: "Thông tin kỳ điểm đang chọn" })).getByText("Độ phủ trọng số 80%")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Xem chi tiết điểm từng chỉ báo" }));
+    expect(screen.getByText("PMI kỳ cũ *")).toBeInTheDocument();
+    expect(screen.queryByText("PMI sản xuất *")).not.toBeInTheDocument();
+  });
   it("labels reconstructed history and displays the period change", async () => {
     vi.mocked(fetchMacroScore).mockResolvedValue(scoreData([
       { asOf: "2026-10-22T11:00:00Z", score: 60, reconstructed: true },
@@ -79,7 +91,7 @@ describe("macro score panel", () => {
     ]));
     renderPanel(); await screen.findByTestId("score-chart");
     expect(screen.getByText(/Có điểm tính lại/)).toBeInTheDocument();
-    expect(screen.getByText("+5")).toBeInTheDocument();
+    expect(screen.getByText("+5 điểm")).toBeInTheDocument();
     expect(screen.getByText("60 / 65")).toBeInTheDocument();
   });
 });

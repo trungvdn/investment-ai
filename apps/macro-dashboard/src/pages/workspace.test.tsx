@@ -184,7 +184,7 @@ describe("React workspace", () => {
     expect(document.documentElement).toHaveClass("dark");
     await user.click(screen.getByRole("link", { name: "Bối cảnh vĩ mô" }));
     expect(
-      screen.getByRole("heading", { name: /Bối cảnh lớn/ }),
+      screen.getByRole("heading", { name: "Bức tranh kinh tế" }),
     ).toBeInTheDocument();
     expect(document.documentElement).toHaveClass("dark");
   });

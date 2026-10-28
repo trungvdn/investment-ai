@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   ArrowUpRight,
   ChartCandlestick,
@@ -26,7 +26,7 @@ export function Layout() {
   });
   const [collapsed, setCollapsed] = useState(false),
     [mobile, setMobile] = useState(false);
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
     try {
@@ -37,8 +37,8 @@ export function Layout() {
   }, [dark]);
   useEffect(() => {
     setMobile(false);
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    if (!hash) window.scrollTo(0, 0);
+  }, [pathname, hash]);
   return (
     <div className={cn("app-layout", collapsed && "is-collapsed")}>
       {mobile && (
@@ -83,6 +83,13 @@ export function Layout() {
             <Globe2 size={20} />
             <span className="sidebar-copy">Bối cảnh vĩ mô</span>
           </NavLink>
+          {pathname === "/macro" && <div className="macro-subnav sidebar-copy" aria-label="Điều hướng vĩ mô">{[
+            ["macro-overview", "Tổng quan vĩ mô"],
+            ["macro-score", "Điểm số vĩ mô"],
+            ["macro-indicators", "Chỉ số kinh tế"],
+            ["macro-history", "Lịch sử chỉ báo"],
+            ["macro-operations", "Lịch thu thập"],
+          ].map(([id,label]) => <Link key={id} to={`/macro#${id}`} className={cn("macro-subnav-link", (hash === `#${id}` || (!hash && id === "macro-overview")) && "active")} aria-current={hash === `#${id}` || (!hash && id === "macro-overview") ? "location" : undefined}>{label}{id === "macro-score" && <small>MỚI</small>}</Link>)}</div>}
         </nav>
         <div className="sidebar-insight sidebar-copy">
           <BookOpen size={20} />
@@ -147,7 +154,7 @@ export function Layout() {
           </div>
           <div className="topbar-right">
             <span className="research-pill">
-              <span /> Research edition
+              <span /> Research workspace
             </span>
             <span className="avatar">TI</span>
           </div>
