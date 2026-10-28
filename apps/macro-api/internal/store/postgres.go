@@ -133,7 +133,7 @@ const observationColumns = `indicator_code,period,period_end,value,unit,source,s
 func (p *Postgres) History(ctx context.Context, code string, from, to *time.Time, revisions bool) ([]macro.Observation, error) {
 	query := `SELECT ` + observationColumns + ` FROM macro_observations WHERE indicator_code=$1 AND ($2::date IS NULL OR period_end >= $2) AND ($3::date IS NULL OR period_end <= $3) ORDER BY period_end,priority DESC,revision DESC`
 	if !revisions {
-		query = `SELECT DISTINCT ON (period_end) ` + observationColumns + ` FROM macro_observations WHERE indicator_code=$1 AND ($2::date IS NULL OR period_end >= $2) AND ($3::date IS NULL OR period_end <= $3) AND (NOT EXISTS (SELECT 1 FROM macro_source_policies p WHERE p.indicator_code=$1 AND p.active_batch_id IS NOT NULL)
+		query = `SELECT DISTINCT ON (period_end) ` + observationColumns + ` FROM macro_observations WHERE indicator_code=$1 AND ($2::date IS NULL OR period_end >= $2) AND ($3::date IS NULL OR period_end <= $3) AND (series_id='MANUAL_USER_20261027' OR NOT EXISTS (SELECT 1 FROM macro_source_policies p WHERE p.indicator_code=$1 AND p.active_batch_id IS NOT NULL)
           OR id IN (SELECT l.observation_id FROM macro_canonical_links l JOIN macro_source_policies p ON p.active_batch_id=l.batch_id WHERE p.indicator_code=$1)) ORDER BY period_end,priority DESC,revision DESC,collected_at DESC`
 	}
 	rows, err := p.Pool.Query(ctx, query, code, from, to)

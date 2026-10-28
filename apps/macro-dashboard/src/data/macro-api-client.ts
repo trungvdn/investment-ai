@@ -13,6 +13,10 @@ const safeURL = (value: unknown, code: string) => {
       "www.pmi.spglobal.com", "pmi.spglobal.com", "www.ice.com", "indices.ice.com",
     ].includes(u.hostname);
     if (primary) return true;
+    if (["VN_CPI_YOY", "VN_CREDIT_GROWTH"].includes(code)
+      && u.hostname === "github.com"
+      && u.pathname === "/trungvdn/investment-ai/blob/main/apps/macro-api/data/manual/2026-10-27.sql"
+      && !u.search && !u.hash) return true;
     if (code !== "VN_PMI") return false;
     if (["mbs.com.vn", "www.mbs.com.vn"].includes(u.hostname)) return true;
     return ["tradingeconomics.com", "www.tradingeconomics.com"].includes(u.hostname)
