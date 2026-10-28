@@ -251,6 +251,21 @@ it("distinguishes an unreachable proxy upstream from storage failure", async () 
   })).rejects.toThrow("MACRO_API_URL");
 });
 
+const manualURL = "https://github.com/trungvdn/investment-ai/blob/main/apps/macro-api/data/manual/2026-10-27.sql";
+it("accepts only the exact manual gap-fill provenance for CPI and credit", () => {
+  for (const code of ["VN_CPI_YOY", "VN_CREDIT_GROWTH"]) {
+    const value = pmiDashboard(manualURL);
+    value.indicators[0].code = code;
+    value.indicators[0].latest.indicatorCode = code;
+    expect(validateMacroDashboard(value).indicators).toHaveLength(1);
+    for (const url of [manualURL + "?x=1", manualURL.replace("github.com", "github.com.evil.test"), manualURL.replace("investment-ai", "other-repo")]) {
+      value.indicators[0].latest.sourceUrl = url;
+      expect(() => validateMacroDashboard(value)).toThrow(code);
+    }
+  }
+  expect(() => validateMacroDashboard(pmiDashboard(manualURL))).toThrow("VN_PMI");
+});
+
 const manualGapURL = "https://github.com/trungvdn/investment-ai/blob/main/apps/macro-api/data/manual/2026-10-27.sql";
 it("loads manual CPI and credit with their actual units", async () => {
   const indicators = [

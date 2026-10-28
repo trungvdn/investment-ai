@@ -137,6 +137,38 @@ func TestPostgresPersistenceRevisionsAndSourcePriority(t *testing.T) {
 	if err != nil || len(allRevisions) != 3 {
 		t.Fatal("canonical selection discarded source revisions")
 	}
+	// Manual gap fills remain visible beside an active CPI batch, preserve the
+	// selected January value, and are idempotent without network collection.
+	manualSQL, err := os.ReadFile("../../data/manual/2026-10-27.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if _, err = p.Pool.Exec(ctx, string(manualSQL)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	filled, err := p.History(ctx, "VN_CPI_YOY", nil, nil, false)
+	if err != nil || len(filled) != 4 {
+		t.Fatalf("manual CPI gaps hidden by active batch: %+v %v", filled, err)
+	}
+	want := map[string]float64{"2025-12": 3.27, "2026-01": 3, "2026-02": 2.94, "2026-03": 4.65}
+	for _, v := range filled {
+		if v.Value != want[v.Period] {
+			t.Fatalf("unexpected CPI value: %+v", v)
+		}
+	}
+	credit, err := p.History(ctx, "VN_CREDIT_GROWTH", nil, nil, false)
+	if err != nil || len(credit) != 1 || credit[0].Value != 11.59 || credit[0].Unit != "% YTD" {
+		t.Fatalf("manual credit gap failed: %+v %v", credit, err)
+	}
+	var manualCount int
+	if err = p.Pool.QueryRow(ctx, "SELECT count(*) FROM macro_observations WHERE series_id='MANUAL_USER_20261027'").Scan(&manualCount); err != nil || manualCount != 4 {
+		t.Fatalf("duplicate manual rows: %d %v", manualCount, err)
+	}
+	if _, err = p.Pool.Exec(ctx, "DELETE FROM macro_observations WHERE series_id='MANUAL_USER_20261027'"); err != nil {
+		t.Fatal(err)
+	}
 	if err = p.RecordAttempt(ctx, "python:canonical:VN_CPI_YOY", macro.Attempt{Code: o.IndicatorCode, CheckedAt: time.Now().Add(-time.Hour), Success: true, Message: "selected"}); err != nil {
 		t.Fatal(err)
 	}
@@ -255,6 +287,25 @@ func TestPostgresPersistenceRevisionsAndSourcePriority(t *testing.T) {
 	token, e = p.ClaimSource(ctx, "sbv:bills", time.Now().Add(time.Second))
 	if e != nil || token == "" {
 		t.Fatal("operator requeue did not become due")
+	}
+
+	// An empty database receives all five supplied values exactly once.
+	if _, err = p.Pool.Exec(ctx, `DELETE FROM macro_canonical_links;
+	 UPDATE macro_source_policies SET active_batch_id=NULL;
+	 DELETE FROM macro_observations`); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if _, err = p.Pool.Exec(ctx, string(manualSQL)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err = p.Pool.QueryRow(ctx, "SELECT count(*) FROM macro_observations").Scan(&manualCount); err != nil || manualCount != 5 {
+		t.Fatalf("expected five unique manual values: %d %v", manualCount, err)
+	}
+	filled, err = p.History(ctx, "VN_CPI_YOY", nil, nil, false)
+	if err != nil || len(filled) != 4 || filled[1].Period != "2026-01" || filled[1].Value != 2.53 {
+		t.Fatalf("January manual CPI missing: %+v %v", filled, err)
 	}
 
 	upper := 8.1
