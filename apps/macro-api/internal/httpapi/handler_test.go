@@ -55,3 +55,21 @@ func TestOperationsEndpointIsReadOnlyAndReportsCoverage(t *testing.T) {
 		t.Fatal("operations endpoint must not mutate state")
 	}
 }
+
+func TestScoreParameterValidationAndStorageFailure(t *testing.T) {
+	h := New(&service.Service{Repo: &testutil.Memory{}})
+	for _, tc := range []struct {
+		method, path string
+		status       int
+	}{
+		{"GET", "/api/macro/score?frequency=monthly", 400},
+		{"GET", "/api/macro/score", 503},
+		{"POST", "/api/macro/score", 405},
+	} {
+		r := httptest.NewRecorder()
+		h.ServeHTTP(r, httptest.NewRequest(tc.method, tc.path, nil))
+		if r.Code != tc.status {
+			t.Fatalf("%s: %d", tc.path, r.Code)
+		}
+	}
+}

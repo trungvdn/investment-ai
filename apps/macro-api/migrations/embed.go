@@ -31,3 +31,6 @@ var IIPPPIHistory string
 
 //go:embed 010_deposit_rates.sql
 var DepositRates string
+
+//go:embed 011_macro_scores.sql
+var MacroScores string
