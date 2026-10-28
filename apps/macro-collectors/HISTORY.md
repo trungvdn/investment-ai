@@ -95,3 +95,89 @@ docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --r
 Merge/deploy the stacked PRs in order #12, #13, #14. All groups use this single
 production writer. Legacy pilot diagnostics remain optional and are not required
 by this worker.
+
+## Lãi suất huy động VND, kỳ hạn 6–12 tháng
+
+Dataset `sbv_deposit_rates` supplies one `VN_DEPOSIT_RATE` monthly indicator:
+NHNN's published range of average VND deposit rates for state-owned and joint
+stock commercial banks, new and existing deposits, term 6–12 months. It is not
+a regulatory ceiling, standing policy rate, individual bank quote, or midpoint.
+
+The Python worker checks https://sbv.gov.vn/vi/trang-chu daily, discovers links
+named “Diễn biến lãi suất của tổ chức tín dụng đối với khách hàng tháng M/YYYY”,
+then reads the HTML or downloads the report's PDF attachment and uses the
+existing Poppler runtime. Reference month comes from the report heading, not
+the publication/download date. The parser restricts VND, bank population,
+new/existing deposits and exact 6–12 month tenor. USD, lending rates, shorter
+terms, conflicting bounds and future months fail validation.
+
+For example, NHNN's September 2026 report, published 22 October 2026, reports
+6.6–8.1%/year for this definition. Discovery supports four reports per bounded
+job/page; this is not a complete historical archive. For older reports or when
+the index is inaccessible, configure `SBV_DEPOSIT_REPORT_URLS` as a space-separated
+list of explicit HTTPS NHNN article/PDF URLs (maximum 20). These still require
+successful retrieval and the same validation. Access/parse failures remain
+visible through existing retries and source alerts; there is no static-value
+fallback. Index failure with explicit reports returns PARTIAL and retains valid
+observations without claiming latest discovery succeeded.
+
+Migration 010 adds nullable `upper_value` to existing `macro_observations`, and
+registers one dataset/binding. `value` stores the published lower bound,
+`upper_value` the upper bound. Scalar indicators omit `upperValue` in API JSON.
+A shared range-writer wrapper retains both lower-only and upper-only revisions
+and the existing lock/idempotency/raw provenance rules. No new data table.
+
+Indicator Monitor displays “lower–upper %”, and its chart plots both bounds.
+No standalone interest-rate section or three standing-policy indicators remain.
+Previous-period scalar changes are not calculated for ranges. The prior draft
+policy dataset is disabled if present; its stored audit data is preserved.
+
+Deploy from the repository root, after merging:
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml up -d --build macro-api macro-history
+# Wait for Macro API /healthz (migration 010), then trigger collection:
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history run --dataset sbv_deposit_rates --once --force
+```
+
+Rebuild the frontend for production, or restart `npm run dev`. The range field
+requires the API, Python collector and frontend changes to be deployed together.
+Reruns do not create duplicate observations. A busy lease must finish before
+another manual run can claim it. PARTIAL exits nonzero to keep discovery/source
+issues visible, even when valid older reports were saved.
+
+### Backfill deposit rates from January 2026
+
+The homepage only exposes the newest release. The collector now also inspects
+NHNN's press archive at https://sbv.gov.vn/vi/thong-cao-bao-chi, identifies the
+publishers containing monthly interest-rate releases, and requests their first
+100 published items. This is needed because older monthly reports reside in a
+separate publisher without visible pagination links. Published pagination links
+are also followed, within a 10-index-page job limit. Article slugs are not guessed.
+The checked-in `sbv_deposit_reports.json` is a registry of published public article/PDF
+addresses, not stored values; each file must still download and pass parsing.
+
+With `--from/--to`, each `--pages` unit processes four requested months. January
+through September therefore needs three bounded jobs, not the default one page.
+After updating and rebuilding the Python image, from the repository root:
+
+```sh
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml build macro-history
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history backfill --dataset sbv_deposit_rates --from 2026-01 --to 2026-09 --pages 3
+docker compose -f docker-compose.macro.yml -f docker-compose.history.yml run --rm macro-history coverage --dataset sbv_deposit_rates --from 2026-01 --to 2026-09
+```
+
+A complete result has 9 stored periods and `missingRequestedPeriods: []`.
+`MISSING_PERIODS` reports individual missing months in a collection batch, even
+when none of its requested months could be found. Partial retrieval exits nonzero
+while retaining valid ranges. Run coverage to inspect what is actually stored;
+do not treat a successful September update as proof the historical interval is
+complete. Repeated backfill reuses existing revisions, including September.
+
+Known 2026 report addresses (January–September) are registered from NHNN's own
+archive, so backfill for that interval can go directly to the reports without
+repeated index requests. Source downloads are paced at one request per two
+seconds. PDF alternates are skipped once that month's report has succeeded.
+Live verification reached the April PDF, but several other downloads returned
+HTTP 403; address discovery is not proof those values have been ingested.
+Coverage and source errors must still be checked after running on the target host.

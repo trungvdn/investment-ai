@@ -63,7 +63,7 @@ The NHNN/PPI extension adds central FX, VND overnight interbank rates, aggregate
 
 Phase 5 adds the PMI 50-point reference line and S&P Global source links. NHNN bill yields are weighted by awarded volumes; changing tenor baskets are not displayed as a comparable daily yield change. A valid OMO result without a published bill yield displays `NO_PUBLISHED_RATE`, preserving any previous observation with its own date. PMI public release URLs are configured on the backend, not in the browser. See the Macro API README for source setup and live-access limitations.
 
-The operations extension adds a persisted per-source schedule/status panel (Vietnam time), safe source-error details, consecutive failure counts and overdue-worker warnings from `/api/macro/operations`. The catalog contains 18 definitions: actual ICE spot DXY is separate from FRED Broad USD and requires a configured authorized export. PMI now discovers explicit Vietnam manufacturing links from S&P's public release index; explicit release URLs remain an override. See the Macro API operations section for source cadences, retries and access limitations.
+The operations extension adds a persisted per-source schedule/status panel (Vietnam time), safe source-error details, consecutive failure counts and overdue-worker warnings from `/api/macro/operations`. The catalog contains 19 definitions: actual ICE spot DXY is separate from FRED Broad USD and requires a configured authorized export. PMI now discovers explicit Vietnam manufacturing links from S&P's public release index; explicit release URLs remain an override. See the Macro API operations section for source cadences, retries and access limitations.
 
 ## Troubleshoot Macro API while running npm run dev
 
@@ -97,3 +97,5 @@ A fetch/network error differs from HTTP 502 (proxy cannot reach API), HTTP 503
 from MBS and Trading Economics are recognized for VN_PMI; primary GSO/NSO aliases
 are supported. HTTPS and exact-host validation remain enabled, without mock
 fallback. Validation errors identify the offending indicator.
+
+The deposit-rate indicator (VN_DEPOSIT_RATE) displays NHNN's monthly VND 6–12 month range in Indicator Monitor. Both bounds are plotted and retained; a midpoint is not used. See ../macro-collectors/HISTORY.md for source discovery, PDF extraction and ingestion commands.

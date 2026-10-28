@@ -29,6 +29,9 @@ const validObservation = (o: MacroObservation, ind: MacroIndicator) =>
   o &&
   o.indicatorCode === ind.code &&
   Number.isFinite(o.value) &&
+  (ind.comparisonBasis === "RANGE"
+    ? Number.isFinite(o.upperValue) && o.value >= 0 && o.value <= o.upperValue! && o.upperValue! <= 100
+    : o.upperValue === undefined || o.upperValue === null) &&
   o.unit === ind.unit &&
   typeof o.period === "string" &&
   Number.isFinite(Date.parse(o.periodEnd)) &&

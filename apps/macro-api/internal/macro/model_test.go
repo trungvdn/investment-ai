@@ -85,3 +85,22 @@ func TestPMIPendingDoesNotHidePreviouslyStaleData(t *testing.T) {
 		t.Fatal("publication wait hid stale stored observation")
 	}
 }
+
+func TestDepositRangeValidation(t *testing.T) {
+	end, _ := MonthEnd("2026-09")
+	upper := 8.1
+	o := Observation{IndicatorCode: "VN_DEPOSIT_RATE", Period: "2026-09", PeriodEnd: end, Value: 6.6, UpperValue: &upper, Unit: "%", Source: "SBV", SourceURL: "https://sbv.gov.vn/report.pdf", SeriesID: "SBV_VND_DEPOSIT_6_12M_RANGE", Method: "PUBLISHED_RANGE"}
+	if err := Validate(o, time.Date(2026, 10, 27, 0, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range []float64{6.5, math.NaN(), math.Inf(1), 101} {
+		o.UpperValue = &v
+		if Validate(o, time.Now()) == nil {
+			t.Fatal("invalid upper bound accepted")
+		}
+	}
+	o.UpperValue = nil
+	if Validate(o, time.Now()) == nil {
+		t.Fatal("missing upper bound accepted")
+	}
+}

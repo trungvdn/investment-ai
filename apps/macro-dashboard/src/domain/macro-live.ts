@@ -1,4 +1,5 @@
-import type { MacroIndicator } from "../lib/types";
+import { formatNumber } from "../lib/utils";
+import type { MacroObservation, MacroIndicator } from "../lib/types";
 export const statusLabels: Record<string, string> = {
   AVAILABLE: "Có dữ liệu",
   STALE: "Kỳ dữ liệu đã cũ",
@@ -32,7 +33,7 @@ function periodKey(date: Date, frequency: string) {
     ? `${date.getUTCFullYear()}-Q${Math.floor(date.getUTCMonth() / 3) + 1}`
     : date.toISOString().slice(0, 7);
 }
-export function historyPoints(indicator: MacroIndicator, months: number) {
+export function historyPoints(indicator: MacroIndicator, months: number): { period: string; value: number | null; upperValue?: number | null }[] {
   const history = indicator.history;
   if (!history.length) return [];
   const last = new Date(history.at(-1)!.periodEnd);
@@ -43,19 +44,24 @@ export function historyPoints(indicator: MacroIndicator, months: number) {
     return chosen.map((o) => ({ period: o.period, value: o.value }));
   if (!chosen.length) return [];
   const byPeriod = new Map(chosen.map((o) => [o.period, o.value]));
-  const out: { period: string; value: number | null }[] = [];
+  const out: { period: string; value: number | null; upperValue?: number | null }[] = [];
   const date = periodStart(chosen[0].period, indicator.frequency);
   if (!date) return [];
   const stop = chosen.at(-1)!.period;
   const step = indicator.frequency === "QUARTERLY" ? 3 : 1;
   while (periodKey(date, indicator.frequency) <= stop) {
     const period = periodKey(date, indicator.frequency);
-    out.push({ period, value: byPeriod.get(period) ?? null });
+    out.push({ period, value: byPeriod.get(period) ?? null,
+      ...(indicator.comparisonBasis === "RANGE" ? { upperValue: chosen.find((o) => o.period === period)?.upperValue ?? null } : {}),
+    });
     date.setUTCMonth(date.getUTCMonth() + step);
   }
   return out;
 }
+export const observationValue = (o: MacroObservation) =>
+  o.upperValue === undefined ? formatNumber(o.value) : `${formatNumber(o.value)}–${formatNumber(o.upperValue)}`;
 export function previousChange(i: MacroIndicator) {
+  if (i.comparisonBasis === "RANGE") return null;
   if (i.code === "VN_SBV_TBILL") return null; // The tenor basket can change between auctions.
   const h = i.history;
   if (h.length < 2) return null;

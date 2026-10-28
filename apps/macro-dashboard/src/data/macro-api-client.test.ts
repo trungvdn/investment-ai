@@ -265,3 +265,44 @@ it("accepts only the exact manual gap-fill provenance for CPI and credit", () =>
   }
   expect(() => validateMacroDashboard(pmiDashboard(manualURL))).toThrow("VN_PMI");
 });
+
+const manualGapURL = "https://github.com/trungvdn/investment-ai/blob/main/apps/macro-api/data/manual/2026-10-27.sql";
+it("loads manual CPI and credit with their actual units", async () => {
+  const indicators = [
+    { code: "VN_CREDIT_GROWTH", unit: "% YTD", period: "2026-09", periodEnd: "2026-09-30", value: 11.59 },
+    { code: "VN_CPI_YOY", unit: "% YoY", period: "2026-03", periodEnd: "2026-03-31", value: 4.65 },
+  ].map(({ code, ...data }) => {
+    const observation = { ...data, indicatorCode: code, sourceUrl: manualGapURL };
+    return { code, name: code, enabled: true, unit: data.unit, latest: observation, history: [observation] };
+  });
+  const dashboard = { ...empty, available: 2, indicators };
+  const result = await fetchMacroDashboard({
+    fetchImpl: async () => new Response(JSON.stringify(dashboard), { headers: { "Content-Type": "application/json" } }),
+  });
+  expect(result.indicators[0].latest?.value).toBe(11.59);
+  expect(result.indicators[1].latest?.value).toBe(4.65);
+  for (const url of [
+    manualGapURL.replace("github.com", "github.com.evil.test"),
+    manualGapURL.replace("investment-ai", "other-repo"),
+    manualGapURL + "?redirect=1",
+    manualGapURL.replace("https:", "http:"),
+    manualGapURL.replace("https://", "https://user:password@"),
+  ]) {
+    const bad = structuredClone(dashboard);
+    bad.indicators[0].latest.sourceUrl = url;
+    expect(() => validateMacroDashboard(bad)).toThrow("VN_CREDIT_GROWTH");
+  }
+  expect(() => validateMacroDashboard(pmiDashboard(manualGapURL))).toThrow("VN_PMI");
+});
+
+it("requires both valid deposit range bounds and preserves them through fetch", async () => {
+  const observation = { indicatorCode: "VN_DEPOSIT_RATE", period: "2026-09", periodEnd: "2026-09-30", value: 6.6, upperValue: 8.1, unit: "%", sourceUrl: "https://sbv.gov.vn/documents/report.pdf/id" };
+  const indicator = { code: "VN_DEPOSIT_RATE", name: "Lãi suất huy động", enabled: true, comparisonBasis: "RANGE", unit: "%", latest: observation, history: [observation] };
+  const payload = { ...empty, available: 1, indicators: [indicator] };
+  const result = await fetchMacroDashboard({ fetchImpl: async () => new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json" } }) });
+  expect(result.indicators[0].latest?.upperValue).toBe(8.1);
+  for (const upperValue of [undefined, null, 6.5, 101, "8.1", NaN]) {
+    const bad = { ...payload, indicators: [{ ...indicator, latest: { ...observation, upperValue } }] };
+    expect(() => validateMacroDashboard(bad)).toThrow("VN_DEPOSIT_RATE");
+  }
+});

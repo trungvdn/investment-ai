@@ -73,3 +73,19 @@ it("shows a normal publication delay without exposing the manifest status prefix
   expect(sourceMessage(i)).toBe("Chờ PMI kỳ mới");
   expect(statusLabels.AWAITING_RELEASE).toBe("Chờ công bố kỳ mới");
 });
+
+it("plots both deposit range bounds with monthly gaps and no scalar change", () => {
+  const indicator = {
+    frequency: "MONTHLY", comparisonBasis: "RANGE",
+    history: [
+      { period: "2026-07", periodEnd: "2026-07-31", value: 6.1, upperValue: 7.6 },
+      { period: "2026-09", periodEnd: "2026-09-30", value: 6.6, upperValue: 8.1 },
+    ],
+  } as MacroIndicator;
+  expect(historyPoints(indicator, 12)).toEqual([
+    { period: "2026-07", value: 6.1, upperValue: 7.6 },
+    { period: "2026-08", value: null, upperValue: null },
+    { period: "2026-09", value: 6.6, upperValue: 8.1 },
+  ]);
+  expect(previousChange(indicator)).toBeNull();
+});

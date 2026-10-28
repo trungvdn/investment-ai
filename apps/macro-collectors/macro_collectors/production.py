@@ -34,6 +34,12 @@ def validated(rows,config,today):
                 raise ValueError("Binding mismatch")
             if not math.isfinite(row["value"]) or isinstance(row["value"],bool) or not row.get("method") or not row.get("source_url","").startswith("https://"):
                 raise ValueError("Invalid value or provenance")
+            if b.get("comparison_basis") == "RANGE":
+                upper=row.get("upper_value")
+                if isinstance(upper,bool) or not isinstance(upper,(int,float)) or not math.isfinite(upper) or not 0<=row["value"]<=upper<=100:
+                    raise ValueError("Invalid published range")
+            elif row.get("upper_value") is not None:
+                raise ValueError("Upper bound on scalar observation")
             period=row["period"]
             if b["frequency"]=="MONTHLY":
                 if not re.fullmatch(r"\d{4}-\d{2}",period):raise ValueError("Invalid month")
@@ -49,7 +55,7 @@ def validated(rows,config,today):
             if row.get("published_at") and (row["published_at"].tzinfo is None or row["published_at"].date()>today):
                 raise ValueError("Invalid publication date")
             key=(row["indicator_code"],period,row["series_id"])
-            if key in result and any(result[key][field]!=row[field] for field in ("value","unit","method","period_end")):
+            if key in result and (any(result[key][field]!=row[field] for field in ("value","unit","method","period_end")) or result[key].get("upper_value")!=row.get("upper_value")):
                 raise ValueError("Conflicting period within job")
             result.setdefault(key,row)
         return [result[key] for key in sorted(result)]
@@ -85,10 +91,13 @@ def persist(db,dataset,token,body,rows,config,failure=None,notes=None):
         if not failure:
             if raw_id is None:raise RuntimeError("Production values require raw provenance")
             for row in rows:
-                saved=db.execute("""SELECT * FROM macro_save_observation_v1(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                  (row["indicator_code"],row["period"],row["period_end"],row["value"],row["unit"],
-                   SOURCES.get(dataset["source_id"],dataset["source_id"]),row["source_url"],row["series_id"],
-                   row["method"],row["priority"],row.get("published_at"),now,raw_id)).fetchone()
+                args=(row["indicator_code"],row["period"],row["period_end"],row["value"],row["unit"],
+                      SOURCES.get(dataset["source_id"],dataset["source_id"]),row["source_url"],row["series_id"],
+                      row["method"],row["priority"],row.get("published_at"),now,raw_id)
+                if row.get("upper_value") is not None:
+                    saved=db.execute("SELECT * FROM macro_save_range_observation_v1("+",".join(["%s"]*14)+")",args+(row["upper_value"],)).fetchone()
+                else:
+                    saved=db.execute("SELECT * FROM macro_save_observation_v1("+",".join(["%s"]*13)+")",args).fetchone()
                 if saved["inserted"]:
                     inserted+=1
                     revised+=int(saved["observation_revision"]>1)

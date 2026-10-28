@@ -103,6 +103,12 @@ func (p *Postgres) Migrate(ctx context.Context) error {
 	if _, err = tx.Exec(ctx, `INSERT INTO macro_schema_migrations(version) VALUES(9) ON CONFLICT DO NOTHING`); err != nil {
 		return err
 	}
+	if _, err = tx.Exec(ctx, migrations.DepositRates); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO macro_schema_migrations(version) VALUES(10) ON CONFLICT DO NOTHING`); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 func (p *Postgres) Close() { p.Pool.Close() }
@@ -119,8 +125,13 @@ func (p *Postgres) Save(ctx context.Context, o macro.Observation) error {
 	if err := macro.Validate(o, time.Now()); err != nil {
 		return err
 	}
-	_, err := p.Pool.Exec(ctx, `SELECT * FROM macro_save_observation_v1($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-		o.IndicatorCode, o.Period, o.PeriodEnd, o.Value, o.Unit, o.Source, o.SourceURL, o.SeriesID, o.Method, o.Priority, o.PublishedAt, o.CollectedAt, o.RawID)
+	query := `SELECT * FROM macro_save_observation_v1($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
+	args := []any{o.IndicatorCode, o.Period, o.PeriodEnd, o.Value, o.Unit, o.Source, o.SourceURL, o.SeriesID, o.Method, o.Priority, o.PublishedAt, o.CollectedAt, o.RawID}
+	if o.UpperValue != nil {
+		query = `SELECT * FROM macro_save_range_observation_v1($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`
+		args = append(args, *o.UpperValue)
+	}
+	_, err := p.Pool.Exec(ctx, query, args...)
 	return err
 }
 func (p *Postgres) RecordAttempt(ctx context.Context, provider string, a macro.Attempt) error {
@@ -128,7 +139,7 @@ func (p *Postgres) RecordAttempt(ctx context.Context, provider string, a macro.A
 	return err
 }
 
-const observationColumns = `indicator_code,period,period_end,value,unit,source,source_url,series_id,method,priority,published_at,first_seen_at,collected_at,revision,raw_id`
+const observationColumns = `indicator_code,period,period_end,value,unit,source,source_url,series_id,method,priority,published_at,first_seen_at,collected_at,revision,raw_id,upper_value`
 
 func (p *Postgres) History(ctx context.Context, code string, from, to *time.Time, revisions bool) ([]macro.Observation, error) {
 	query := `SELECT ` + observationColumns + ` FROM macro_observations WHERE indicator_code=$1 AND ($2::date IS NULL OR period_end >= $2) AND ($3::date IS NULL OR period_end <= $3) ORDER BY period_end,priority DESC,revision DESC`
@@ -144,7 +155,7 @@ func (p *Postgres) History(ctx context.Context, code string, from, to *time.Time
 	out := []macro.Observation{}
 	for rows.Next() {
 		var o macro.Observation
-		if err := rows.Scan(&o.IndicatorCode, &o.Period, &o.PeriodEnd, &o.Value, &o.Unit, &o.Source, &o.SourceURL, &o.SeriesID, &o.Method, &o.Priority, &o.PublishedAt, &o.FirstSeenAt, &o.CollectedAt, &o.Revision, &o.RawID); err != nil {
+		if err := rows.Scan(&o.IndicatorCode, &o.Period, &o.PeriodEnd, &o.Value, &o.Unit, &o.Source, &o.SourceURL, &o.SeriesID, &o.Method, &o.Priority, &o.PublishedAt, &o.FirstSeenAt, &o.CollectedAt, &o.Revision, &o.RawID, &o.UpperValue); err != nil {
 			return nil, err
 		}
 		out = append(out, o)

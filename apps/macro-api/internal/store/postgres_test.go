@@ -308,4 +308,21 @@ func TestPostgresPersistenceRevisionsAndSourcePriority(t *testing.T) {
 		t.Fatalf("January manual CPI missing: %+v %v", filled, err)
 	}
 
+	upper := 8.1
+	depositEnd, _ := macro.MonthEnd("2026-09")
+	deposit := macro.Observation{IndicatorCode: "VN_DEPOSIT_RATE", Period: "2026-09", PeriodEnd: depositEnd, Value: 6.6, UpperValue: &upper, Unit: "%", Source: "SBV", SourceURL: "https://sbv.gov.vn/report.pdf", SeriesID: "SBV_VND_DEPOSIT_6_12M_RANGE", Method: "PUBLISHED_RANGE", Priority: 100, RawID: id, CollectedAt: time.Now().UTC()}
+	for i := 0; i < 2; i++ {
+		if err = p.Save(ctx, deposit); err != nil {
+			t.Fatal(err)
+		}
+	}
+	upper = 8.2
+	if err = p.Save(ctx, deposit); err != nil {
+		t.Fatal(err)
+	}
+	depositRows, err := p.History(ctx, deposit.IndicatorCode, nil, nil, true)
+	if err != nil || len(depositRows) != 2 || depositRows[0].UpperValue == nil || *depositRows[0].UpperValue != 8.2 {
+		t.Fatalf("deposit range revision/serialization failed: %+v %v", depositRows, err)
+	}
+
 }

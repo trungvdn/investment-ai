@@ -28,3 +28,6 @@ var SBVHistory string
 
 //go:embed 009_iip_ppi_history.sql
 var IIPPPIHistory string
+
+//go:embed 010_deposit_rates.sql
+var DepositRates string
