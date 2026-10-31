@@ -244,7 +244,7 @@
       ],
       "confirmation_condition": "Spring của vùng lớn cần xuyên hỗ trợ đã hình thành rồi phục hồi.",
       "invalidation_condition": "Đề xuất bác bỏ Spring 09/10 ở GEX_CONTEXT_202607 do không xuyên 19.7.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "correction_reason": "Bác bỏ nhãn",
       "reviewer": null,
       "reviewed_at": null
     },
@@ -276,7 +276,7 @@
       ],
       "confirmation_condition": "Nhịp hồi sau low 21.35 tạo cạnh trên và có pullback tiếp theo.",
       "invalidation_condition": "Nếu không hình thành nền và tiếp tục giảm, xem lại AR của giả thuyết tích lũy mới.",
-      "correction_reason": null,
+      "correction_reason": "Bác bỏ nhãn",
       "reviewer": null,
       "reviewed_at": null
     },
@@ -308,7 +308,7 @@
       ],
       "confirmation_condition": "Phải vượt đúng biên TR đã xác định và có follow-through.",
       "invalidation_condition": "Chưa vượt 26.85–27.2 nên bác bỏ SOS vùng lớn.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "correction_reason": "Bác bỏ nhãn",
       "reviewer": null,
       "reviewed_at": null
     },
@@ -340,7 +340,7 @@
       ],
       "confirmation_condition": "Cần SOS trước và pullback giữ breakout có phản ứng cầu.",
       "invalidation_condition": "Thiếu SOS và hồi xác nhận: đề xuất bác bỏ LPS ở cutoff.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "correction_reason": "Bác bỏ nhãn.",
       "reviewer": null,
       "reviewed_at": null
     }
