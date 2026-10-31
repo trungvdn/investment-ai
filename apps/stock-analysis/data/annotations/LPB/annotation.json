@@ -262,7 +262,7 @@
       ],
       "confirmation_condition": "Cần stopping action, AR và kiểm tra giữ đáy để củng cố SC.",
       "invalidation_condition": "Đáy mới 36.1 tại cutoff phản đối giả thuyết 15/10 đã dừng markdown.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "correction_reason": "Bác bỏ nhãn",
       "reviewer": null,
       "reviewed_at": null
     },
@@ -294,7 +294,7 @@
       ],
       "confirmation_condition": "Cần bối cảnh tích lũy, breakout biên trên có trước và follow-through.",
       "invalidation_condition": "Thiếu TR phù hợp và giá phá đáy sau hồi: đề xuất bác bỏ SOS này.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "correction_reason": "Bác bỏ nhãn",
       "reviewer": null,
       "reviewed_at": null
     },
@@ -326,7 +326,7 @@
       ],
       "confirmation_condition": "Chờ stopping action và phản ứng sau đó; chỉ xem đây là điểm theo dõi, chưa khẳng định SC.",
       "invalidation_condition": "Nếu giá tiếp tục tạo đáy thấp hơn không có chuyển biến cung–cầu, bỏ SC ứng viên.",
-      "correction_reason": null,
+      "correction_reason": "Bác bỏ nhãn",
       "reviewer": null,
       "reviewed_at": null
     }
