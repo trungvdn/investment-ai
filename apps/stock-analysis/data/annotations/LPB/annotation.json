@@ -1,45 +1,418 @@
 {
   "schema_version": "1.0",
-  "sample_id": "LPB_1D_draft_v1",
+  "sample_id": "LPB_1D_2026-10-30_example_v1",
   "ticker": "LPB",
   "timeframe": "1D",
-  "analysis_as_of": null,
+  "analysis_as_of": "2026-10-30",
   "data": {
-    "start_date": null,
-    "end_date": null,
-    "source_commit": null,
-    "adjustment_status": null,
-    "quality_notes": [],
+    "start_date": "2024-10-31",
+    "end_date": "2026-10-30",
+    "source_commit": "11831cec05429a357b3f06016a8f7ff898afd096",
+    "adjustment_status": "unverified",
+    "quality_notes": [
+      "497 phiên; cột event trống; không trùng ngày, OHLC hợp lệ và volume không âm theo kiểm tra nội bộ. Chưa xác minh lịch giao dịch, đơn vị và điều chỉnh giá.",
+      "Phân tích từ OHLCV; chưa đối chiếu nhãn trên ảnh LPB_nhan.png.",
+      "RV20=volume/trung bình 20 phiên liền trước, không tính phiên hiện tại."
+    ],
     "ohlcv_path": "candles_LPB_1D.csv",
     "chart_path": "LPB_nhan.png"
   },
   "context": {
-    "prior_trend": null,
-    "evidence": []
+    "prior_trend": "uptrend",
+    "evidence": [
+      "Close 28/04=43.09; high 25/06=58.5 sau nhịp tăng mạnh 19–25/06.",
+      "Sau đỉnh tháng 6, các lần hồi tháng 7 chỉ đạt high 56, sau đó phá vùng 50.1–50.8.",
+      "Close 30/10=36.1, dưới low 14–15/10=37.2; chuỗi markdown chưa có dấu hiệu dừng giảm được xác nhận."
+    ]
   },
   "assessment": {
-    "structure": null,
-    "phase": null,
-    "status": null,
-    "confidence": null,
-    "reasoning": [],
-    "counter_evidence": [],
-    "alternative_hypotheses": [],
-    "invalidation_condition": null
+    "structure": "markdown",
+    "phase": "E",
+    "status": "developing",
+    "confidence": "medium",
+    "preceding_structure": {
+      "structure": "distribution",
+      "structure_id": "LPB_TR_202606",
+      "start_date": "2026-06-24",
+      "end_date": "2026-09-03"
+    },
+    "reasoning": [
+      "Ưu tiên markdown sau vùng phân phối ứng viên 24/06–03/09.",
+      "BC cụm 24–25/06, AR đến 14/07, ST đỉnh thấp hơn tháng 7, SOW cuối tháng 8–đầu tháng 9 và LPSY ứng viên 07/09.",
+      "30/10 close=low=36.1 phá đáy 37.2; nhịp hồi 23/10 không giữ được."
+    ],
+    "counter_evidence": [
+      "Các nhãn BC/AR/ST và phạm vi TR vẫn cần duyệt; không suy luận ý định tổ chức từ OHLCV.",
+      "Volume trên breakdown tháng 8–9 và 30/10 không cực đoan; không coi đây là panic selling được xác nhận."
+    ],
+    "alternative_hypotheses": [
+      "Điều chỉnh sâu sau tăng; chất lượng mô hình phân phối cần đánh giá thêm.",
+      "Vùng tích lũy mới có thể hình thành về sau nhưng chưa có bằng chứng xác nhận tại cutoff."
+    ],
+    "invalidation_condition": "Lấy lại và giữ 50.8 qua ít nhất hai close, sau đó kiểm tra giữ vùng sẽ làm suy yếu luận điểm markdown từ TR cũ. Lấy lại 37.2 hoặc 41.7 chỉ là thay đổi hành vi ngắn hạn, chưa tự bác bỏ toàn bộ cấu trúc. Ngưỡng minh họa chưa backtest."
   },
-  "trading_ranges": [],
-  "events": [],
-  "supply_demand_observations": [],
-  "scenarios": [],
+  "trading_ranges": [
+    {
+      "structure_id": "LPB_TR_202606",
+      "start_date": "2026-06-24",
+      "end_date": "2026-09-03",
+      "support_zone": {
+        "lower": 50.1,
+        "upper": 50.8
+      },
+      "resistance_zone": {
+        "lower": 56,
+        "upper": 58.5
+      },
+      "status": "provisional",
+      "evidence": [
+        "Cụm đỉnh 24–25/06: volume đỉnh tại 24/06, high giá 58.5 tại 25/06.",
+        "03/07 low 50.8; 14/07 low 50.1; đỉnh hồi 21/07 và 27/07 high 56.",
+        "Đến 03/09 close 48.8 dưới hỗ trợ; end_date là cutoff breakout ứng viên, không phải xác nhận của người dùng."
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "E001",
+      "structure_id": "LPB_TR_202606",
+      "proposed_label": "BC",
+      "start_date": "2026-06-24",
+      "end_date": "2026-06-25",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026; chờ người dùng duyệt, không dùng dữ liệu tương lai."
+      ],
+      "price_evidence": [
+        "24/06 O/H/L/C=56.2/56.2/54.8/55.5; 25/06 high 58.5 nhưng close 56.",
+        "25/06 close ở 16.7% biên độ; không đồng nhất ngày volume lớn nhất và ngày đỉnh giá."
+      ],
+      "volume_evidence": [
+        "24/06 volume 11865500 RV20 8.17; 25/06 volume 3744100 RV20 1.89."
+      ],
+      "confirmation_evidence": [
+        "26/06 close 53; nhịp giảm sau đó chạm low 50.1 ngày 14/07."
+      ],
+      "counter_evidence": [
+        "Volume cực lớn có thể có nguyên nhân khác; chưa xác minh điều chỉnh hoặc giao dịch đặc biệt."
+      ],
+      "confirmation_condition": "Climax sau tăng, xuất hiện phản ứng giảm và vùng kiểm tra về sau.",
+      "invalidation_condition": "Nếu cấu trúc sau đó tiếp tục tăng bền qua 58.5, xem lại BC của vùng này.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E002",
+      "structure_id": "LPB_TR_202606",
+      "proposed_label": "AR",
+      "start_date": "2026-06-26",
+      "end_date": "2026-07-14",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026; chờ người dùng duyệt, không dùng dữ liệu tương lai."
+      ],
+      "price_evidence": [
+        "Giảm sau BC: 03/07 low 50.8; 14/07 low 50.1, close 51.5."
+      ],
+      "volume_evidence": [
+        "14/07 volume 2294600 RV20 0.81."
+      ],
+      "confirmation_evidence": [
+        "Sau 14/07 hồi đến high 56 ngày 21/07 và 27/07."
+      ],
+      "counter_evidence": [
+        "AR ở phân phối là Automatic Reaction, không phải Automatic Rally; phạm vi kéo dài cần duyệt."
+      ],
+      "confirmation_condition": "Phản ứng giảm sau BC tạo cạnh dưới để theo dõi TR.",
+      "invalidation_condition": "Nếu BC/phạm vi vùng bị sửa thì đánh giá lại AR và cạnh dưới.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E003",
+      "structure_id": "LPB_TR_202606",
+      "proposed_label": "ST",
+      "start_date": "2026-07-21",
+      "end_date": "2026-07-27",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026; chờ người dùng duyệt, không dùng dữ liệu tương lai."
+      ],
+      "price_evidence": [
+        "21/07 và 27/07 high 56, thấp hơn BC high 58.5; close lần lượt 54.6 và 54.0."
+      ],
+      "volume_evidence": [
+        "21/07 volume 6305000 RV20 1.93; 27/07 5562100 RV20 2.12."
+      ],
+      "confirmation_evidence": [
+        "Sau đỉnh kiểm tra, giá không vượt 56 và giảm về hỗ trợ tháng 8."
+      ],
+      "counter_evidence": [
+        "Volume thấp hơn đỉnh 24/06 nhưng vẫn lớn so trung bình gần nhất; không mô tả là test cạn cung."
+      ],
+      "confirmation_condition": "Kiểm tra vùng cung với đỉnh thấp hơn và không duy trì được nhịp tăng.",
+      "invalidation_condition": "Nếu vượt bền 58.5 và giữ được, bác bỏ diễn giải ST yếu của phân phối.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E004",
+      "structure_id": "LPB_TR_202606",
+      "proposed_label": "SOW",
+      "start_date": "2026-08-20",
+      "end_date": "2026-09-03",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026; chờ người dùng duyệt, không dùng dữ liệu tương lai."
+      ],
+      "price_evidence": [
+        "20/08 low 49.65; 21/08 low 48.5, close 50; 03/09 low 48, close 48.8 dưới hỗ trợ 50.1–50.8."
+      ],
+      "volume_evidence": [
+        "21/08 volume 3868700 RV20 1.26; 03/09 volume 3233600 RV20 1.07."
+      ],
+      "confirmation_evidence": [
+        "Các nhịp hồi sau đó không lấy lại vùng bền vững; giá tiếp tục giảm trong tháng 9–10."
+      ],
+      "counter_evidence": [
+        "Đây là cụm breakdown diễn ra qua nhiều phiên, không chọn một phiên volume lớn nhất; 21/08 chưa đủ xác nhận một mình."
+      ],
+      "confirmation_condition": "Giá chấp nhận dưới hỗ trợ và có follow-through giảm; xem cả kết quả thay vì chỉ volume.",
+      "invalidation_condition": "Nhanh lấy lại và giữ 50.8 sau kiểm tra sẽ phản đối SOW thành công.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E005",
+      "structure_id": "LPB_TR_202606",
+      "proposed_label": "LPSY",
+      "start_date": "2026-09-07",
+      "end_date": "2026-09-07",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026; chờ người dùng duyệt, không dùng dữ liệu tương lai."
+      ],
+      "price_evidence": [
+        "High 50, close 49.65; nhịp hồi không lấy lại hỗ trợ cũ 50.1–50.8 sau breakdown 03/09."
+      ],
+      "volume_evidence": [
+        "Volume 1913700 RV20 0.63."
+      ],
+      "confirmation_evidence": [
+        "09/09 close 48.15; 11/09 46.7; 14/09 46; tiếp tục giảm."
+      ],
+      "counter_evidence": [
+        "Khoảng hồi ngắn; chỉ là LPSY ứng viên của vùng cũ, không gán mọi đỉnh hồi sau đó là LPSY."
+      ],
+      "confirmation_condition": "Hồi yếu sau SOW, bị từ chối dưới hỗ trợ cũ và có nhịp giảm tiếp.",
+      "invalidation_condition": "Nếu lấy lại 50.8 và giữ qua kiểm tra, xem lại LPSY thành công.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E006",
+      "structure_id": "LPB_MARKDOWN_202609",
+      "proposed_label": "SC",
+      "start_date": "2026-10-15",
+      "end_date": "2026-10-15",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "invalidated",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026; chờ người dùng duyệt, không dùng dữ liệu tương lai."
+      ],
+      "price_evidence": [
+        "Low=close=37.2; volume tăng nhưng sau nhịp hồi, 30/10 low=close=36.1 tạo đáy mới."
+      ],
+      "volume_evidence": [
+        "15/10 volume 2613600 RV20 1.31; không phải volume climax cực đoan."
+      ],
+      "confirmation_evidence": [
+        "23/10 high 41.7, close 40.4; sau đó giá quay giảm và phá 37.2."
+      ],
+      "counter_evidence": [
+        "Không bác bỏ khả năng có selling climax trong tương lai; chỉ bác bỏ SC đã dừng markdown tại 15/10 trong mẫu này."
+      ],
+      "confirmation_condition": "Cần stopping action, AR và kiểm tra giữ đáy để củng cố SC.",
+      "invalidation_condition": "Đáy mới 36.1 tại cutoff phản đối giả thuyết 15/10 đã dừng markdown.",
+      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E007",
+      "structure_id": "LPB_MARKDOWN_202609",
+      "proposed_label": "SOS",
+      "start_date": "2026-10-23",
+      "end_date": "2026-10-23",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "invalidated",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026; chờ người dùng duyệt, không dùng dữ liệu tương lai."
+      ],
+      "price_evidence": [
+        "High 41.7, close 40.4; đây là hồi trong markdown, không có TR tích lũy đã xác lập bị phá lên."
+      ],
+      "volume_evidence": [
+        "Volume 3460900 RV20 1.75; volume hồi lớn riêng lẻ không đủ tạo SOS."
+      ],
+      "confirmation_evidence": [
+        "27/10 close 38.4; 30/10 close 36.1."
+      ],
+      "counter_evidence": [
+        "Không biến mọi nhịp hồi mạnh thành SOS; thiếu cấu trúc tích lũy nền."
+      ],
+      "confirmation_condition": "Cần bối cảnh tích lũy, breakout biên trên có trước và follow-through.",
+      "invalidation_condition": "Thiếu TR phù hợp và giá phá đáy sau hồi: đề xuất bác bỏ SOS này.",
+      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E008",
+      "structure_id": "LPB_MARKDOWN_202609",
+      "proposed_label": "SC",
+      "start_date": "2026-10-30",
+      "end_date": "2026-10-30",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026; chờ người dùng duyệt, không dùng dữ liệu tương lai."
+      ],
+      "price_evidence": [
+        "O/H/L/C=37.25/37.3/36.1/36.1; đóng đáy, phá 37.2."
+      ],
+      "volume_evidence": [
+        "Volume 2352300 RV20 1.15, không cực đoan."
+      ],
+      "confirmation_evidence": [
+        "Không có dữ liệu sau 30/10."
+      ],
+      "counter_evidence": [
+        "Chưa có phản ứng cầu hoặc AR sau phiên; không chọn SC chỉ vì đây là đáy mới nhất."
+      ],
+      "confirmation_condition": "Chờ stopping action và phản ứng sau đó; chỉ xem đây là điểm theo dõi, chưa khẳng định SC.",
+      "invalidation_condition": "Nếu giá tiếp tục tạo đáy thấp hơn không có chuyển biến cung–cầu, bỏ SC ứng viên.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    }
+  ],
+  "supply_demand_observations": [
+    {
+      "observation": "Cụm tăng tháng 6 volume rất lớn nhưng không duy trì đỉnh; các lần hồi tháng 7 tạo đỉnh thấp hơn.",
+      "evidence_event_ids": [
+        "E001",
+        "E003"
+      ]
+    },
+    {
+      "observation": "Hồi 07/09 volume thấp và không lấy lại hỗ trợ cũ; giảm sau đó củng cố markdown.",
+      "evidence_event_ids": [
+        "E004",
+        "E005"
+      ]
+    },
+    {
+      "observation": "30/10 đóng đáy và phá đáy cũ; chưa có bằng chứng cầu ngăn giảm.",
+      "evidence_event_ids": [
+        "E008"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "S1",
+      "structure_id": "LPB_MARKDOWN_202609",
+      "description": "Markdown tiếp diễn.",
+      "confirmation_condition": "Không lấy lại 37.2, tiếp tục đỉnh/đáy thấp hơn và nhịp hồi bị bán xuống.",
+      "invalidation_condition": "Ngừng tạo đáy mới, hồi và kiểm tra giữ đáy; lấy lại 41.7 sẽ phản đối chuỗi giảm ngắn hạn, chưa đủ bác bỏ TR cũ.",
+      "evidence_event_ids": [
+        "E005",
+        "E008"
+      ]
+    },
+    {
+      "scenario_id": "S2",
+      "structure_id": "LPB_MARKDOWN_202609",
+      "description": "Xuất hiện stopping action và khả năng vùng tích lũy mới.",
+      "confirmation_condition": "Có phản ứng cầu sau đáy mới, AR và kiểm tra giữ đáy. Vượt 41.7 rồi kiểm tra giữ được sẽ bổ sung bằng chứng thay đổi hành vi; không tự gọi tích lũy chỉ vì hồi một phiên.",
+      "invalidation_condition": "Tiếp tục tạo đáy thấp hơn mà không có phản ứng cầu bền.",
+      "evidence_event_ids": [
+        "E006",
+        "E007",
+        "E008"
+      ]
+    },
+    {
+      "scenario_id": "S3",
+      "structure_id": "LPB_TR_202606",
+      "description": "Phục hồi trở lại vùng phân phối cũ.",
+      "confirmation_condition": "Lấy lại 50.8 qua ít nhất hai close rồi kiểm tra giữ vùng; vượt 58.5 bền vững sẽ phản đối mạnh mô hình phân phối cũ.",
+      "invalidation_condition": "Nhịp hồi bị từ chối dưới 50.1–50.8 và quay giảm.",
+      "evidence_event_ids": [
+        "E004",
+        "E005"
+      ]
+    }
+  ],
   "review": {
-    "status": "draft",
+    "status": "in_review",
     "reviewer": null,
     "reviewed_at": null,
     "corrections": [],
-    "eligible_for_ai": false
+    "eligible_for_ai": false,
+    "notes": [
+      "Ví dụ AI soạn; mọi nhãn đúng/sai chờ người dùng xác nhận.",
+      "Phân biệt TR phân phối cũ và markdown hiện tại; AR ở vùng phân phối là Automatic Reaction.",
+      "Các ngưỡng số phiên là minh họa chưa backtest; không có mục tiêu giá suy diễn dưới đáy mới."
+    ]
   },
   "future_outcome_excluded_from_input": {
     "evaluation_date": null,
     "observations": []
-  }
+  },
+  "structures": [
+    {
+      "structure_id": "LPB_MARKDOWN_202609",
+      "structure": "markdown",
+      "start_date": "2026-09-03",
+      "end_date": null,
+      "parent_structure_id": "LPB_TR_202606",
+      "status": "developing"
+    }
+  ]
 }
