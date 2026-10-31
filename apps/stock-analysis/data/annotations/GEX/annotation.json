@@ -1,0 +1,458 @@
+{
+  "schema_version": "1.0",
+  "sample_id": "GEX_1D_2026-10-30_example_v1",
+  "ticker": "GEX",
+  "timeframe": "1D",
+  "analysis_as_of": "2026-10-30",
+  "data": {
+    "start_date": "2024-10-31",
+    "end_date": "2026-10-30",
+    "source_commit": "eca550eb32245f9ad0e4f9690c8dd3a95239e545",
+    "adjustment_status": "unverified",
+    "quality_notes": [
+      "497 phiên; cột event trống; kiểm tra không trùng ngày, OHLC hợp lệ, volume không âm. Chưa xác minh đủ phiên theo lịch, đơn vị và điều chỉnh giá.",
+      "Dựa trên OHLCV, chưa đối chiếu nhãn trên ảnh GEX_nhan.png.",
+      "RV20=volume/trung bình 20 phiên liền trước, không tính phiên hiện tại."
+    ],
+    "ohlcv_path": "candles_GEX_1D.csv",
+    "chart_path": "GEX_nhan.png"
+  },
+  "context": {
+    "prior_trend": "downtrend",
+    "evidence": [
+      "High 17/06=32.25; low 28/07=19.7 sau markdown tháng 7.",
+      "Hồi tới high 13/08=26.85 và 28/08=27.2; tháng 9–10 điều chỉnh nhưng chưa xuyên 19.7.",
+      "30/10 close 22.2 nằm trong vùng rộng; chưa có breakout trên 27.2."
+    ]
+  },
+  "assessment": {
+    "structure": "unclear",
+    "phase": "B",
+    "status": "developing",
+    "confidence": "low",
+    "reasoning": [
+      "Ưu tiên giả thuyết tích lũy tiềm năng đang xây nền pha B của vùng lớn; chưa xác nhận accumulation.",
+      "Cụm đáy 27–28/07 được theo sau bởi nhịp hồi tháng 8; các lần kiểm tra tháng 9–10 vẫn cao hơn 19.7."
+    ],
+    "counter_evidence": [
+      "Cung còn mạnh tại 14/09: close=low=22.3, RV20 2.73.",
+      "Các nhịp hồi tháng 9–10 không lấy lại đỉnh tháng 8; cũng có thể là tái phân phối trong markdown.",
+      "30/10 đóng đáy phiên 22.2; chưa có bằng chứng cầu giữ pullback."
+    ],
+    "alternative_hypotheses": [
+      "Tái phân phối trong markdown nếu vùng tiếp tục suy yếu và phá 19.7.",
+      "Vùng tháng 10 chỉ là hồi kỹ thuật bên trong vùng lớn."
+    ],
+    "invalidation_condition": "Hai close liên tiếp dưới 19.7 và không lấy lại trong ba phiên sau bác bỏ giả thuyết giữ đáy tích lũy lớn. Breakout bền trên 27.2 sẽ yêu cầu đánh giá chuyển pha thay vì duy trì pha B. Ngưỡng minh họa chưa backtest."
+  },
+  "trading_ranges": [
+    {
+      "structure_id": "GEX_CONTEXT_202607",
+      "start_date": "2026-07-27",
+      "end_date": null,
+      "support_zone": {
+        "lower": 19.7,
+        "upper": 20.3
+      },
+      "resistance_zone": {
+        "lower": 26.85,
+        "upper": 27.2
+      },
+      "status": "provisional",
+      "evidence": [
+        "Low 27/07=20.3; 28/07=19.7.",
+        "Đỉnh nhịp hồi 13/08=26.85, mở rộng 28/08=27.2.",
+        "Low 14/09=22.3 và 09/10=21.35 còn cao hơn đáy tháng 7.",
+        "Cạnh trên hình thành dần; không coi 27.2 đã biết từ đầu tháng 8."
+      ]
+    },
+    {
+      "structure_id": "GEX_TR_202610",
+      "start_date": "2026-10-08",
+      "end_date": null,
+      "support_zone": {
+        "lower": 21.35,
+        "upper": 21.8
+      },
+      "resistance_zone": {
+        "lower": 24.2,
+        "upper": 24.35
+      },
+      "status": "provisional",
+      "evidence": [
+        "08/10 low 21.8; 09/10 low 21.35.",
+        "22/10 high 24.2; 26/10 high 24.35; cạnh trên chỉ hình thành sau nhịp hồi.",
+        "Không dùng biên tương lai để tự gán SOS cho 21/10."
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "E001",
+      "structure_id": "GEX_CONTEXT_202607",
+      "proposed_label": "PS",
+      "start_date": "2026-07-22",
+      "end_date": "2026-07-23",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "uncertain",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; được người dùng duyệt ngày 31/10/2026. Phân biệt vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "22/07 close=low=20.75; 23/07 low 20.2 rồi close=high=22.2."
+      ],
+      "volume_evidence": [
+        "23/07 volume 21127600 RV20 1.75."
+      ],
+      "confirmation_evidence": [
+        "Sau đó 28/07 vẫn tạo đáy thấp hơn 19.7."
+      ],
+      "counter_evidence": [
+        "Có phản ứng cầu nhưng chưa chắc vai trò PS; cũng có thể là một phần cụm dừng giảm."
+      ],
+      "confirmation_condition": "Cần thay đổi hành vi cung–cầu trước cụm SC theo cùng cấu trúc.",
+      "invalidation_condition": "Nếu người duyệt chọn SC bao gồm cả cụm này thì bỏ nhãn PS riêng.",
+      "correction_reason": null,
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E002",
+      "structure_id": "GEX_CONTEXT_202607",
+      "proposed_label": "SC",
+      "start_date": "2026-07-27",
+      "end_date": "2026-07-28",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "uncertain",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; được người dùng duyệt ngày 31/10/2026. Phân biệt vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "27/07 low=close=20.3; 28/07 low 19.7, close 20.9 ở 68.6% biên độ."
+      ],
+      "volume_evidence": [
+        "27/07 volume 15477400 RV20 1.18; 28/07 volume 11534000 RV20 0.85."
+      ],
+      "confirmation_evidence": [
+        "Hồi tới vùng 26.85–27.2 trong tháng 8."
+      ],
+      "counter_evidence": [
+        "Không có volume climax nổi bật tại đáy; SC cần duyệt, không chọn tự động vì đây là low thấp nhất."
+      ],
+      "confirmation_condition": "Stopping action có AR và các lần kiểm tra giữ đáy về sau.",
+      "invalidation_condition": "Nếu thiếu bằng chứng climax, đổi sang stopping action/no_event; mất bền 19.7 làm suy yếu cấu trúc hiện tại.",
+      "correction_reason": null,
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E003",
+      "structure_id": "GEX_CONTEXT_202607",
+      "proposed_label": "AR",
+      "start_date": "2026-07-29",
+      "end_date": "2026-08-13",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "AR",
+      "event_status": "candidate",
+      "label_verdict": "correct",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; được người dùng duyệt ngày 31/10/2026. Phân biệt vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "Nhịp hồi sau đáy: high 13/08=26.85 nhưng close 25.4 ở đáy phiên.",
+        "28/08 mở rộng high lên 27.2, theo dõi riêng thay vì tự kéo dài AR."
+      ],
+      "volume_evidence": [
+        "13/08 volume 16682000 RV20 1.22; 28/08 volume 15194000 RV20 1.31."
+      ],
+      "confirmation_evidence": [
+        "Sau đỉnh tháng 8, giá điều chỉnh tháng 9."
+      ],
+      "counter_evidence": [
+        "Nhịp hồi kéo dài và có mở rộng sau đó; cần người duyệt xác nhận phạm vi AR."
+      ],
+      "confirmation_condition": "Hồi sau dừng giảm tạo cạnh trên, sau đó có phản ứng kiểm tra.",
+      "invalidation_condition": "Nếu xác định AR kết thúc sớm hơn hoặc bao gồm tới 28/08 thì cập nhật ngày và biên tương ứng.",
+      "correction_reason": null,
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E004",
+      "structure_id": "GEX_CONTEXT_202607",
+      "proposed_label": "ST",
+      "start_date": "2026-09-14",
+      "end_date": "2026-10-09",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "ST",
+      "event_status": "candidate",
+      "label_verdict": "correct",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; được người dùng duyệt ngày 31/10/2026. Phân biệt vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "14/09 low=close=22.3; 09/10 low 21.35, close 22.25; đáy cụm còn cao hơn 19.7 khoảng 8.38%."
+      ],
+      "volume_evidence": [
+        "14/09 volume 24534400 RV20 2.73; 09/10 6410900 RV20 0.77."
+      ],
+      "confirmation_evidence": [
+        "21/10 hồi close 23.85; đến 30/10 chưa xuyên 21.35."
+      ],
+      "counter_evidence": [
+        "Đây là nhịp kiểm tra kéo dài gồm nhiều sóng; 14/09 cung mạnh, không gọi toàn cụm cạn cung hoặc ST đã hoàn tất."
+      ],
+      "confirmation_condition": "Giữ đáy rộng, có dấu hiệu cung giảm về cuối và phản ứng hồi; duyệt ST nông hay chỉ pullback.",
+      "invalidation_condition": "Nếu markdown tiếp tục bền dưới 19.7, bác bỏ ST thành công; mất 21.35 là cảnh báo sớm.",
+      "correction_reason": null,
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E005",
+      "structure_id": "GEX_CONTEXT_202607",
+      "proposed_label": "Spring",
+      "start_date": "2026-10-09",
+      "end_date": "2026-10-09",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "no_event",
+      "event_status": "invalidated",
+      "label_verdict": "incorrect",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; được người dùng duyệt ngày 31/10/2026. Phân biệt vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "Low 21.35 cao hơn đáy vùng lớn 19.7, không có xuyên hỗ trợ rộng."
+      ],
+      "volume_evidence": [
+        "Volume thấp hơn trung bình không bù điều kiện thiếu xuyên đáy."
+      ],
+      "confirmation_evidence": [
+        "Có hồi sau 09/10 nhưng không biến phiên này thành Spring của vùng lớn."
+      ],
+      "counter_evidence": [
+        "Nếu dùng vùng nhỏ khác phải chỉ rõ structure_id và biên trước sự kiện."
+      ],
+      "confirmation_condition": "Spring của vùng lớn cần xuyên hỗ trợ đã hình thành rồi phục hồi.",
+      "invalidation_condition": "Đề xuất bác bỏ Spring 09/10 ở GEX_CONTEXT_202607 do không xuyên 19.7.",
+      "correction_reason": "Bác bỏ nhãn",
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E006",
+      "structure_id": "GEX_TR_202610",
+      "proposed_label": "AR",
+      "start_date": "2026-10-12",
+      "end_date": "2026-10-26",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "no_event",
+      "event_status": "invalidated",
+      "label_verdict": "incorrect",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; được người dùng duyệt ngày 31/10/2026. Phân biệt vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "21/10 close 23.85, 22/10 high 24.2; 26/10 high 24.35 nhưng close 23.3."
+      ],
+      "volume_evidence": [
+        "21/10 volume 18324000 RV20 2.98."
+      ],
+      "confirmation_evidence": [
+        "27–30/10 điều chỉnh, close cuối 22.2."
+      ],
+      "counter_evidence": [
+        "Vùng mới ngắn; có thể chỉ là hồi kỹ thuật trong markdown, không đủ khẳng định tích lũy mới."
+      ],
+      "confirmation_condition": "Nhịp hồi sau low 21.35 tạo cạnh trên và có pullback tiếp theo.",
+      "invalidation_condition": "Nếu không hình thành nền và tiếp tục giảm, xem lại AR của giả thuyết tích lũy mới.",
+      "correction_reason": "Người dùng bác bỏ nhãn AR cho nhịp hồi 12–26/10 trong GEX_TR_202610.",
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E007",
+      "structure_id": "GEX_CONTEXT_202607",
+      "proposed_label": "SOS",
+      "start_date": "2026-10-21",
+      "end_date": "2026-10-21",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "no_event",
+      "event_status": "invalidated",
+      "label_verdict": "incorrect",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; được người dùng duyệt ngày 31/10/2026. Phân biệt vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "Close 23.85 dưới kháng cự rộng 26.85–27.2."
+      ],
+      "volume_evidence": [
+        "Volume 18324000 RV20 2.98; volume lớn riêng lẻ không tạo breakout vùng rộng."
+      ],
+      "confirmation_evidence": [
+        "Nhịp hồi cao nhất 26/10=24.35 vẫn thấp hơn đỉnh tháng 8."
+      ],
+      "counter_evidence": [
+        "Chỉ bác bỏ SOS của vùng rộng, không phủ nhận phiên có cầu tăng hoặc breakout vùng cực nhỏ khác."
+      ],
+      "confirmation_condition": "Phải vượt đúng biên TR đã xác định và có follow-through.",
+      "invalidation_condition": "Chưa vượt 26.85–27.2 nên bác bỏ SOS vùng lớn.",
+      "correction_reason": "Bác bỏ nhãn",
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E008",
+      "structure_id": "GEX_TR_202610",
+      "proposed_label": "LPS",
+      "start_date": "2026-10-27",
+      "end_date": "2026-10-30",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "no_event",
+      "event_status": "invalidated",
+      "label_verdict": "incorrect",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; được người dùng duyệt ngày 31/10/2026. Phân biệt vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "Pullback về close=low=22.2 ngày 30/10, chưa có SOS hợp lệ của TR mới trước đó."
+      ],
+      "volume_evidence": [
+        "30/10 volume 6788200 RV20 0.89; volume giảm không tự tạo LPS."
+      ],
+      "confirmation_evidence": [
+        "Không có dữ liệu hồi sau 30/10."
+      ],
+      "counter_evidence": [
+        "Có thể là kiểm tra bên trong chưa xác nhận; không gán LPS khi thiếu SOS."
+      ],
+      "confirmation_condition": "Cần SOS trước và pullback giữ breakout có phản ứng cầu.",
+      "invalidation_condition": "Thiếu SOS và hồi xác nhận: đề xuất bác bỏ LPS ở cutoff.",
+      "correction_reason": "Bác bỏ nhãn.",
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
+    }
+  ],
+  "supply_demand_observations": [
+    {
+      "observation": "14/09 volume lớn, đóng đáy cho thấy cung còn mạnh; volume 09/10 giảm nhưng chưa chứng minh hấp thụ hoàn tất.",
+      "evidence_event_ids": [
+        "E004"
+      ]
+    },
+    {
+      "observation": "21/10 có cầu trên nhịp hồi, nhưng chưa thoát vùng rộng; pullback cuối tháng đóng yếu.",
+      "evidence_event_ids": [
+        "E006",
+        "E007",
+        "E008"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "S1",
+      "structure_id": "GEX_CONTEXT_202607",
+      "description": "Tích lũy rộng tiếp tục xây nền.",
+      "confirmation_condition": "Giữ 19.7; kiểm tra sâu/nông có cung giảm và phản ứng hồi; chưa vượt bền 27.2.",
+      "invalidation_condition": "Thoát vùng bền theo một hướng; mất 19.7 phản đối tích lũy giữ đáy.",
+      "evidence_event_ids": [
+        "E002",
+        "E003",
+        "E004"
+      ]
+    },
+    {
+      "scenario_id": "S2",
+      "structure_id": "GEX_CONTEXT_202607",
+      "description": "Breakout vùng rộng và chuyển pha.",
+      "confirmation_condition": "Hai close trên 27.2, có follow-through và kiểm tra lại giữ 26.85–27.2; sau đó mới xem xét SOS/LPS rộng.",
+      "invalidation_condition": "Quay nhanh vào vùng, không lấy lại biên và mất đáy kiểm tra.",
+      "evidence_event_ids": [
+        "E003",
+        "E004"
+      ]
+    },
+    {
+      "scenario_id": "S3",
+      "structure_id": "GEX_CONTEXT_202607",
+      "description": "Markdown/tái phân phối tiếp diễn.",
+      "confirmation_condition": "Mất 21.35 là cảnh báo; hai close dưới 19.7 không lấy lại trong ba phiên sau sẽ bác bỏ giả thuyết giữ đáy.",
+      "invalidation_condition": "Phục hồi nhanh vào vùng và kiểm tra giữ đáy; đánh giá khả năng Spring mới bằng dữ liệu thực tế.",
+      "evidence_event_ids": [
+        "E002",
+        "E004"
+      ]
+    },
+    {
+      "scenario_id": "S4",
+      "structure_id": "GEX_TR_202610",
+      "description": "Vùng nhỏ giữ nền và hồi phục.",
+      "confirmation_condition": "Giữ 21.35–21.8 rồi hồi vượt 24.35 và kiểm tra giữ được; điều này chưa phải breakout vùng rộng.",
+      "invalidation_condition": "Mất 21.35 bền, không có phản ứng cầu.",
+      "evidence_event_ids": [
+        "E006",
+        "E008"
+      ]
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "trungvdn",
+    "reviewed_at": "2026-10-31",
+    "corrections": [
+      {
+        "event_id": "E005",
+        "structure_id": "GEX_CONTEXT_202607",
+        "from": "Spring",
+        "to": "no_event",
+        "reason": "Bác bỏ nhãn"
+      },
+      {
+        "event_id": "E006",
+        "structure_id": "GEX_TR_202610",
+        "from": "AR",
+        "to": "no_event",
+        "reason": "Người dùng bác bỏ nhãn AR cho nhịp hồi 12–26/10 trong GEX_TR_202610."
+      },
+      {
+        "event_id": "E007",
+        "structure_id": "GEX_CONTEXT_202607",
+        "from": "SOS",
+        "to": "no_event",
+        "reason": "Bác bỏ nhãn"
+      },
+      {
+        "event_id": "E008",
+        "structure_id": "GEX_TR_202610",
+        "from": "LPS",
+        "to": "no_event",
+        "reason": "Bác bỏ nhãn."
+      }
+    ],
+    "eligible_for_ai": true,
+    "notes": [
+      "Người dùng xác nhận toàn bộ mẫu GEX ngày 31/10/2026, gồm hai phạm vi cấu trúc, 8 sự kiện và 4 kịch bản.",
+      "Pha B là giả thuyết ưu tiên vùng rộng; structure=unclear, chưa xác nhận tích lũy bởi thị trường.",
+      "E001 PS và E002 SC vẫn uncertain; E003 AR và E004 ST giữ nhãn ứng viên.",
+      "Theo sửa trực tiếp trong JSON: bác bỏ E005 Spring, E006 AR vùng nhỏ, E007 SOS và E008 LPS. no_event chỉ áp dụng nhãn/phạm vi bị bác bỏ; giữ quan sát giá và volume.",
+      "Giữ giới hạn xác minh dữ liệu/ảnh và ngưỡng chưa backtest; kịch bản tương lai chưa xảy ra."
+    ]
+  },
+  "future_outcome_excluded_from_input": {
+    "evaluation_date": null,
+    "observations": []
+  }
+}

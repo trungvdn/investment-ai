@@ -1,0 +1,377 @@
+{
+  "schema_version": "1.0",
+  "sample_id": "NVL_1D_2026-10-30_example_v1",
+  "ticker": "NVL",
+  "timeframe": "1D",
+  "analysis_as_of": "2026-10-30",
+  "data": {
+    "start_date": "2024-10-31",
+    "end_date": "2026-10-30",
+    "source_commit": "d74161d9e6b549236f55eb9419cbf32879e1653a",
+    "adjustment_status": "unverified",
+    "quality_notes": [
+      "497 phiên; không trùng ngày; OHLC hợp lệ và volume không âm. Chưa đối chiếu lịch giao dịch, đơn vị giá và điều chỉnh doanh nghiệp.",
+      "Cột event trống. Phân tích từ OHLCV, chưa đối chiếu nhãn trên ảnh NVL_nhan.png.",
+      "RV20 = volume phiên / trung bình 20 phiên liền trước, không bao gồm phiên hiện tại. Phiên high=low không tính vị trí đóng cửa."
+    ],
+    "ohlcv_path": "candles_NVL_1D.csv",
+    "chart_path": "NVL_nhan.png"
+  },
+  "context": {
+    "prior_trend": "downtrend",
+    "evidence": [
+      "High 10/08/2026 là 14.181; close 30/09 là 10.2.",
+      "Vùng đáy cũ 11.394 ngày 16/07 và 11.593 ngày 14/09 không giữ được: 28/09 close 10.996, 29/09 close 10.25.",
+      "Phân tích tách vùng tháng 9–10 khỏi cấu trúc tháng 7–8; không nối ST tháng 10 vào đáy cũ đã mất."
+    ]
+  },
+  "assessment": {
+    "structure": "unclear",
+    "phase": "A",
+    "status": "developing",
+    "confidence": "low",
+    "reasoning": [
+      "Giả thuyết ưu tiên: stopping action và vùng tích lũy sớm; chưa xác nhận accumulation.",
+      "30/09 low 9.6, close 10.2, volume 97059000 RV20 6.97; sau đó AR lên 11.3 ngày 12–13/10.",
+      "Pullback cuối tháng 10 volume giảm nhưng chưa có phản ứng hồi đủ để xác nhận ST."
+    ],
+    "counter_evidence": [
+      "Chưa có close vượt 11.3; chưa có SOS và LPS được xác nhận.",
+      "Giá 30/10 close 10.4 vẫn thấp hơn đỉnh AR; một nhịp hồi kỹ thuật sau markdown có thể tạo hình tương tự."
+    ],
+    "alternative_hypotheses": [
+      "Hồi kỹ thuật trong markdown; vùng mới có thể trở thành tái phân phối.",
+      "Tích lũy sớm chuyển từ pha A sang B nếu kiểm tra hỗ trợ thành công."
+    ],
+    "invalidation_condition": "Hai phiên liên tiếp đóng dưới 9.6 và không phục hồi trong ba phiên tiếp theo sẽ bác bỏ giả thuyết giữ đáy của vùng hiện tại. Ngưỡng vận hành minh họa, chưa backtest."
+  },
+  "trading_ranges": [
+    {
+      "structure_id": "NVL_TR_202609",
+      "start_date": "2026-09-30",
+      "end_date": null,
+      "support_zone": {
+        "lower": 9.6,
+        "upper": 10.05
+      },
+      "resistance_zone": {
+        "lower": 11.15,
+        "upper": 11.3
+      },
+      "status": "provisional",
+      "evidence": [
+        "Low SC 30/09 = 9.6; low 02/10 = 9.91; low 08–09/10 = 10.05.",
+        "12–13/10 high 11.3, close 11.15.",
+        "10.15–10.25 là vùng kiểm tra bên trong cuối tháng 10, không tự thay đáy TR 9.6."
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "E001",
+      "structure_id": "NVL_TR_202609",
+      "proposed_label": "PS",
+      "start_date": "2026-09-14",
+      "end_date": "2026-09-14",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "uncertain",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026, được người dùng review và xác nhận ngày 31/10/2026; giữ nguyên mức độ chắc chắn tại cutoff."
+      ],
+      "price_evidence": [
+        "Low 11.593; close 11.892; sau đó hồi đến high 13.136 ngày 21/09."
+      ],
+      "volume_evidence": [
+        "Volume 22465000, RV20 2.00."
+      ],
+      "confirmation_evidence": [
+        "Có phản ứng cầu tạm thời trước nhịp bán mạnh cuối tháng 9."
+      ],
+      "counter_evidence": [
+        "Chưa chắc có quan hệ PS–SC; có thể chỉ là hồi kỹ thuật trong vùng cũ."
+      ],
+      "confirmation_condition": "Cần đánh giá thay đổi hành vi từ giữa đến cuối tháng 9.",
+      "invalidation_condition": "Nếu không có vai trò hỗ trợ sơ bộ trong cụm dừng giảm thì bỏ PS.",
+      "correction_reason": null,
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E002",
+      "structure_id": "NVL_TR_202609",
+      "proposed_label": "SC",
+      "start_date": "2026-09-30",
+      "end_date": "2026-09-30",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "SC",
+      "event_status": "candidate",
+      "label_verdict": "correct",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026, được người dùng review và xác nhận ngày 31/10/2026; giữ nguyên mức độ chắc chắn tại cutoff."
+      ],
+      "price_evidence": [
+        "O/H/L/C=9.6/10.6/9.6/10.2; close ở 60% biên độ; tạo đáy mới sau các phiên giảm 28–29/09."
+      ],
+      "volume_evidence": [
+        "97059000; trung bình 20 phiên trước 13935145; RV20 6.97."
+      ],
+      "confirmation_evidence": [
+        "Sau đó low 02/10=9.91 chưa phá 9.6; hồi tới 11.3 ngày 12–13/10."
+      ],
+      "counter_evidence": [
+        "Volume lớn có thể phản ánh bán cưỡng bức; OHLCV không xác định được nguyên nhân hay người mua."
+      ],
+      "confirmation_condition": "Cần AR và giữ vùng đáy qua các lần kiểm tra để củng cố giả thuyết SC.",
+      "invalidation_condition": "Nếu markdown tiếp diễn bền dưới 9.6 thì xem lại SC của vùng hiện tại.",
+      "correction_reason": null,
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E003",
+      "structure_id": "NVL_TR_202609",
+      "proposed_label": "AR",
+      "start_date": "2026-10-01",
+      "end_date": "2026-10-13",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "AR",
+      "event_status": "candidate",
+      "label_verdict": "correct",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026, được người dùng review và xác nhận ngày 31/10/2026; giữ nguyên mức độ chắc chắn tại cutoff."
+      ],
+      "price_evidence": [
+        "Nhịp hồi sau 30/09: close 09/10=10.95; high 12–13/10=11.3; close hai phiên=11.15."
+      ],
+      "volume_evidence": [
+        "09/10 volume 73096900 RV20 3.12; 12/10=18672700; 13/10=21625300."
+      ],
+      "confirmation_evidence": [
+        "Từ 14/10 điều chỉnh; close 30/10=10.4."
+      ],
+      "counter_evidence": [
+        "Nhịp hồi kéo dài nhiều phiên; người duyệt cần xác nhận phạm vi AR phù hợp."
+      ],
+      "confirmation_condition": "Hồi sau SC rồi xuất hiện pullback tạo cạnh trên tham chiếu.",
+      "invalidation_condition": "Nếu xác định một vùng khác, phải xem lại AR và biên trên tương ứng.",
+      "correction_reason": null,
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E004",
+      "structure_id": "NVL_TR_202609",
+      "proposed_label": "ST",
+      "start_date": "2026-10-26",
+      "end_date": "2026-10-30",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "ST",
+      "event_status": "candidate",
+      "label_verdict": "correct",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026, được người dùng review và xác nhận ngày 31/10/2026; giữ nguyên mức độ chắc chắn tại cutoff."
+      ],
+      "price_evidence": [
+        "Low 26/10=10.2; low 30/10=10.15, vẫn cao hơn đáy SC 9.6 khoảng 5.73%."
+      ],
+      "volume_evidence": [
+        "26/10=28763200 RV20 1.03; 30/10=14738700 RV20 0.61; bằng 15.2% volume SC."
+      ],
+      "confirmation_evidence": [
+        "Chưa có dữ liệu hồi sau 30/10."
+      ],
+      "counter_evidence": [
+        "Đây là kiểm tra hỗ trợ bên trong; chưa quay sát đáy 9.6 và chưa có hồi xác nhận."
+      ],
+      "confirmation_condition": "Chờ giữ đáy pullback và hồi phục; đối chiếu test bên trong hay ST của SC.",
+      "invalidation_condition": "Nếu giá tiếp tục giảm không có phản ứng cầu thì không xác nhận ST; thủng 9.6 cần đánh giá lại vùng.",
+      "correction_reason": null,
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E005",
+      "structure_id": "NVL_TR_202609",
+      "proposed_label": "SOS",
+      "start_date": "2026-10-09",
+      "end_date": "2026-10-09",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "AR",
+      "event_status": "invalidated",
+      "label_verdict": "incorrect",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026, được người dùng review và xác nhận ngày 31/10/2026; giữ nguyên mức độ chắc chắn tại cutoff."
+      ],
+      "price_evidence": [
+        "Close=high=10.95, vượt high 30/09=10.6 nhưng chưa vượt biên trên AR hình thành sau đó là 11.3."
+      ],
+      "volume_evidence": [
+        "73096900; RV20 3.12; volume lớn riêng lẻ không đủ xác nhận SOS."
+      ],
+      "confirmation_evidence": [
+        "12–13/10 high 11.3, sau đó quay xuống; đến 30/10 chưa có close trên 11.3."
+      ],
+      "counter_evidence": [
+        "Không dùng đỉnh tương lai để giả vờ biết biên AR tại 09/10: đây là đánh giá hồi cứu ở cutoff 30/10."
+      ],
+      "confirmation_condition": "Muốn gán SOS cho vùng đang xét cần breakout rõ khỏi TR đã hình thành và follow-through.",
+      "invalidation_condition": "Tại cutoff, bác bỏ gán SOS 09/10 cho NVL_TR_202609; ưu tiên xem đây là một phần AR.",
+      "correction_reason": "Bác bỏ nhãn, đây là một phần AR.",
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E006",
+      "structure_id": "NVL_TR_202609",
+      "proposed_label": "Spring",
+      "start_date": "2026-10-02",
+      "end_date": "2026-10-02",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "no_event",
+      "event_status": "invalidated",
+      "label_verdict": "incorrect",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026, được người dùng review và xác nhận ngày 31/10/2026; giữ nguyên mức độ chắc chắn tại cutoff."
+      ],
+      "price_evidence": [
+        "Low 9.91 cao hơn hỗ trợ đáy TR 9.6; không xuyên đáy SC."
+      ],
+      "volume_evidence": [
+        "40823300 RV20 2.22; volume không bù được điều kiện thiếu xuyên hỗ trợ."
+      ],
+      "confirmation_evidence": [
+        "Giá hồi sau phiên, nhưng không biến phiên thành Spring theo đáy TR đã chọn."
+      ],
+      "counter_evidence": [
+        "Nếu dùng một vùng nhỏ khác cần structure_id riêng."
+      ],
+      "confirmation_condition": "Phải xác định TR trước và có xuyên hỗ trợ rồi phục hồi.",
+      "invalidation_condition": "Bác bỏ Spring 02/10 đối với vùng có đáy 9.6.",
+      "correction_reason": "Bác bỏ nhãn",
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
+    },
+    {
+      "event_id": "E007",
+      "structure_id": "NVL_TR_202609",
+      "proposed_label": "LPS",
+      "start_date": "2026-10-26",
+      "end_date": "2026-10-30",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": "ST",
+      "event_status": "invalidated",
+      "label_verdict": "incorrect",
+      "context_evidence": [
+        "Suy luận tại 30/10/2026, được người dùng review và xác nhận ngày 31/10/2026; giữ nguyên mức độ chắc chắn tại cutoff."
+      ],
+      "price_evidence": [
+        "Pullback về low 10.15 ở dưới đỉnh AR 11.3; chưa có SOS hợp lệ trước đó."
+      ],
+      "volume_evidence": [
+        "Volume giảm so SC nhưng giảm volume không tự tạo nhãn LPS."
+      ],
+      "confirmation_evidence": [
+        "Chưa có dữ liệu sau 30/10 để xác nhận hồi phục."
+      ],
+      "counter_evidence": [
+        "Có thể là ST ứng viên theo E004, không đồng thời gán LPS cho cùng cấu trúc."
+      ],
+      "confirmation_condition": "Cần SOS trước, sau đó pullback giữ breakout và có bằng chứng cầu.",
+      "invalidation_condition": "Bác bỏ LPS hiện tại do thiếu SOS của NVL_TR_202609.",
+      "correction_reason": "Bác bỏ nhãn. Giữ ST ứng viên theo E004, chưa xác nhận ST.",
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
+    }
+  ],
+  "supply_demand_observations": [
+    {
+      "observation": "Nỗ lực bán lớn 30/09 nhưng đóng cao hơn low; phản ứng hồi sau đó hỗ trợ giả thuyết dừng giảm, chưa chứng minh hấp thụ hoàn tất.",
+      "evidence_event_ids": [
+        "E002",
+        "E003"
+      ]
+    },
+    {
+      "observation": "Volume pullback cuối tháng 10 giảm so SC; cần phân biệt ít cung với ít cầu do chưa có hồi xác nhận.",
+      "evidence_event_ids": [
+        "E004"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "S1",
+      "description": "Củng cố tích lũy sớm.",
+      "confirmation_condition": "Giữ vùng 10.15–10.25, có nhịp hồi và kiểm tra lại với cung giảm; sau đó mới xem xét phá 11.3.",
+      "invalidation_condition": "Mất đáy pullback liên tục và không có hồi; thủng bền 9.6 bác bỏ vùng hiện tại.",
+      "evidence_event_ids": [
+        "E002",
+        "E003",
+        "E004"
+      ]
+    },
+    {
+      "scenario_id": "S2",
+      "description": "Dao động trong vùng, chưa rõ cấu trúc.",
+      "confirmation_condition": "Giá tiếp tục giao dịch giữa 9.6 và 11.3, chưa có breakout có follow-through.",
+      "invalidation_condition": "Thoát vùng bền vững theo một hướng.",
+      "evidence_event_ids": [
+        "E003",
+        "E004"
+      ]
+    },
+    {
+      "scenario_id": "S3",
+      "description": "Markdown tiếp diễn hoặc tái phân phối.",
+      "confirmation_condition": "Hai close liên tiếp dưới 9.6 và không phục hồi trong ba phiên tiếp theo.",
+      "invalidation_condition": "Nhanh chóng lấy lại vùng và giữ được hỗ trợ khi kiểm tra.",
+      "evidence_event_ids": [
+        "E002"
+      ]
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "trungvdn@gmail.com",
+    "reviewed_at": "2026-10-31",
+    "corrections": [
+      {
+        "event_id": "E005",
+        "from": "SOS",
+        "to": "AR",
+        "reason": "Bác bỏ nhãn, đây là một phần AR."
+      },
+      {
+        "event_id": "E006",
+        "from": "Spring",
+        "to": "no_event",
+        "reason": "Bác bỏ nhãn"
+      },
+      {
+        "event_id": "E007",
+        "from": "LPS",
+        "to": "ST",
+        "reason": "Bác bỏ nhãn. Giữ ST ứng viên theo E004, chưa xác nhận ST."
+      }
+    ],
+    "eligible_for_ai": true,
+    "notes": [
+      "Người dùng review và xác nhận phân tích NVL trong hội thoại ngày 31/10/2026.",
+      "Duyệt SC/AR/ST ở mức ứng viên và PS còn uncertain; không tự xác nhận sự kiện thị trường.",
+      "Pha A là giả thuyết, structure=unclear; giới hạn xác minh ảnh/dữ liệu và ngưỡng chưa backtest được giữ nguyên."
+    ]
+  },
+  "future_outcome_excluded_from_input": {
+    "evaluation_date": null,
+    "observations": []
+  }
+}
