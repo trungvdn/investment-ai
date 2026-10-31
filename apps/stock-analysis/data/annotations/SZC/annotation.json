@@ -273,9 +273,9 @@
       ],
       "confirmation_condition": "Spring phải xuyên hỗ trợ của TR đã xác định rồi phục hồi.",
       "invalidation_condition": "Thiếu xuyên 16.031 nên bác bỏ nhãn Spring theo TR này.",
-      "correction_reason": "AI đề xuất bác bỏ nhãn; chờ người duyệt xác nhận.",
-      "reviewer": null,
-      "reviewed_at": null
+      "correction_reason": "Xác nhận bác bỏ nhãn",
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at":"2026-10-31" 
     },
     {
       "event_id": "E008",
@@ -305,9 +305,9 @@
       ],
       "confirmation_condition": "Cần stopping action, AR và vùng giữ đáy; không chỉ xét volume.",
       "invalidation_condition": "Bác bỏ việc dùng 29/05 làm SC của TR tháng 7 hiện tại; không kết luận mọi cách diễn giải lịch sử đều sai.",
-      "correction_reason": "AI đề xuất bác bỏ nhãn; chờ người duyệt xác nhận.",
-      "reviewer": null,
-      "reviewed_at": null
+      "correction_reason": "Xác nhận bác bỏ nhãn",
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at":"2026-10-31" 
     }
   ],
   "supply_demand_observations": [
