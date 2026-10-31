@@ -1,6 +1,6 @@
 # HDG — Ví dụ phân tích Wyckoff tại 30/10/2026
 
-> Bản AI soạn, chờ người dùng duyệt. review.status=in_review; eligible_for_ai=false. Dựa trên OHLCV, chưa đối chiếu nhãn trên ảnh.
+> Bản AI soạn đã được người dùng review và xác nhận ngày 31/10/2026. review.status=approved; eligible_for_ai=true. Dựa trên OHLCV, chưa đối chiếu nhãn trên ảnh.
 
 ## 1. Thông tin và dữ liệu
 
@@ -32,7 +32,7 @@ Không suy ra danh tính/ý định tổ chức hoặc nguyên nhân doanh nghi�
 
 ## 5. Nhật ký nhãn sự kiện
 
-Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự kiện còn lại giữ label_verdict=unreviewed, final_label=null. invalidated là đề xuất của AI. Phân biệt **nhãn sai** với **sự kiện có xảy ra nhưng kịch bản thành công bị bác bỏ sau đó**, đặc biệt E004.
+Người dùng đã duyệt toàn bộ mẫu. E005 giữ markdown_continuation; E009 bị bác bỏ. Các nhãn candidate được giữ ở mức ứng viên, uncertain vẫn chưa chốt. Phân biệt **nhãn sai** với **sự kiện có xảy ra nhưng kịch bản thành công bị bác bỏ sau đó**, đặc biệt E004.
 
 ### E001 — SC: 2026-07-27 → 2026-07-28
 
@@ -43,8 +43,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: Chọn cụm stopping action ứng viên, không khẳng định Selling Climax chỉ vì đáy.
 - Điều kiện xác nhận: Cần phản ứng hồi và kiểm tra sau đó; người duyệt có thể thay SC bằng no_event/stopping action.
 - Điều kiện bác bỏ: Nếu thiếu bằng chứng climax thì bỏ SC; breakdown tháng 10 bác bỏ tích lũy thành công, không tự chứng minh nhãn dừng giảm lịch sử luôn sai.
-- event_status: uncertain; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: uncertain; label_verdict: uncertain.
+- Nhãn cuối: chưa chốt (uncertain); người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E002 — AR: 2026-07-29 → 2026-08-10
 
@@ -55,8 +55,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: SC chưa chắc chắn; nhãn AR phụ thuộc cách xác định stopping action và phạm vi cấu trúc.
 - Điều kiện xác nhận: Nhịp hồi sau dừng giảm tạo cạnh trên và có phản ứng giảm tiếp theo.
 - Điều kiện bác bỏ: Nếu SC/cấu trúc gốc bị sửa thì xem lại AR.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: AR; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E003 — ST: 2026-08-19
 
@@ -67,8 +67,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: Không phải test volume giảm so phiên đáy; cần đánh giá thêm chất lượng cung.
 - Điều kiện xác nhận: Giữ vùng hỗ trợ và có phản ứng hồi sau kiểm tra.
 - Điều kiện bác bỏ: Nếu thiếu quan hệ kiểm tra với stopping action, bỏ ST thay vì ép chuỗi.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: ST; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E004 — SOS: 2026-09-04
 
@@ -79,8 +79,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: Breakout thực sự có xảy ra nhưng không duy trì; không dùng kết quả sau đó để xóa quan sát breakout ban đầu.
 - Điều kiện xác nhận: Cần follow-through và giữ biên trên; điều kiện thành công không được duy trì tới cutoff.
 - Điều kiện bác bỏ: Việc quay vào vùng rồi phá 15.2 bác bỏ giả thuyết SOS thành công/markup tiếp diễn, không tự đồng nghĩa nhãn breakout ban đầu sai.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: SOS; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E005 — Tiếp tục markdown sau khi Accumulation thất bại: 2026-10-02 → 2026-10-05
 
@@ -105,8 +105,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: Dừng giảm ngắn hạn có thể chỉ là hồi kỹ thuật trong markdown.
 - Điều kiện xác nhận: Cần AR và kiểm tra giữ đáy; không xác nhận SC chỉ vì là đáy thấp nhất.
 - Điều kiện bác bỏ: Nếu tiếp tục markdown bền dưới 14.15, đánh giá lại stopping action hiện tại.
-- event_status: uncertain; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: uncertain; label_verdict: uncertain.
+- Nhãn cuối: chưa chốt (uncertain); người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E007 — AR: 2026-10-12 → 2026-10-22
 
@@ -117,8 +117,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: Đây là cạnh trên hình thành qua nhịp hồi; không biết sẵn 15.7 trước 22/10.
 - Điều kiện xác nhận: Hồi sau dừng giảm và có pullback giúp xác định biên vùng mới.
 - Điều kiện bác bỏ: Nếu không hình thành nền mà chỉ tiếp diễn markdown, AR của giả thuyết tích lũy cần xét lại.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: AR; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E008 — ST: 2026-10-27 → 2026-10-30
 
@@ -129,8 +129,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: Kiểm tra nông, chưa sát đáy; 30/10 đóng đáy phiên không cho thấy cầu đã xác nhận.
 - Điều kiện xác nhận: Cần giữ đáy pullback và có phản ứng hồi, đánh giá ST hay pullback thông thường.
 - Điều kiện bác bỏ: Nếu giảm tiếp thiếu cầu hỗ trợ thì không xác nhận ST.
-- event_status: uncertain; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: uncertain; label_verdict: uncertain.
+- Nhãn cuối: chưa chốt (uncertain); người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E009 — Spring: 2026-10-09
 
@@ -141,8 +141,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: Không ghép hồi rất muộn vào một Spring thành công mà bỏ qua thời gian giá chấp nhận dưới vùng.
 - Điều kiện xác nhận: Spring của vùng cũ phải có xuyên và hồi lại vùng với bằng chứng phù hợp.
 - Điều kiện bác bỏ: Đề xuất bác bỏ Spring thành công 09/10 của vùng cũ; low mới không tự tạo Spring.
-- event_status: invalidated; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: invalidated; label_verdict: incorrect.
+- Nhãn cuối: no_event; người duyệt: trungvdn; ngày duyệt: 2026-10-31.\n- Ghi chú duyệt: Bác bỏ nhãn
 
 ### E010 — SOS: 2026-10-21
 
@@ -153,8 +153,8 @@ Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự
 - Bằng chứng phản đối/giới hạn: Có thể là breakout vùng rất nhỏ nếu định nghĩa structure_id khác; chưa đủ xem là SOS của toàn vùng tháng 10.
 - Điều kiện xác nhận: Cần TR có biên trước sự kiện và breakout giữ được; hiện ưu tiên E007 AR.
 - Điều kiện bác bỏ: Nếu chỉ là nhịp AR không giữ breakout, không xác nhận SOS vùng tháng 10.
-- event_status: uncertain; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: uncertain; label_verdict: uncertain.
+- Nhãn cuối: chưa chốt (uncertain); người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ## 6. Cung–cầu và pha
 
@@ -182,12 +182,14 @@ Ngưỡng hai/ba phiên là minh họa, chưa backtest. Không gán xác suất 
 
 ## 8. Duyệt mẫu
 
-- Trạng thái: in_review; eligible_for_ai=false.
-- Người duyệt/ngày duyệt: chưa điền. Chưa có nhãn đúng/sai được người dùng xác nhận.
-- Cần duyệt vùng cũ: SC uncertain, AR, ST và SOS 04/09 có phản ứng thất bại; E005 đã sửa thành tiếp tục markdown sau khi Accumulation thất bại.
-- Cần duyệt vùng mới: stopping action/SC 09/10, AR đến 22/10, ST nông cuối tháng và SOS 21/10 còn uncertain.
-- Đề xuất bác bỏ Spring thành công 09/10 của vùng cũ do không phục hồi vào vùng nhanh.
-- Đối chiếu ảnh và điều chỉnh giá; sửa final_label, label_verdict, correction_reason và reviewer trong JSON cùng báo cáo.
+- Trạng thái: approved; eligible_for_ai=true.
+- Người duyệt: trungvdn; ngày duyệt: 2026-10-31.
+- Phạm vi: HDG_TR_202607, HDG_TR_202610, 10 sự kiện và 4 kịch bản.
+- E002 AR, E003 ST, E004 SOS vùng cũ và E007 AR vùng mới: giữ nhãn ứng viên. E004 có breakout quan sát được nhưng kịch bản thành công không được duy trì.
+- E001 SC, E006 SC, E008 ST và E010 SOS: giữ uncertain; không tự chốt nhãn cuối.
+- E005: giữ sửa đã xác nhận thành markdown_continuation sau Accumulation thất bại, thay SOW.
+- E009: xác nhận bác bỏ Spring thành công 09/10 của vùng cũ; no_event chỉ áp dụng nhãn/phạm vi này.
+- Giữ assessment structure=unclear, phase=UNKNOWN và bối cảnh markdown ưu tiên. Giới hạn xác minh ảnh/dữ liệu, ngưỡng chưa backtest và bất định tương lai giữ nguyên.
 
 ## 9. Kết quả tương lai — loại khỏi đầu vào AI
 
