@@ -286,10 +286,19 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		if ctxChange > 0.12 && st.relativeVolume >= 1.5 && st.spread >= rangeWidth*0.18 && st.closeLocation <= 0.45 {
 			add("BC_CANDIDATE", i, 0.62, "Buying-climax candidate after an advance.")
 		}
-		if useRangeLevels {
-			if rc.valid && i >= rc.start && i <= rc.end && ctxChange < -0.05 && c.Low < support && c.Close > support && st.closeLocation >= 0.55 && st.relativeVolume < 1.35 {
-				add("SPRING", i, 0.72, "After the trading range formed, price undercut support and closed back inside on non-exceptional volume.")
+		// Spring boundaries must exist before this candle. Using the minimum
+		// of a window containing this low makes penetration impossible.
+		if i >= 60 {
+			priorTrend := 0.0
+			if i > tw && cs[i-tw-1].Close > 0 {
+				priorTrend = (cs[i-1].Close - cs[i-tw-1].Close) / cs[i-tw-1].Close
 			}
+			priorRange := a.detectTradingRange(cs[:i], priorTrend)
+			if priorRange.valid && ctxChange < -0.05 && c.Low < priorRange.support && c.Close > priorRange.support && st.closeLocation >= 0.55 && st.relativeVolume < 1.35 {
+				add("SPRING", i, 0.72, "Price undercut a range established before this candle and recovered inside on non-exceptional volume.")
+			}
+		}
+		if useRangeLevels {
 			if ctxChange > 0.05 && c.High > resistance && c.Close < resistance && st.closeLocation <= 0.45 && st.relativeVolume > 0.8 {
 				add("UTAD", i, 0.70, "Price exceeded established range resistance and closed back inside after an advance.")
 			}
