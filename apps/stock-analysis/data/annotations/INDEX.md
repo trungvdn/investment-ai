@@ -10,4 +10,4 @@
 | MSB | [MSB/report.md](MSB/report.md) | [MSB/annotation.json](MSB/annotation.json) | draft | — | — |
 | NLG | [NLG/report.md](NLG/report.md) | [NLG/annotation.json](NLG/annotation.json) | draft | — | — |
 | NVL | [NVL/report.md](NVL/report.md) | [NVL/annotation.json](NVL/annotation.json) | draft | — | — |
-| SZC | [SZC/report.md](SZC/report.md) | [SZC/annotation.json](SZC/annotation.json) | draft | — | — |
+| SZC | [SZC/report.md](SZC/report.md) | [SZC/annotation.json](SZC/annotation.json) | in_review (ví dụ AI) | — | — |
