@@ -26,12 +26,12 @@
     ]
   },
   "assessment": {
-    "structure": "reaccumulation",
+    "structure": "markup",
     "phase": "E",
     "status": "developing",
     "confidence": "medium",
     "reasoning": [
-      "Giả thuyết tái tích lũy và thoát vùng: Spring ứng viên 26–27/08, SOS 23/09 và LPS ứng viên 05/10.",
+      "Đang ở giai đoạn markup sau reaccumulation của MSB_TR_202607 từ 2026-07-01 đến 2026-09-23; 23/09 là mốc breakout, sau đó giá tiếp tục tăng.",
       "Giá tiếp tục tạo đỉnh cao: high 29/10=16.15; 30/10 close 15.8 vẫn trên biên cũ 13.726."
     ],
     "counter_evidence": [
@@ -40,10 +40,16 @@
       "30/10 close 15.8 thấp hơn open 16, volume 10312400; cần theo dõi pullback, không tự gọi LPS mới."
     ],
     "alternative_hypotheses": [
-      "Xu hướng tăng có nhịp nghỉ thông thường, chưa đủ bằng chứng phân loại đầy đủ Wyckoff.",
+      "Xu hướng tăng có nhịp nghỉ thông thường, mức độ phù hợp của các nhãn sự kiện riêng lẻ vẫn cần duyệt.",
       "Nếu breakout mất hiệu lực và quay bền vào vùng cũ, cần hạ nhận định pha E."
     ],
-    "invalidation_condition": "Hai close liên tiếp dưới 13.601 và không lấy lại 13.726 trong ba phiên sau làm suy yếu giả thuyết thoát vùng; mất bền 12.14 bác bỏ giả thuyết giữ đáy Spring. Ngưỡng minh họa chưa backtest."
+    "invalidation_condition": "Hai close liên tiếp dưới 13.601 và không lấy lại 13.726 trong ba phiên sau làm suy yếu giả thuyết thoát vùng; mất bền 12.14 bác bỏ giả thuyết giữ đáy Spring. Ngưỡng minh họa chưa backtest.",
+    "preceding_structure": {
+      "structure": "reaccumulation",
+      "structure_id": "MSB_TR_202607",
+      "start_date": "2026-07-01",
+      "end_date": "2026-09-23"
+    }
   },
   "trading_ranges": [
     {
@@ -355,7 +361,8 @@
       "Ví dụ AI soạn, chưa được người dùng duyệt.",
       "Pha E là giả thuyết thoát vùng, confidence định tính không phải xác suất.",
       "Không ép SC–AR–ST cho vùng tái tích lũy; cần kiểm tra điều chỉnh giá trước khi duyệt Spring.",
-      "Các ngưỡng số phiên là quy ước minh họa, chưa backtest."
+      "Các ngưỡng số phiên là quy ước minh họa, chưa backtest.",
+      "Người dùng điều chỉnh assessment: đang markup sau reaccumulation 2026-07-01–2026-09-23. Đây là điều chỉnh nhận định, chưa phải duyệt toàn bộ mẫu."
     ]
   },
   "future_outcome_excluded_from_input": {

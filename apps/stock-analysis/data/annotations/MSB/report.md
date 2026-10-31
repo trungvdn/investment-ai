@@ -14,7 +14,7 @@
 
 ## 2. Kết luận nhanh
 
-**Ưu tiên giả thuyết tái tích lũy đã thoát vùng, pha E đang phát triển; tin cậy trung bình định tính.** Cụm 26–27/08 là Spring ứng viên, 23/09 là SOS và 05/10 là LPS ứng viên. Giá sau đó tạo đỉnh cao hơn tới high 16.15 ngày 29/10. Phiên giảm 30/10 chưa đủ để kết luận phân phối, đồng thời chưa đủ xác nhận một LPS mới.
+**Đang ở giai đoạn markup (pha E) sau reaccumulation từ 01/07/2026 đến 23/09/2026; tin cậy trung bình định tính.** Cụm 26–27/08 là Spring ứng viên, 23/09 là SOS và 05/10 là LPS ứng viên. Giá sau đó tạo đỉnh cao hơn tới high 16.15 ngày 29/10. Phiên giảm 30/10 chưa đủ để kết luận phân phối, đồng thời chưa đủ xác nhận một LPS mới.
 
 ## 3. Bối cảnh
 
@@ -133,7 +133,7 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 | 05/10 low 13.85 giữ trên biên cũ, sau đó tăng | LPS ứng viên được phản ứng sau hỗ trợ | Không chứng minh danh tính/ý định tổ chức |
 | 30/10 close 15.8, volume tăng so 29/10 | Có cung trên nhịp điều chỉnh | Không đủ kết luận phân phối hoặc LPS mới |
 
-Pha E là cách diễn giải thoát vùng cũ tại cutoff; không có nghĩa xu hướng tăng sẽ tiếp tục chắc chắn. Nếu trở lại bền trong vùng, phải cập nhật nhận định.
+Assessment hiện tại là markup sau vùng reaccumulation MSB_TR_202607 (01/07–23/09/2026). Pha E là cách diễn giải thoát vùng cũ tại cutoff; không có nghĩa xu hướng tăng sẽ tiếp tục chắc chắn. Nếu trở lại bền trong vùng, phải cập nhật nhận định.
 
 ## 7. Kịch bản
 
@@ -149,7 +149,8 @@ Ngưỡng hai/ba phiên là quy ước minh họa, chưa backtest; các kịch b
 
 - Trạng thái: in_review; eligible_for_ai=false.
 - Người duyệt/ngày duyệt: chưa điền. Chưa có nhãn đúng/sai được người dùng xác nhận.
-- Cần duyệt: bối cảnh tái tích lũy, biên TR, dữ liệu điều chỉnh quanh tháng 8, Spring, Test, SOS, LPS và pha E.
+- Người dùng đã điều chỉnh assessment thành markup sau reaccumulation 01/07–23/09/2026; toàn mẫu vẫn in_review.
+- Cần duyệt: biên TR, dữ liệu điều chỉnh quanh tháng 8, Spring, Test, SOS, LPS và pha E.
 - Đề xuất bác bỏ: SC 22/07 do thiếu bối cảnh kết thúc markdown; SOW 26/08 do phục hồi nhanh. LPS mới 30/10 còn uncertain.
 - Sửa final_label, label_verdict, correction_reason, reviewer trong annotation.json cùng báo cáo; chỉ approved sau khi người dùng xác nhận.
 
