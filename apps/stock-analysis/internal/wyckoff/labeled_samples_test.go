@@ -63,6 +63,10 @@ func TestLabeledSampleRecall(t *testing.T) {
 				}
 			}
 			symbol := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "candles_"), "_1D.csv")
+			// Exercise OHLCV validation even when annotations are absent.
+			if _, err := NewAnalyzer(DefaultConfig()).Analyze(symbol, candles); err != nil {
+				t.Fatal(err)
+			}
 			for idx, label := range labels {
 				// Permit up to 15 subsequent observed sessions for retrospective
 				// confirmation. This does not measure real-time detection latency.
@@ -92,6 +96,10 @@ func TestLabeledSampleRecall(t *testing.T) {
 			}
 			t.Logf("COVERAGE symbol=%s candles=%d positiveLabels=%d", symbol, len(candles), len(labels))
 		})
+	}
+	if total == 0 {
+		t.Log("NOT_EVALUABLE: no machine-readable positive labels; PNG annotations are not parsed")
+		return
 	}
 	t.Logf("SCORE positiveLabels=%d exactDateMatchedWithin15Sessions=%d; precision unavailable; no accuracy gate", total, matched)
 }
