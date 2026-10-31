@@ -337,9 +337,9 @@
       ],
       "confirmation_condition": "Phải nêu đúng structure_id và biên cần vượt.",
       "invalidation_condition": "Không gán breakout trên 25.95 cho phiên đóng 22.85.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
-      "reviewer": null,
-      "reviewed_at": null
+      "correction_reason": "Bác bỏ nhãn",
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
     },
     {
       "event_id": "E009",
