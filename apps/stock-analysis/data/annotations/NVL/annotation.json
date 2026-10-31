@@ -5,13 +5,13 @@
   "timeframe": "1D",
   "analysis_as_of": null,
   "data": {
-    "ohlcv_url": "https://github.com/trungvdn/investment-ai/blob/main/apps/stock-analysis/data/sample/candles_NVL_1D.csv",
-    "chart_url": "https://github.com/trungvdn/investment-ai/blob/main/apps/stock-analysis/data/sample/NVL_nhan.png",
     "start_date": null,
     "end_date": null,
     "source_commit": null,
     "adjustment_status": null,
-    "quality_notes": []
+    "quality_notes": [],
+    "ohlcv_path": "candles_NVL_1D.csv",
+    "chart_path": "NVL_nhan.png"
   },
   "context": {
     "prior_trend": null,

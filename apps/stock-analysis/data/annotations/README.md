@@ -1,6 +1,6 @@
 # Bộ khuôn mẫu Wyckoff — 9 cổ phiếu
 
-Mã đã đối chiếu từ thư mục sample: BCM, CTD, GEX, HDG, LPB, MSB, NLG, NVL, SZC.
+Bộ mẫu gồm các mã: BCM, CTD, GEX, HDG, LPB, MSB, NLG, NVL, SZC.
 
 ## Cách điền
 
@@ -26,8 +26,8 @@ Mã đã đối chiếu từ thư mục sample: BCM, CTD, GEX, HDG, LPB, MSB, NL
 - Bằng chứng cần ngày/đoạn dữ liệu cụ thể. Nếu so volume với trung bình, ghi cửa sổ tính; nếu mô tả biên độ rộng, ghi mốc so sánh.
 - Giá trị từ dữ liệu sau analysis_as_of không được dùng trong phần nhận định. future_outcome_excluded_from_input phải bị loại khỏi đầu vào AI khi đánh giá hồi cứu.
 - Biểu đồ có nhãn là tham chiếu gốc chưa duyệt, không tự coi là ground truth. Khi phân tích hồi cứu, không cho AI xem phần biểu đồ sau ngày phân tích.
-- Các đường dẫn main có thể thay đổi; trước khi duyệt, ghi commit nguồn để cố định phiên bản dữ liệu.
+- data.ohlcv_path và data.chart_path được tính tương đối từ thư mục chứa annotation.json. Các liên kết trong report.md cũng trỏ tới tệp cùng thư mục. Trước khi duyệt, ghi commit nguồn để cố định phiên bản dữ liệu.
 
 ## Phạm vi bàn giao
 
-Mỗi mã có report.md và annotation.json. Bộ này chứa khuôn mẫu và liên kết tới dữ liệu/biểu đồ nguồn; không đóng gói lại OHLCV và ảnh. Không gán nhãn hoặc kết luận thay người duyệt.
+Mỗi thư mục mã chứa đủ 4 tệp: report.md, annotation.json, candles_TICKER_1D.csv và TICKER_nhan.png. OHLCV và ảnh được chuyển từ data/sample vào cùng thư mục mẫu, giữ nguyên nội dung. Không gán nhãn hoặc kết luận thay người duyệt.

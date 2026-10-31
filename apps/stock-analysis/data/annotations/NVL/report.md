@@ -6,8 +6,8 @@
 
 - Mã: NVL
 - Khung thời gian: 1D
-- OHLCV nguồn: [candles_NVL_1D.csv](https://github.com/trungvdn/investment-ai/blob/main/apps/stock-analysis/data/sample/candles_NVL_1D.csv)
-- Biểu đồ tham chiếu: [NVL_nhan.png](https://github.com/trungvdn/investment-ai/blob/main/apps/stock-analysis/data/sample/NVL_nhan.png)
+- OHLCV nguồn: [candles_NVL_1D.csv](candles_NVL_1D.csv)
+- Biểu đồ tham chiếu: [NVL_nhan.png](NVL_nhan.png)
 - Ngày phân tích (analysis_as_of): [YYYY-MM-DD]
 - Khoảng dữ liệu thực sự sử dụng: […] → […]
 - Phiên bản/commit dữ liệu: […]

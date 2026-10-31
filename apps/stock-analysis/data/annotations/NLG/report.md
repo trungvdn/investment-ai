@@ -6,8 +6,8 @@
 
 - Mã: NLG
 - Khung thời gian: 1D
-- OHLCV nguồn: [candles_NLG_1D.csv](https://github.com/trungvdn/investment-ai/blob/main/apps/stock-analysis/data/sample/candles_NLG_1D.csv)
-- Biểu đồ tham chiếu: [NLG_nhan.png](https://github.com/trungvdn/investment-ai/blob/main/apps/stock-analysis/data/sample/NLG_nhan.png)
+- OHLCV nguồn: [candles_NLG_1D.csv](candles_NLG_1D.csv)
+- Biểu đồ tham chiếu: [NLG_nhan.png](NLG_nhan.png)
 - Ngày phân tích (analysis_as_of): [YYYY-MM-DD]
 - Khoảng dữ liệu thực sự sử dụng: […] → […]
 - Phiên bản/commit dữ liệu: […]
