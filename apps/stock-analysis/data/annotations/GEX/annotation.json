@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "sample_id": "GEX_1D_draft_v1",
+  "ticker": "GEX",
+  "timeframe": "1D",
+  "analysis_as_of": null,
+  "data": {
+    "ohlcv_url": "https://github.com/trungvdn/investment-ai/blob/main/apps/stock-analysis/data/sample/candles_GEX_1D.csv",
+    "chart_url": "https://github.com/trungvdn/investment-ai/blob/main/apps/stock-analysis/data/sample/GEX_nhan.png",
+    "start_date": null,
+    "end_date": null,
+    "source_commit": null,
+    "adjustment_status": null,
+    "quality_notes": []
+  },
+  "context": {
+    "prior_trend": null,
+    "evidence": []
+  },
+  "assessment": {
+    "structure": null,
+    "phase": null,
+    "status": null,
+    "confidence": null,
+    "reasoning": [],
+    "counter_evidence": [],
+    "alternative_hypotheses": [],
+    "invalidation_condition": null
+  },
+  "trading_ranges": [],
+  "events": [],
+  "supply_demand_observations": [],
+  "scenarios": [],
+  "review": {
+    "status": "draft",
+    "reviewer": null,
+    "reviewed_at": null,
+    "corrections": [],
+    "eligible_for_ai": false
+  },
+  "future_outcome_excluded_from_input": {
+    "evaluation_date": null,
+    "observations": []
+  }
+}
