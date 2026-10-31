@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -96,6 +98,10 @@ func newHandler(provider marketdata.Provider, demo bool, uiDir string) http.Hand
 		}
 
 		candles = prepareCandles(candles, from, to, timeframe)
+		if err := exportCandlesCSV(fmt.Sprintf("candles_%s_%s.csv", symbol, timeframe), candles); err != nil {
+			log.Printf("could not export candles for %s: %v", symbol, err)
+		}
+
 		result, err := analyzer.Analyze(symbol, candles)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -136,6 +142,34 @@ func newHandler(provider marketdata.Provider, demo bool, uiDir string) http.Hand
 		})
 	}
 	return mux
+}
+
+func exportCandlesCSV(path string, candles []wyckoff.Candle) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	w := csv.NewWriter(file)
+	if err := w.Write([]string{"date", "open", "high", "low", "close", "volume", "event"}); err != nil {
+		return err
+	}
+	for _, candle := range candles {
+		if err := w.Write([]string{
+			candle.Date.Format("2006-01-02"),
+			fmt.Sprintf("%g", candle.Open),
+			fmt.Sprintf("%g", candle.High),
+			fmt.Sprintf("%g", candle.Low),
+			fmt.Sprintf("%g", candle.Close),
+			strconv.FormatFloat(candle.Volume, 'f', -1, 64),
+			"",
+		}); err != nil {
+			return err
+		}
+	}
+	w.Flush()
+	return w.Error()
 }
 
 func newCombinedHandler(stock http.Handler, macroURL string) (http.Handler, error) {
