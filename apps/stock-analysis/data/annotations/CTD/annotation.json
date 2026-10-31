@@ -1,42 +1,413 @@
 {
   "schema_version": "1.0",
-  "sample_id": "CTD_1D_draft_v1",
+  "sample_id": "CTD_1D_2026-10-30_example_v1",
   "ticker": "CTD",
   "timeframe": "1D",
-  "analysis_as_of": null,
+  "analysis_as_of": "2026-10-30",
   "data": {
-    "start_date": null,
-    "end_date": null,
-    "source_commit": null,
-    "adjustment_status": null,
-    "quality_notes": [],
+    "start_date": "2024-10-31",
+    "end_date": "2026-10-30",
+    "source_commit": "84b3251a4a28111bc9510332b6ea2b4a8a387561",
+    "adjustment_status": "unverified",
+    "quality_notes": [
+      "497 phiên; event trống. Kiểm tra không trùng ngày, OHLC hợp lệ, volume không âm; chưa xác minh lịch giao dịch, đơn vị hoặc điều chỉnh giá.",
+      "Phân tích OHLCV, chưa đối chiếu ảnh CTD_nhan.png.",
+      "RV20=volume/trung bình 20 phiên liền trước, loại phiên hiện tại."
+    ],
     "ohlcv_path": "candles_CTD_1D.csv",
     "chart_path": "CTD_nhan.png"
   },
   "context": {
-    "prior_trend": null,
-    "evidence": []
+    "prior_trend": "downtrend",
+    "evidence": [
+      "High 17/06=73.9; low 23/07=54.7 sau nhịp giảm tháng 7.",
+      "Hồi lên high 05/08=65; kiểm tra 17/09 low 56.8 giữ trên 54.7.",
+      "20/10 close 66 vượt 65; 29/10 close 64.7 và 30/10 close 64 quay dưới vùng breakout."
+    ]
   },
   "assessment": {
-    "structure": null,
-    "phase": null,
-    "status": null,
-    "confidence": null,
-    "reasoning": [],
-    "counter_evidence": [],
-    "alternative_hypotheses": [],
-    "invalidation_condition": null
+    "structure": "accumulation",
+    "phase": "D",
+    "status": "developing",
+    "confidence": "medium",
+    "reasoning": [
+      "Giả thuyết tích lũy đang kiểm tra chuyển sang pha D, chưa khẳng định breakout thành công.",
+      "SOS ứng viên 20/10 volume tăng; sau đó high 27/10=68.4 nhưng pullback cuối tháng mất 65."
+    ],
+    "counter_evidence": [
+      "SC tháng 7 không có volume climax rõ.",
+      "29/10 giảm mạnh với RV20 1.91; 30/10 đóng đáy phiên 64. LPS chưa có hồi xác nhận."
+    ],
+    "alternative_hypotheses": [
+      "Breakout thất bại, quay lại pha B trong vùng rộng.",
+      "Nhịp hồi kỹ thuật sau markdown, mô hình tích lũy chưa được thị trường xác nhận."
+    ],
+    "invalidation_condition": "Hai close dưới 63.2 và không lấy lại 65 trong ba phiên sau làm suy yếu chuyển pha D; hai close dưới 54.7 và không phục hồi làm suy yếu toàn vùng tích lũy. Ngưỡng minh họa chưa backtest."
   },
-  "trading_ranges": [],
-  "events": [],
-  "supply_demand_observations": [],
-  "scenarios": [],
+  "trading_ranges": [
+    {
+      "structure_id": "CTD_CONTEXT_202607",
+      "start_date": "2026-07-22",
+      "end_date": null,
+      "support_zone": {
+        "lower": 54.7,
+        "upper": 56
+      },
+      "resistance_zone": {
+        "lower": 63.2,
+        "upper": 65
+      },
+      "status": "provisional",
+      "evidence": [
+        "22/07 low 56; 23/07 low 54.7; 05/08 high 65 close 63.2.",
+        "17/09 low 56.8 giữ đáy rộng; high 15/10=64 chưa vượt 65.",
+        "20/10 close 66 vượt biên nhưng cuối tháng quay dưới 65; chưa chốt kết thúc TR."
+      ]
+    },
+    {
+      "structure_id": "CTD_TR_202609",
+      "start_date": "2026-09-11",
+      "end_date": "2026-10-07",
+      "support_zone": {
+        "lower": 56.8,
+        "upper": 57.5
+      },
+      "resistance_zone": {
+        "lower": 59.9,
+        "upper": 60.7
+      },
+      "status": "provisional",
+      "evidence": [
+        "11/09 low 57.5; 17/09 low 56.8; 18/09 high 59.9; 28/09 high 60.7.",
+        "07/10 close 61.9 vượt vùng nhỏ; không đồng nghĩa vượt biên rộng 65."
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "E001",
+      "structure_id": "CTD_CONTEXT_202607",
+      "proposed_label": "SC",
+      "start_date": "2026-07-22",
+      "end_date": "2026-07-23",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026, chờ người dùng duyệt; tách vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "22/07 low=close=56; 23/07 low 54.7, close 56.9 ở 57.9% biên độ."
+      ],
+      "volume_evidence": [
+        "22/07 volume 661800 RV20 1.25; 23/07 458000 RV20 0.85."
+      ],
+      "confirmation_evidence": [
+        "27/07 low 55 chưa phá 54.7; sau đó hồi lên 65 ngày 05/08."
+      ],
+      "counter_evidence": [
+        "Volume không climax rõ, có thể chỉ là stopping action."
+      ],
+      "confirmation_condition": "Cần nhịp hồi và kiểm tra giữ đáy; người duyệt có thể bỏ SC nếu thiếu climax.",
+      "invalidation_condition": "Không ép SC chỉ vì đáy; mất bền 54.7 làm suy yếu giả thuyết giữ đáy.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E002",
+      "structure_id": "CTD_CONTEXT_202607",
+      "proposed_label": "AR",
+      "start_date": "2026-07-24",
+      "end_date": "2026-08-05",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026, chờ người dùng duyệt; tách vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "Sau kiểm tra low 55 ngày 27–28/07, hồi lên high 65, close 63.2 ngày 05/08."
+      ],
+      "volume_evidence": [
+        "05/08 volume 405300 RV20 0.82."
+      ],
+      "confirmation_evidence": [
+        "Sau đỉnh 65, giá điều chỉnh dần về vùng 56.8 tháng 9."
+      ],
+      "counter_evidence": [
+        "Nhịp bắt đầu có kiểm tra đáy xen kẽ; phạm vi AR cần duyệt."
+      ],
+      "confirmation_condition": "Hồi sau stopping action tạo cạnh trên và phản ứng điều chỉnh.",
+      "invalidation_condition": "Nếu thay đổi SC hoặc phân đoạn nhịp hồi thì sửa phạm vi AR.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E003",
+      "structure_id": "CTD_CONTEXT_202607",
+      "proposed_label": "ST",
+      "start_date": "2026-09-11",
+      "end_date": "2026-09-17",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026, chờ người dùng duyệt; tách vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "11/09 low 57.5; 17/09 low 56.8 rồi close 58.8; cao hơn SC low 54.7 khoảng 3.84%."
+      ],
+      "volume_evidence": [
+        "17/09 volume 157100 RV20 0.66, bằng 34.3% volume 23/07."
+      ],
+      "confirmation_evidence": [
+        "Sau đó đi ngang và breakout vùng nhỏ 07/10."
+      ],
+      "counter_evidence": [
+        "ST muộn và chưa sát đáy rộng; có thể là kiểm tra bên trong."
+      ],
+      "confirmation_condition": "Giữ đáy, cung giảm và phản ứng hồi, đánh giá trong bối cảnh vùng lớn.",
+      "invalidation_condition": "Mất 54.7 bền phản đối ST thành công; thiếu quan hệ với SC thì bỏ nhãn.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E004",
+      "structure_id": "CTD_CONTEXT_202607",
+      "proposed_label": "SOS",
+      "start_date": "2026-10-20",
+      "end_date": "2026-10-20",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026, chờ người dùng duyệt; tách vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "O/H/L/C=63.3/66.2/63.3/66; close vượt 65 khoảng 1.54%."
+      ],
+      "volume_evidence": [
+        "Volume 1272800 RV20 3.80."
+      ],
+      "confirmation_evidence": [
+        "27/10 high 68.4; 29–30/10 close 64.7 và 64 quay dưới 65."
+      ],
+      "counter_evidence": [
+        "Breakout có xảy ra nhưng giữ vùng chưa thành công; không đồng nhất thất bại sau đó với nhãn quan sát sai."
+      ],
+      "confirmation_condition": "Cần giữ/lấy lại 65 và kiểm tra có cầu hỗ trợ để củng cố pha D.",
+      "invalidation_condition": "Giá chấp nhận lại trong vùng và mất 63.2 không phục hồi sẽ phản đối SOS thành công.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E005",
+      "structure_id": "CTD_CONTEXT_202607",
+      "proposed_label": "LPS",
+      "start_date": "2026-10-29",
+      "end_date": "2026-10-30",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026, chờ người dùng duyệt; tách vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "29/10 low 64.6 close 64.7; 30/10 low=close=64, dưới biên 65."
+      ],
+      "volume_evidence": [
+        "29/10 volume 883800 RV20 1.91; 30/10 419300 RV20 0.85."
+      ],
+      "confirmation_evidence": [
+        "Chưa có phiên hồi sau cutoff."
+      ],
+      "counter_evidence": [
+        "Một phiên volume giảm sau phiên bán mạnh chưa chứng minh cạn cung; chưa giữ lại breakout."
+      ],
+      "confirmation_condition": "Chờ hồi lấy lại 65 và kiểm tra giữ vùng với cung giảm.",
+      "invalidation_condition": "Giảm tiếp dưới 63.2 không lấy lại vùng thì không xác nhận LPS.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E006",
+      "structure_id": "CTD_CONTEXT_202607",
+      "proposed_label": "Spring",
+      "start_date": "2026-09-17",
+      "end_date": "2026-09-17",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "invalidated",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026, chờ người dùng duyệt; tách vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "Low 56.8 cao hơn hỗ trợ đáy rộng 54.7, không xuyên đáy này."
+      ],
+      "volume_evidence": [
+        "Volume thấp không thay thế điều kiện xuyên hỗ trợ."
+      ],
+      "confirmation_evidence": [
+        "Phản ứng hồi sau đó phù hợp ST ứng viên E003 hơn Spring rộng."
+      ],
+      "counter_evidence": [
+        "Nếu xét vùng nhỏ khác cần biên đã tồn tại và structure_id riêng."
+      ],
+      "confirmation_condition": "Spring rộng cần xuyên hỗ trợ rộng rồi hồi lại.",
+      "invalidation_condition": "Bác bỏ Spring vùng lớn 17/09 do không xuyên 54.7.",
+      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E007",
+      "structure_id": "CTD_CONTEXT_202607",
+      "proposed_label": "SOS",
+      "start_date": "2026-10-07",
+      "end_date": "2026-10-07",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "invalidated",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026, chờ người dùng duyệt; tách vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "Close 61.9 dưới kháng cự rộng 65."
+      ],
+      "volume_evidence": [
+        "Volume 685300 RV20 2.82."
+      ],
+      "confirmation_evidence": [
+        "Sau đó mới tới breakout rộng ngày 20/10."
+      ],
+      "counter_evidence": [
+        "Có breakout vùng nhỏ E008; chỉ bác bỏ SOS của vùng rộng cùng ngày."
+      ],
+      "confirmation_condition": "Vượt đúng kháng cự của structure_id đang xét và có follow-through.",
+      "invalidation_condition": "Chưa vượt 65 nên không phải breakout rộng.",
+      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E008",
+      "structure_id": "CTD_TR_202609",
+      "proposed_label": "SOS",
+      "start_date": "2026-10-07",
+      "end_date": "2026-10-07",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026, chờ người dùng duyệt; tách vùng rộng và vùng nhỏ."
+      ],
+      "price_evidence": [
+        "O/H/L/C=59/62.4/59/61.9, vượt biên nhỏ 60.7 đã hình thành ngày 28/09."
+      ],
+      "volume_evidence": [
+        "Volume 685300 RV20 2.82."
+      ],
+      "confirmation_evidence": [
+        "08/10 close 62.3; 14/10 close 63.6; sau đó vượt vùng lớn 20/10."
+      ],
+      "counter_evidence": [
+        "Chỉ áp dụng vùng nhỏ; không dùng để tuyên bố pha D rộng ngay 07/10."
+      ],
+      "confirmation_condition": "Breakout giữ 60.7 và có follow-through; kiểm tra xác nhận thêm chất lượng vùng nhỏ.",
+      "invalidation_condition": "Quay bền dưới 59.9–60.7 sẽ làm suy yếu breakout nhỏ.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    }
+  ],
+  "supply_demand_observations": [
+    {
+      "observation": "ST tháng 9 volume giảm so đáy tháng 7; SOS 20/10 có volume tăng nhưng pullback cuối tháng còn cung.",
+      "evidence_event_ids": [
+        "E003",
+        "E004",
+        "E005"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "S1",
+      "structure_id": "CTD_CONTEXT_202607",
+      "description": "Giữ breakout, củng cố pha D.",
+      "confirmation_condition": "Lấy lại 65 qua hai close rồi kiểm tra giữ vùng với cung giảm; vượt 68.4 có follow-through là bằng chứng bổ sung.",
+      "invalidation_condition": "Chấp nhận dưới 63.2 và không lấy lại 65.",
+      "evidence_event_ids": [
+        "E004",
+        "E005"
+      ]
+    },
+    {
+      "scenario_id": "S2",
+      "structure_id": "CTD_CONTEXT_202607",
+      "description": "Quay lại xây nền pha B.",
+      "confirmation_condition": "Ở dưới 65 nhưng giữ 54.7; tiếp tục dao động chưa có hướng thoát vùng bền.",
+      "invalidation_condition": "Thoát bền trên 65 hoặc dưới 54.7.",
+      "evidence_event_ids": [
+        "E002",
+        "E003",
+        "E004"
+      ]
+    },
+    {
+      "scenario_id": "S3",
+      "structure_id": "CTD_CONTEXT_202607",
+      "description": "Giả thuyết tích lũy thất bại.",
+      "confirmation_condition": "Hai close dưới 54.7 và không phục hồi trong ba phiên sau; các nhịp hồi bị từ chối củng cố.",
+      "invalidation_condition": "Phục hồi nhanh vào vùng và kiểm tra giữ đáy.",
+      "evidence_event_ids": [
+        "E001",
+        "E003"
+      ]
+    },
+    {
+      "scenario_id": "S4",
+      "structure_id": "CTD_TR_202609",
+      "description": "Breakout nhỏ giữ hiệu lực khi vùng rộng điều chỉnh.",
+      "confirmation_condition": "Nếu kiểm tra 59.9–60.7, vùng giữ được với cung giảm và có nhịp hồi.",
+      "invalidation_condition": "Chấp nhận dưới 59.9 và không lấy lại 60.7.",
+      "evidence_event_ids": [
+        "E008"
+      ]
+    }
+  ],
   "review": {
-    "status": "draft",
+    "status": "in_review",
     "reviewer": null,
     "reviewed_at": null,
     "corrections": [],
-    "eligible_for_ai": false
+    "eligible_for_ai": false,
+    "notes": [
+      "Ví dụ AI soạn, chưa được người dùng duyệt.",
+      "Pha D là giả thuyết đang bị kiểm tra; chưa xác nhận LPS hoặc markup bền vững.",
+      "Ngưỡng số phiên minh họa, chưa backtest; nhãn sai chỉ là đề xuất AI."
+    ]
   },
   "future_outcome_excluded_from_input": {
     "evaluation_date": null,
