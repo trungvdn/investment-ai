@@ -158,7 +158,7 @@
         "Nhịp hồi kéo dài nhiều phiên; người duyệt cần xác nhận phạm vi AR phù hợp."
       ],
       "confirmation_condition": "Hồi sau SC rồi xuất hiện pullback tạo cạnh trên tham chiếu.",
-      "invalidation_condition": "Nếu người duyệt chọn cấu trúc khác, phải xác định lại AR và cạnh trên.",
+      "invalidation_condition": "Nếu xác định một vùng khác, phải xem lại AR và biên trên tương ứng.",
       "correction_reason": null,
       "reviewer": null,
       "reviewed_at": null
@@ -223,9 +223,9 @@
       ],
       "confirmation_condition": "Muốn gán SOS cho vùng đang xét cần breakout rõ khỏi TR đã hình thành và follow-through.",
       "invalidation_condition": "Tại cutoff, bác bỏ gán SOS 09/10 cho NVL_TR_202609; ưu tiên xem đây là một phần AR.",
-      "correction_reason": "AI đề xuất bác bỏ nhãn trong cấu trúc này; chưa được người dùng xác nhận.",
-      "reviewer": null,
-      "reviewed_at": null
+      "correction_reason": "Bác bỏ nhãn, đây là một phần AR.",
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
     },
     {
       "event_id": "E006",
@@ -255,9 +255,9 @@
       ],
       "confirmation_condition": "Phải xác định TR trước và có xuyên hỗ trợ rồi phục hồi.",
       "invalidation_condition": "Bác bỏ Spring 02/10 đối với vùng có đáy 9.6.",
-      "correction_reason": "AI đề xuất bác bỏ nhãn trong cấu trúc này; chưa được người dùng xác nhận.",
-      "reviewer": null,
-      "reviewed_at": null
+      "correction_reason": "Bác bỏ nhãn",
+      "reviewer": "trungvdn@gmail.com",
+      "reviewed_at": "2026-10-31"
     },
     {
       "event_id": "E007",
@@ -287,7 +287,7 @@
       ],
       "confirmation_condition": "Cần SOS trước, sau đó pullback giữ breakout và có bằng chứng cầu.",
       "invalidation_condition": "Bác bỏ LPS hiện tại do thiếu SOS của NVL_TR_202609.",
-      "correction_reason": "AI đề xuất bác bỏ nhãn trong cấu trúc này; chưa được người dùng xác nhận.",
+      "correction_reason": "Bác bỏ nhãn.",
       "reviewer": null,
       "reviewed_at": null
     }
