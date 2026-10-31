@@ -1,42 +1,431 @@
 {
   "schema_version": "1.0",
-  "sample_id": "BCM_1D_draft_v1",
+  "sample_id": "BCM_1D_2026-10-30_example_v1",
   "ticker": "BCM",
   "timeframe": "1D",
-  "analysis_as_of": null,
+  "analysis_as_of": "2026-10-30",
   "data": {
-    "start_date": null,
-    "end_date": null,
-    "source_commit": null,
-    "adjustment_status": null,
-    "quality_notes": [],
+    "start_date": "2024-10-31",
+    "end_date": "2026-10-30",
+    "source_commit": "58cded756648bbe4b7766167a840aa0c2c3df784",
+    "adjustment_status": "unverified",
+    "quality_notes": [
+      "497 phiên; event trống. Kiểm tra không trùng ngày, OHLC hợp lệ và volume không âm; chưa xác minh lịch giao dịch, đơn vị và điều chỉnh giá.",
+      "Phân tích OHLCV, chưa đối chiếu nhãn trên ảnh BCM_nhan.png.",
+      "RV20=volume/trung bình 20 phiên liền trước, không tính phiên hiện tại.",
+      "Phân biệt vùng tham chiếu 36.5–45.5 với cực trị nến 33.9 và 47; không dùng 36.5 như biên hỗ trợ đã biết trước 06/10."
+    ],
     "ohlcv_path": "candles_BCM_1D.csv",
     "chart_path": "BCM_nhan.png"
   },
   "context": {
-    "prior_trend": null,
-    "evidence": []
+    "prior_trend": "downtrend",
+    "evidence": [
+      "Close 01/07=52.8; 27/07=35.1, ngày 28/07 low 33.9.",
+      "Nhịp hồi đạt high 47 và close 45.5 ngày 13/08.",
+      "07/10 và 14/10 low 37, giữ trên low 06/10=36.5 và trên cụm đáy tháng 7."
+    ]
   },
   "assessment": {
-    "structure": null,
-    "phase": null,
-    "status": null,
-    "confidence": null,
-    "reasoning": [],
-    "counter_evidence": [],
-    "alternative_hypotheses": [],
-    "invalidation_condition": null
+    "structure": "unclear",
+    "phase": "B",
+    "status": "developing",
+    "confidence": "medium",
+    "reasoning": [
+      "Ưu tiên giả thuyết tích lũy tiềm năng pha B: SC ứng viên 27/07, AR 13/08 và ST tháng 10.",
+      "Giá chưa vượt vùng kháng cự 45.5–47; nhịp hồi tháng 10 chưa phải SOS của vùng lớn."
+    ],
+    "counter_evidence": [
+      "Cầu trên nhịp hồi 23/10 có volume tăng nhưng 30/10 close=low=38.4, cho thấy hồi chưa giữ được.",
+      "Đáy SC 27/07 bị xuyên ngay 28/07; cần đọc cả cụm dừng giảm, không coi 27/07 là đáy thấp nhất."
+    ],
+    "alternative_hypotheses": [
+      "Tái phân phối trong markdown nếu mất bền cụm đáy 33.9–35.1.",
+      "Đi ngang kéo dài, chưa đủ bằng chứng xác nhận accumulation."
+    ],
+    "invalidation_condition": "Hai close dưới 33.9 và không lấy lại trong ba phiên sau bác bỏ giả thuyết giữ đáy lớn. Mất 36.5 chỉ làm suy yếu các ST gần đây; không tự đồng nghĩa mất toàn bộ cấu trúc. Ngưỡng minh họa chưa backtest."
   },
-  "trading_ranges": [],
-  "events": [],
-  "supply_demand_observations": [],
-  "scenarios": [],
+  "trading_ranges": [
+    {
+      "structure_id": "BCM_CONTEXT_202607",
+      "start_date": "2026-07-27",
+      "end_date": null,
+      "support_zone": {
+        "lower": 33.9,
+        "upper": 35.1
+      },
+      "resistance_zone": {
+        "lower": 45.5,
+        "upper": 47
+      },
+      "reference_range": {
+        "lower": 36.5,
+        "upper": 45.5,
+        "as_of": "2026-10-30",
+        "support_observed_on": "2026-10-06"
+      },
+      "status": "provisional",
+      "evidence": [
+        "SC ứng viên 27/07 low 35.1; cực trị thấp hơn 28/07=33.9.",
+        "AR 13/08 close 45.5, high 47.",
+        "Vùng tham chiếu làm việc 36.5–45.5: 36.5 là low 06/10; không hồi tố dùng biên này cho nhận định trước 06/10."
+      ]
+    },
+    {
+      "structure_id": "BCM_TR_202610",
+      "start_date": "2026-10-06",
+      "end_date": null,
+      "support_zone": {
+        "lower": 36.5,
+        "upper": 37
+      },
+      "resistance_zone": {
+        "lower": 39.7,
+        "upper": 40.5
+      },
+      "status": "provisional",
+      "evidence": [
+        "06/10 low 36.5; 07/10 và 14/10 low 37; 08/10 high 39.7, 19/10 high 40.5.",
+        "20/10 close 40.9 và 21/10 41.2 vượt vùng nhỏ; cuối tháng quay lại bên trong."
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "E001",
+      "structure_id": "BCM_CONTEXT_202607",
+      "proposed_label": "PS",
+      "start_date": "2026-07-23",
+      "end_date": "2026-07-23",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; chờ người dùng duyệt. Phân biệt vùng lớn, vùng nhỏ và cực trị nến."
+      ],
+      "price_evidence": [
+        "Low 36.7, close 38.4 sau nhịp giảm mạnh; đóng ở 68% biên độ."
+      ],
+      "volume_evidence": [
+        "Volume 610200 RV20 1.68."
+      ],
+      "confirmation_evidence": [
+        "27–28/07 tiếp tục tạo đáy thấp hơn."
+      ],
+      "counter_evidence": [
+        "Phản ứng cầu tạm thời chưa đủ khẳng định PS tách biệt."
+      ],
+      "confirmation_condition": "Cần quan hệ với cụm SC sau đó và thay đổi hành vi.",
+      "invalidation_condition": "Nếu chỉ là hồi trong markdown hoặc thuộc cụm SC thì bỏ PS riêng.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E002",
+      "structure_id": "BCM_CONTEXT_202607",
+      "proposed_label": "SC",
+      "start_date": "2026-07-27",
+      "end_date": "2026-07-27",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; chờ người dùng duyệt. Phân biệt vùng lớn, vùng nhỏ và cực trị nến."
+      ],
+      "price_evidence": [
+        "O/H/L/C=37.7/38/35.1/35.1; phiên giảm mạnh đóng đáy."
+      ],
+      "volume_evidence": [
+        "Volume 934600 RV20 2.41."
+      ],
+      "confirmation_evidence": [
+        "28/07 low 33.9, close 35.55 rồi hồi; đến 13/08 high 47."
+      ],
+      "counter_evidence": [
+        "27/07 không phải đáy cuối cùng; đọc cùng phản ứng 28/07, không bỏ qua lower low."
+      ],
+      "confirmation_condition": "Nhịp bán mạnh cuối markdown được theo sau bởi dừng giảm/AR và kiểm tra giữ đáy.",
+      "invalidation_condition": "Nếu markdown tiếp tục bền dưới 33.9, xem lại SC mở đầu cấu trúc hiện tại.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E003",
+      "structure_id": "BCM_CONTEXT_202607",
+      "proposed_label": "AR",
+      "start_date": "2026-07-28",
+      "end_date": "2026-08-13",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; chờ người dùng duyệt. Phân biệt vùng lớn, vùng nhỏ và cực trị nến."
+      ],
+      "price_evidence": [
+        "Nhịp hồi bắt đầu với low 33.9 ngày 28/07; đỉnh 13/08 high 47, close 45.5."
+      ],
+      "volume_evidence": [
+        "13/08 volume 1809000 RV20 2.30."
+      ],
+      "confirmation_evidence": [
+        "Sau 13/08 điều chỉnh về vùng kiểm tra tháng 9–10."
+      ],
+      "counter_evidence": [
+        "Ngày đầu AR còn có lower low; phạm vi nhịp phải được người duyệt kiểm tra."
+      ],
+      "confirmation_condition": "Phản ứng hồi sau SC hình thành cạnh trên và điều chỉnh tiếp theo.",
+      "invalidation_condition": "Nếu sửa cụm SC/điểm bắt đầu hồi, điều chỉnh ngày AR tương ứng.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E004",
+      "structure_id": "BCM_CONTEXT_202607",
+      "proposed_label": "ST",
+      "start_date": "2026-10-07",
+      "end_date": "2026-10-07",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; chờ người dùng duyệt. Phân biệt vùng lớn, vùng nhỏ và cực trị nến."
+      ],
+      "price_evidence": [
+        "Sau low 06/10=36.5, ngày 07/10 low 37, close 38.5; chưa phá đáy rộng 33.9."
+      ],
+      "volume_evidence": [
+        "Volume 387600 RV20 0.70, bằng 41.5% volume SC 27/07."
+      ],
+      "confirmation_evidence": [
+        "08/10 high 39.7, sau đó kiểm tra lần nữa 14/10."
+      ],
+      "counter_evidence": [
+        "Đây là kiểm tra nông so đáy tháng 7; cần xét cả cụm 06–07/10."
+      ],
+      "confirmation_condition": "Giữ đáy kiểm tra gần, cung giảm và có phản ứng hồi.",
+      "invalidation_condition": "Nếu mất 36.5 không hồi, nhịp ST gần suy yếu; mất bền 33.9 đe dọa vùng lớn.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E005",
+      "structure_id": "BCM_CONTEXT_202607",
+      "proposed_label": "ST",
+      "start_date": "2026-10-14",
+      "end_date": "2026-10-14",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; chờ người dùng duyệt. Phân biệt vùng lớn, vùng nhỏ và cực trị nến."
+      ],
+      "price_evidence": [
+        "Low 37 bằng low 07/10; close 37.9, trên 36.5."
+      ],
+      "volume_evidence": [
+        "Volume 258400 RV20 0.54, thấp hơn 07/10 khoảng 33.3%."
+      ],
+      "confirmation_evidence": [
+        "20–23/10 hồi tới close 41.65; cuối tháng quay xuống 38.4."
+      ],
+      "counter_evidence": [
+        "ST có phản ứng hồi nhưng chưa dẫn đến breakout vùng lớn."
+      ],
+      "confirmation_condition": "Kiểm tra giữ đáy với cung giảm và hồi sau đó.",
+      "invalidation_condition": "Nếu giá chấp nhận dưới 36.5, hạ đánh giá ST thành công; không tự gọi Spring nếu chưa xuyên đúng biên đã có.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E006",
+      "structure_id": "BCM_CONTEXT_202607",
+      "proposed_label": "SOS",
+      "start_date": "2026-10-23",
+      "end_date": "2026-10-23",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "invalidated",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; chờ người dùng duyệt. Phân biệt vùng lớn, vùng nhỏ và cực trị nến."
+      ],
+      "price_evidence": [
+        "Close 41.65, high 41.9 vẫn dưới kháng cự rộng 45.5–47."
+      ],
+      "volume_evidence": [
+        "Volume 1298500 RV20 2.60; volume lớn riêng lẻ không tạo breakout rộng."
+      ],
+      "confirmation_evidence": [
+        "26/10 high 42.4 rồi 30/10 close 38.4."
+      ],
+      "counter_evidence": [
+        "Có cầu trên nhịp hồi nhưng không phải SOS vùng lớn."
+      ],
+      "confirmation_condition": "Cần vượt đúng kháng cự vùng lớn, giữ vùng và có follow-through.",
+      "invalidation_condition": "Chưa vượt 45.5–47 nên đề xuất bác bỏ SOS rộng.",
+      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E007",
+      "structure_id": "BCM_TR_202610",
+      "proposed_label": "SOS",
+      "start_date": "2026-10-20",
+      "end_date": "2026-10-21",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; chờ người dùng duyệt. Phân biệt vùng lớn, vùng nhỏ và cực trị nến."
+      ],
+      "price_evidence": [
+        "20/10 close 40.9 vượt high 19/10=40.5; 21/10 close 41.2."
+      ],
+      "volume_evidence": [
+        "20/10 volume 857100; 21/10 979900; 23/10 tiếp tục tăng volume 1298500."
+      ],
+      "confirmation_evidence": [
+        "23/10 close 41.65; 28–30/10 quay lại dưới 40.5."
+      ],
+      "counter_evidence": [
+        "TR nhỏ ngắn; breakout không giữ được đến cutoff. Không dùng thành công tạm thời để xác nhận pha D rộng."
+      ],
+      "confirmation_condition": "Cần giữ/lấy lại 40.5 sau kiểm tra để củng cố breakout nhỏ.",
+      "invalidation_condition": "Chấp nhận lại trong vùng và mất 36.5 sẽ phản đối SOS nhỏ thành công.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E008",
+      "structure_id": "BCM_TR_202610",
+      "proposed_label": "LPS",
+      "start_date": "2026-10-27",
+      "end_date": "2026-10-30",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Nhận định tại 30/10/2026; chờ người dùng duyệt. Phân biệt vùng lớn, vùng nhỏ và cực trị nến."
+      ],
+      "price_evidence": [
+        "Close giảm từ 40.55 ngày 27/10 về 38.4 ngày 30/10; mất biên breakout 40.5."
+      ],
+      "volume_evidence": [
+        "Volume giảm đến 492800 ngày 30/10 RV20 0.85, nhưng close=low."
+      ],
+      "confirmation_evidence": [
+        "Chưa có hồi sau 30/10 trong dữ liệu."
+      ],
+      "counter_evidence": [
+        "Volume giảm có thể do thiếu cầu; chưa chứng minh cạn cung hoặc LPS thành công."
+      ],
+      "confirmation_condition": "Chờ giữ vùng hỗ trợ và hồi lấy lại 40.5 với bằng chứng cầu.",
+      "invalidation_condition": "Giảm tiếp không có hồi xác nhận thì không xác nhận LPS; mất 36.5 làm xấu vùng nhỏ.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    }
+  ],
+  "supply_demand_observations": [
+    {
+      "observation": "ST 14/10 volume thấp hơn 07/10 trong khi low cùng 37; cung giảm trên kiểm tra gần nhưng chưa xác nhận tích lũy hoàn tất.",
+      "evidence_event_ids": [
+        "E004",
+        "E005"
+      ]
+    },
+    {
+      "observation": "23/10 volume tăng trên nhịp hồi, nhưng chưa vượt kháng cự rộng; cuối tháng mất breakout nhỏ.",
+      "evidence_event_ids": [
+        "E006",
+        "E007",
+        "E008"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "S1",
+      "structure_id": "BCM_CONTEXT_202607",
+      "description": "Tiếp tục tích lũy tiềm năng pha B.",
+      "confirmation_condition": "Giữ 33.9, phản ứng tích cực quanh 36.5–37 và chưa có breakout bền khỏi 45.5–47.",
+      "invalidation_condition": "Thoát vùng bền vững theo một hướng; mất 36.5 làm suy yếu ST gần, chưa tự mất vùng rộng.",
+      "evidence_event_ids": [
+        "E002",
+        "E003",
+        "E004",
+        "E005"
+      ]
+    },
+    {
+      "scenario_id": "S2",
+      "structure_id": "BCM_CONTEXT_202607",
+      "description": "Breakout vùng lớn, chuyển pha.",
+      "confirmation_condition": "Hai close trên 47, có follow-through và kiểm tra giữ 45.5–47; vượt 45.5 đơn lẻ chỉ là tín hiệu sớm.",
+      "invalidation_condition": "Quay vào vùng, không lấy lại kháng cự và phá đáy pullback.",
+      "evidence_event_ids": [
+        "E003",
+        "E005"
+      ]
+    },
+    {
+      "scenario_id": "S3",
+      "structure_id": "BCM_CONTEXT_202607",
+      "description": "Giả thuyết tích lũy thất bại, markdown tiếp diễn.",
+      "confirmation_condition": "Mất 36.5 là cảnh báo; hai close dưới 33.9, không lấy lại trong ba phiên sau, phản đối giữ đáy toàn vùng.",
+      "invalidation_condition": "Hồi nhanh vào vùng và kiểm tra giữ đáy; chỉ khi dữ liệu thực tế có mới đánh giá Spring.",
+      "evidence_event_ids": [
+        "E002",
+        "E004",
+        "E005"
+      ]
+    },
+    {
+      "scenario_id": "S4",
+      "structure_id": "BCM_TR_202610",
+      "description": "Khôi phục breakout nhỏ.",
+      "confirmation_condition": "Lấy lại 40.5 qua hai close, kiểm tra giữ được rồi vượt 42.4 có follow-through.",
+      "invalidation_condition": "Không lấy lại vùng và mất 36.5 bền.",
+      "evidence_event_ids": [
+        "E007",
+        "E008"
+      ]
+    }
+  ],
   "review": {
-    "status": "draft",
+    "status": "in_review",
     "reviewer": null,
     "reviewed_at": null,
     "corrections": [],
-    "eligible_for_ai": false
+    "eligible_for_ai": false,
+    "notes": [
+      "Ví dụ AI soạn, chưa được người dùng duyệt.",
+      "Giữ SC 27/07, AR đỉnh 13/08, ST 07/10 và 14/10 làm nhãn ứng viên; chưa biến thành xác nhận thị trường.",
+      "Vùng tham chiếu 36.5–45.5 không đồng nhất cực trị OHLCV 33.9–47; 36.5 chỉ quan sát ngày 06/10.",
+      "Ngưỡng số phiên là minh họa chưa backtest."
+    ]
   },
   "future_outcome_excluded_from_input": {
     "evaluation_date": null,
