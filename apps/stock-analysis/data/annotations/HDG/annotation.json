@@ -219,11 +219,11 @@
       "proposed_label": "SOW",
       "start_date": "2026-10-02",
       "end_date": "2026-10-05",
-      "confirmed_as_of": null,
+      "confirmed_as_of": "2026-10-30",
       "source": "AI_OHLCV_example",
-      "final_label": null,
-      "event_status": "candidate",
-      "label_verdict": "unreviewed",
+      "final_label": "markdown_continuation",
+      "event_status": "confirmed",
+      "label_verdict": "incorrect",
       "context_evidence": [
         "Nhận định tới 30/10/2026, chờ người dùng duyệt; tách hai cấu trúc."
       ],
@@ -237,13 +237,13 @@
         "09/10 low 14.15; hồi 22/10 chỉ high 15.7, 30/10 close 15."
       ],
       "counter_evidence": [
-        "Cấu trúc phân phối/tái phân phối chưa được xác nhận, nên SOW là nhãn suy yếu ứng viên, không chứng minh phân phối hoàn chỉnh."
+        "Không có cấu trúc phân phối/tái phân phối được xác nhận để gán SOW; giữ diễn giải markdown tiếp diễn sau Accumulation thất bại."
       ],
-      "confirmation_condition": "Chấp nhận dưới đáy TR và có follow-through giảm.",
+      "confirmation_condition": "Breakout tích lũy 04/09 không giữ được; 02–05/10 đóng dưới đáy TR 15.2 và giá tiếp tục tạo đáy thấp hơn.",
       "invalidation_condition": "Lấy lại 15.2–15.6 và giữ qua kiểm tra làm suy yếu breakdown thành công.",
-      "correction_reason": null,
-      "reviewer": null,
-      "reviewed_at": null
+      "correction_reason": "Người dùng sửa E005: tiếp tục markdown sau khi Accumulation thất bại; không gán SOW của phân phối/tái phân phối.",
+      "reviewer": "trungvdn",
+      "reviewed_at": "2026-10-31"
     },
     {
       "event_id": "E006",
@@ -474,13 +474,21 @@
     "status": "in_review",
     "reviewer": null,
     "reviewed_at": null,
-    "corrections": [],
+    "corrections": [
+      {
+        "event_id": "E005",
+        "from": "SOW",
+        "to": "markdown_continuation",
+        "reason": "Người dùng sửa E005: tiếp tục markdown sau khi Accumulation thất bại; không gán SOW của phân phối/tái phân phối."
+      }
+    ],
     "eligible_for_ai": false,
     "notes": [
       "Ví dụ AI soạn, chưa được người dùng duyệt.",
       "structure=unclear và phase=UNKNOWN phản ánh hai cấu trúc với bằng chứng chưa đồng nhất; markdown là bối cảnh ưu tiên, chưa áp nhãn phân phối hoàn chỉnh.",
       "E004 giữ quan sát breakout ứng viên và ghi thất bại về sau; không đồng nhất sự kiện thất bại với gán nhãn sai.",
-      "Các ngưỡng số phiên minh họa chưa backtest."
+      "Các ngưỡng số phiên minh họa chưa backtest.",
+      "Người dùng sửa riêng E005 thành markdown_continuation; mẫu HDG vẫn in_review. markdown_continuation là mô tả chuyển động sau cấu trúc thất bại, không phải sự kiện Wyckoff kinh điển."
     ]
   },
   "future_outcome_excluded_from_input": {

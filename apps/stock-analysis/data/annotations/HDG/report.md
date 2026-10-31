@@ -32,7 +32,7 @@ Không suy ra danh tính/ý định tổ chức hoặc nguyên nhân doanh nghi�
 
 ## 5. Nhật ký nhãn sự kiện
 
-Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất của AI. Phân biệt **nhãn sai** với **sự kiện có xảy ra nhưng kịch bản thành công bị bác bỏ sau đó**, đặc biệt E004.
+Ngoại trừ E005 đã được người dùng sửa và xác nhận, các sự kiện còn lại giữ label_verdict=unreviewed, final_label=null. invalidated là đề xuất của AI. Phân biệt **nhãn sai** với **sự kiện có xảy ra nhưng kịch bản thành công bị bác bỏ sau đó**, đặc biệt E004.
 
 ### E001 — SC: 2026-07-27 → 2026-07-28
 
@@ -82,17 +82,19 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất c
 - event_status: candidate; label_verdict: unreviewed.
 - Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
 
-### E005 — SOW: 2026-10-02 → 2026-10-05
+### E005 — Tiếp tục markdown sau khi Accumulation thất bại: 2026-10-02 → 2026-10-05
 
 - structure_id: HDG_TR_202607; nguồn: AI_OHLCV_example.
 - Bằng chứng giá: 02/10 close 15.05 dưới 15.2; 05/10 low=close=14.65 tiếp diễn breakdown.
 - Bằng chứng volume: 05/10 volume 1143400 RV20 1.33, tăng vừa phải.
 - Phản ứng đến cutoff: 09/10 low 14.15; hồi 22/10 chỉ high 15.7, 30/10 close 15.
-- Bằng chứng phản đối/giới hạn: Cấu trúc phân phối/tái phân phối chưa được xác nhận, nên SOW là nhãn suy yếu ứng viên, không chứng minh phân phối hoàn chỉnh.
-- Điều kiện xác nhận: Chấp nhận dưới đáy TR và có follow-through giảm.
+- Bằng chứng phản đối/giới hạn: Không có cấu trúc phân phối/tái phân phối được xác nhận để gán SOW; giữ diễn giải markdown tiếp diễn sau Accumulation thất bại.
+- Điều kiện xác nhận: Breakout tích lũy 04/09 không giữ được; 02–05/10 đóng dưới đáy TR 15.2 và giá tiếp tục tạo đáy thấp hơn.
 - Điều kiện bác bỏ: Lấy lại 15.2–15.6 và giữ qua kiểm tra làm suy yếu breakdown thành công.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: confirmed tại cutoff 30/10/2026; nhãn SOW ban đầu: incorrect.
+- Nhãn cuối: markdown_continuation; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
+- Lý do sửa: Người dùng sửa E005: tiếp tục markdown sau khi Accumulation thất bại; không gán SOW của phân phối/tái phân phối.
+- Đây là mô tả markdown tiếp diễn, không phải nhãn SOW kinh điển.
 
 ### E006 — SC: 2026-10-09
 
@@ -160,7 +162,7 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất c
 |---|---|---|
 | Cụm đáy 27–28/07 RV20 dưới 1 | Có phản ứng hồi nhưng chưa phải climax volume | Không ép SC vì là đáy |
 | 04/09 RV20 3.72 rồi giá trở lại vùng | Breakout thiếu duy trì | Không dùng volume làm tiêu chí duy nhất |
-| 02–05/10 đóng dưới 15.2 | Suy yếu vùng cũ | Chưa khẳng định tái phân phối hoàn chỉnh |
+| 02–05/10 đóng dưới 15.2 | Tiếp tục markdown sau Accumulation thất bại | Không gán SOW của phân phối/tái phân phối |
 | 21/10 RV20 2.75, close ở high | Có cầu trên nhịp hồi mới | Có thể chỉ là AR, chưa có SOS của TR mới |
 | 30/10 close=low=15 | Pullback chưa xác nhận cầu giữ vùng | Không tự gọi ST hoặc LPS thành công |
 
@@ -182,7 +184,7 @@ Ngưỡng hai/ba phiên là minh họa, chưa backtest. Không gán xác suất 
 
 - Trạng thái: in_review; eligible_for_ai=false.
 - Người duyệt/ngày duyệt: chưa điền. Chưa có nhãn đúng/sai được người dùng xác nhận.
-- Cần duyệt vùng cũ: SC uncertain, AR, ST và SOS 04/09 có phản ứng thất bại; SOW ứng viên tháng 10.
+- Cần duyệt vùng cũ: SC uncertain, AR, ST và SOS 04/09 có phản ứng thất bại; E005 đã sửa thành tiếp tục markdown sau khi Accumulation thất bại.
 - Cần duyệt vùng mới: stopping action/SC 09/10, AR đến 22/10, ST nông cuối tháng và SOS 21/10 còn uncertain.
 - Đề xuất bác bỏ Spring thành công 09/10 của vùng cũ do không phục hồi vào vùng nhanh.
 - Đối chiếu ảnh và điều chỉnh giá; sửa final_label, label_verdict, correction_reason và reviewer trong JSON cùng báo cáo.
