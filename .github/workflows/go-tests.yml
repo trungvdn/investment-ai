@@ -64,5 +64,8 @@ jobs:
       - name: Run tests
         run: go test ./...
 
+      - name: Report labeled sample recall
+        run: go test ./internal/wyckoff -run TestLabeledSampleRecall -count=1 -v
+
       - name: Run static analysis
         run: go vet ./...
