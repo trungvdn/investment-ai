@@ -66,7 +66,7 @@
     },
     {
       "structure_id": "NLG_CONTEXT_202607",
-      "start_date": "2026-07-28",
+      "start_date": "2026-07-27",
       "end_date": null,
       "support_zone": {
         "lower": 19.15,
@@ -76,10 +76,11 @@
         "lower": 25.7,
         "upper": 25.95
       },
-      "status": "context_only",
+      "status": "provisional",
       "evidence": [
         "Dải bối cảnh rộng từ đáy tháng 7 tới đỉnh tháng 9, không được khẳng định là một TR Wyckoff đã xác nhận.",
-        "Không dùng SOS của vùng nhỏ làm breakout trên 25.95 của vùng rộng."
+        "Không dùng SOS của vùng nhỏ làm breakout trên 25.95 của vùng rộng.",
+        "Bổ sung SC cụm 27–28/07, AR nhịp hồi 29/07–07/09 và ST ứng viên 28/09–15/10; cần người dùng duyệt phạm vi nhịp AR và chất lượng ST."
       ]
     }
   ],
@@ -339,6 +340,108 @@
       "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
       "reviewer": null,
       "reviewed_at": null
+    },
+    {
+      "event_id": "E009",
+      "structure_id": "NLG_CONTEXT_202607",
+      "proposed_label": "SC",
+      "start_date": "2026-07-27",
+      "end_date": "2026-07-28",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Cấu trúc lớn được bổ sung theo yêu cầu người dùng, chưa có xác nhận duyệt nhãn.",
+        "SC → AR → ST theo thứ tự; phân biệt với cấu trúc nhỏ NLG_TR_202609_SHORT."
+      ],
+      "price_evidence": [
+        "27/07 O/H/L/C=21.2/21.7/20/20; 28/07=19.8/20.8/19.15/20.6.",
+        "28/07 tạo đáy mới nhưng đóng ở 87.9% biên độ; chọn cụm hai phiên thay vì coi 27/07 là đáy cuối."
+      ],
+      "volume_evidence": [
+        "27/07 volume 2779500 RV20 1.71; 28/07 volume 2768600 RV20 1.61."
+      ],
+      "confirmation_evidence": [
+        "29/07–07/09 hồi lên high 25.95; đến cutoff chưa xuyên lại 19.15."
+      ],
+      "counter_evidence": [
+        "Volume tăng vừa phải, không cực đoan; cần kiểm tra stopping action và nhịp AR chứ không gán SC chỉ vì là đáy."
+      ],
+      "confirmation_condition": "Có nhịp hồi rõ và kiểm tra về sau giữ đáy 19.15.",
+      "invalidation_condition": "Nếu cấu trúc không giữ đáy và markdown tiếp tục bền dưới 19.15, đánh giá lại SC của vùng rộng.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E010",
+      "structure_id": "NLG_CONTEXT_202607",
+      "proposed_label": "AR",
+      "start_date": "2026-07-29",
+      "end_date": "2026-09-07",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "uncertain",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Cấu trúc lớn được bổ sung theo yêu cầu người dùng, chưa có xác nhận duyệt nhãn.",
+        "SC → AR → ST theo thứ tự; phân biệt với cấu trúc nhỏ NLG_TR_202609_SHORT."
+      ],
+      "price_evidence": [
+        "Nhịp hồi từ sau SC tới high 25.95 ngày 07/09; 04/09 close 25.7.",
+        "Cạnh trên rộng tham chiếu 25.7–25.95."
+      ],
+      "volume_evidence": [
+        "04/09 volume 3330100 RV20 1.59; 07/09 2319000 RV20 1.08."
+      ],
+      "confirmation_evidence": [
+        "Sau 07/09 giảm, về low 21.35 ngày 28/09 và low 21.0 ngày 15/10."
+      ],
+      "counter_evidence": [
+        "Nhịp kéo dài và có các đỉnh trung gian 03/08 high 22.45, 05/08 high 22.55; AR sơ cấp có thể kết thúc sớm hơn. Không ép toàn bộ nhịp hồi là Automatic Rally đã xác nhận."
+      ],
+      "confirmation_condition": "Người duyệt xác nhận nhịp rộng này thuộc AR của cấu trúc lớn, hoặc tách AR sơ cấp và nhịp hồi mở rộng.",
+      "invalidation_condition": "Nếu AR sơ cấp kết thúc đầu tháng 8, sửa phạm vi E010; khi đó phải đánh giá lại biên trên thay vì tự coi 25.95 là đỉnh AR.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
+    },
+    {
+      "event_id": "E011",
+      "structure_id": "NLG_CONTEXT_202607",
+      "proposed_label": "ST",
+      "start_date": "2026-09-28",
+      "end_date": "2026-10-15",
+      "confirmed_as_of": null,
+      "source": "AI_OHLCV_example",
+      "final_label": null,
+      "event_status": "candidate",
+      "label_verdict": "unreviewed",
+      "context_evidence": [
+        "Cấu trúc lớn được bổ sung theo yêu cầu người dùng, chưa có xác nhận duyệt nhãn.",
+        "SC → AR → ST theo thứ tự; phân biệt với cấu trúc nhỏ NLG_TR_202609_SHORT."
+      ],
+      "price_evidence": [
+        "Kiểm tra sau đỉnh hồi: low 28/09=21.35, 01/10=21.3, 15/10=21.0.",
+        "Đáy 21.0 cao hơn SC low 19.15 khoảng 9.66%; đây là ST nông/kiểm tra bên trong ứng viên."
+      ],
+      "volume_evidence": [
+        "28/09 volume 2265200 bằng 82.0% volume SC 28/07; 15/10 volume 921400 bằng 33.3% volume SC; RV20 15/10=0.64."
+      ],
+      "confirmation_evidence": [
+        "21–23/10 hồi với close 22.85, 23.15, 23.3; 30/10 close 22 vẫn trên đáy cụm kiểm tra 21.0."
+      ],
+      "counter_evidence": [
+        "Chưa kiểm tra sát 19.15; volume 01/10=2687800 gần volume SC 28/07. Không kết luận toàn bộ nhịp đã cạn cung."
+      ],
+      "confirmation_condition": "Đáy cao hơn SC, cung giảm tương đối và có phản ứng hồi; cần người duyệt xác nhận đây là ST của vùng rộng thay vì chỉ là pullback.",
+      "invalidation_condition": "Nếu không có quan hệ kiểm tra với SC hoặc mất đáy 19.15 bền vững, bác bỏ ST thành công; mất 21.0 trước hết là suy yếu nhịp kiểm tra nông.",
+      "correction_reason": null,
+      "reviewer": null,
+      "reviewed_at": null
     }
   ],
   "supply_demand_observations": [
@@ -398,8 +501,9 @@
     "notes": [
       "Ví dụ AI soạn; nhãn bị bác bỏ vẫn unreviewed cho đến khi người dùng xác nhận.",
       "Pha D chỉ là giả thuyết vùng nhỏ; structure=unclear do TR ngắn và breakout đang bị kiểm tra.",
-      "context_only là trạng thái mô tả dải bối cảnh, không phải TR được xác nhận.",
-      "Ngưỡng số phiên minh họa, chưa backtest."
+      "Ngưỡng số phiên minh họa, chưa backtest.",
+      "NLG_CONTEXT_202607 chuyển provisional; AR rộng uncertain do có khả năng AR sơ cấp kết thúc đầu tháng 8.",
+      "Cùng cụm tháng 10 có thể là ST của cấu trúc lớn và Spring của vùng nhỏ; nhãn phải giữ đúng structure_id."
     ]
   },
   "future_outcome_excluded_from_input": {

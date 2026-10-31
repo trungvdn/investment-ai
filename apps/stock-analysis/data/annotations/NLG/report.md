@@ -27,7 +27,7 @@ Không mặc định đây là tái tích lũy: cần bối cảnh xu hướng t
 | Phạm vi | Hỗ trợ | Kháng cự | Trạng thái |
 |---|---|---|---|
 | NLG_TR_202609_SHORT, từ 28/09 | 21.3–21.4 | 22.2–22.5 | TR ngắn, provisional |
-| NLG_CONTEXT_202607, từ 28/07 | 19.15–20.0 | 25.7–25.95 | Dải bối cảnh, chưa xác nhận TR |
+| NLG_CONTEXT_202607, từ 27/07 | 19.15–20.0 | 25.7–25.95 | TR lớn provisional; AR rộng còn uncertain |
 
 Biên nhỏ có trước Spring: 28–29/09 low 21.35, 01/10 low 21.3; 08/10 high 22.2, 09/10 high 22.5. Sau cụm xuyên đáy, 21.0 là đáy Spring ứng viên; không hồi tố sửa biên trước sự kiện xuống 21.0. TR ngắn nên không ép có đủ PS/SC/AR/ST.
 
@@ -131,6 +131,42 @@ Tất cả label_verdict=unreviewed và final_label=null. invalidated là đề 
 - event_status: invalidated; label_verdict: unreviewed.
 - Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
 
+### E009 — SC: 2026-07-27 → 2026-07-28
+
+- structure_id: NLG_CONTEXT_202607; nguồn: AI_OHLCV_example.
+- Bằng chứng giá: 27/07 O/H/L/C=21.2/21.7/20/20; 28/07=19.8/20.8/19.15/20.6. 28/07 tạo đáy mới nhưng đóng ở 87.9% biên độ; chọn cụm hai phiên thay vì coi 27/07 là đáy cuối.
+- Bằng chứng volume: 27/07 volume 2779500 RV20 1.71; 28/07 volume 2768600 RV20 1.61.
+- Phản ứng đã quan sát: 29/07–07/09 hồi lên high 25.95; đến cutoff chưa xuyên lại 19.15.
+- Bằng chứng phản đối/giới hạn: Volume tăng vừa phải, không cực đoan; cần kiểm tra stopping action và nhịp AR chứ không gán SC chỉ vì là đáy.
+- Điều kiện xác nhận: Có nhịp hồi rõ và kiểm tra về sau giữ đáy 19.15.
+- Điều kiện bác bỏ: Nếu cấu trúc không giữ đáy và markdown tiếp tục bền dưới 19.15, đánh giá lại SC của vùng rộng.
+- event_status: candidate; label_verdict: unreviewed.
+- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+
+### E010 — AR: 2026-07-29 → 2026-09-07
+
+- structure_id: NLG_CONTEXT_202607; nguồn: AI_OHLCV_example.
+- Bằng chứng giá: Nhịp hồi từ sau SC tới high 25.95 ngày 07/09; 04/09 close 25.7. Cạnh trên rộng tham chiếu 25.7–25.95.
+- Bằng chứng volume: 04/09 volume 3330100 RV20 1.59; 07/09 2319000 RV20 1.08.
+- Phản ứng đã quan sát: Sau 07/09 giảm, về low 21.35 ngày 28/09 và low 21.0 ngày 15/10.
+- Bằng chứng phản đối/giới hạn: Nhịp kéo dài và có các đỉnh trung gian 03/08 high 22.45, 05/08 high 22.55; AR sơ cấp có thể kết thúc sớm hơn. Không ép toàn bộ nhịp hồi là Automatic Rally đã xác nhận.
+- Điều kiện xác nhận: Người duyệt xác nhận nhịp rộng này thuộc AR của cấu trúc lớn, hoặc tách AR sơ cấp và nhịp hồi mở rộng.
+- Điều kiện bác bỏ: Nếu AR sơ cấp kết thúc đầu tháng 8, sửa phạm vi E010; khi đó phải đánh giá lại biên trên thay vì tự coi 25.95 là đỉnh AR.
+- event_status: uncertain; label_verdict: unreviewed.
+- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+
+### E011 — ST: 2026-09-28 → 2026-10-15
+
+- structure_id: NLG_CONTEXT_202607; nguồn: AI_OHLCV_example.
+- Bằng chứng giá: Kiểm tra sau đỉnh hồi: low 28/09=21.35, 01/10=21.3, 15/10=21.0. Đáy 21.0 cao hơn SC low 19.15 khoảng 9.66%; đây là ST nông/kiểm tra bên trong ứng viên.
+- Bằng chứng volume: 28/09 volume 2265200 bằng 82.0% volume SC 28/07; 15/10 volume 921400 bằng 33.3% volume SC; RV20 15/10=0.64.
+- Phản ứng đã quan sát: 21–23/10 hồi với close 22.85, 23.15, 23.3; 30/10 close 22 vẫn trên đáy cụm kiểm tra 21.0.
+- Bằng chứng phản đối/giới hạn: Chưa kiểm tra sát 19.15; volume 01/10=2687800 gần volume SC 28/07. Không kết luận toàn bộ nhịp đã cạn cung.
+- Điều kiện xác nhận: Đáy cao hơn SC, cung giảm tương đối và có phản ứng hồi; cần người duyệt xác nhận đây là ST của vùng rộng thay vì chỉ là pullback.
+- Điều kiện bác bỏ: Nếu không có quan hệ kiểm tra với SC hoặc mất đáy 19.15 bền vững, bác bỏ ST thành công; mất 21.0 trước hết là suy yếu nhịp kiểm tra nông.
+- event_status: candidate; label_verdict: unreviewed.
+- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+
 ## 6. Cung–cầu và pha
 
 | Quan sát | Diễn giải | Giới hạn |
@@ -142,6 +178,8 @@ Tất cả label_verdict=unreviewed và final_label=null. invalidated là đề 
 | 30/10 close=low=22; RV20 0.75 | Giá giảm dù volume thấp, cần theo dõi thiếu cầu/cung còn lại | Không gọi LPS đã xác nhận chỉ vì volume giảm |
 
 Pha D chỉ là giả thuyết đang bị kiểm tra. Nếu mất breakout và không lấy lại, hạ về dao động chưa rõ pha hoặc hồi kỹ thuật; không duy trì nhãn D bất chấp bằng chứng mới.
+
+Với **NLG_CONTEXT_202607**, SC E009 → AR E010 → ST E011 là chuỗi giả thuyết riêng. Chưa có breakout trên 25.95 để gọi SOS vùng lớn; chưa gán pha D cho vùng lớn. Cụm 14–15/10 có thể đồng thời là phần ST của vùng lớn và Spring ứng viên của vùng nhỏ, không mâu thuẫn nếu giữ đúng structure_id. E010 cần duyệt đặc biệt: nhịp hồi dài có thể gồm AR sơ cấp đầu tháng 8 và các nhịp hồi mở rộng sau đó.
 
 ## 7. Kịch bản
 
@@ -157,6 +195,7 @@ Các ngưỡng hai/ba phiên là quy ước minh họa để điều kiện ki�
 
 - Trạng thái: in_review; eligible_for_ai=false.
 - Người duyệt/ngày duyệt: chưa điền. Chưa có nhãn đúng/sai được người dùng xác nhận.
+- Bổ sung cần duyệt cho NLG_CONTEXT_202607: E009 SC 27–28/07; E010 AR 29/07–07/09 (uncertain về phạm vi); E011 ST 28/09–15/10. Không tự coi yêu cầu thêm nhãn là đã duyệt nhãn.
 - Cần duyệt: TR nhỏ có đủ ý nghĩa hay không; SC 28/09 và AR 01–09/10; Spring cụm 14–15/10; Test 20/10; SOS 21/10; LPS chưa xác nhận.
 - Nhãn sai AI đề xuất: E007 Test sau Spring ngày 12/10 sai thứ tự; E008 SOS breakout vùng rộng ngày 21/10 sai phạm vi. E005 vẫn là SOS ứng viên của vùng nhỏ.
 - Đối chiếu ảnh và điều chỉnh giá; cập nhật final_label, label_verdict, correction_reason, reviewer cùng JSON. Chỉ chuyển approved sau khi người dùng duyệt.
