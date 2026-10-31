@@ -470,7 +470,8 @@
         "E003",
         "E005",
         "E006"
-      ]
+      ],
+      "structure_id": "NLG_TR_202609_SHORT"
     },
     {
       "scenario_id": "S2",
@@ -480,7 +481,8 @@
       "evidence_event_ids": [
         "E005",
         "E006"
-      ]
+      ],
+      "structure_id": "NLG_TR_202609_SHORT"
     },
     {
       "scenario_id": "S3",
@@ -489,7 +491,80 @@
       "invalidation_condition": "Hồi nhanh lấy lại vùng và kiểm tra giữ đáy.",
       "evidence_event_ids": [
         "E003"
-      ]
+      ],
+      "structure_id": "NLG_TR_202609_SHORT"
+    },
+    {
+      "scenario_id": "S4",
+      "structure_id": "NLG_CONTEXT_202607",
+      "description": "Củng cố tích lũy vùng lớn và breakout phía trên.",
+      "confirmation_condition": "Giữ được đáy kiểm tra nông 21.0, phục hồi qua vùng nhỏ 22.5 rồi tiến đến 25.7–25.95. Chỉ xem xét SOS vùng lớn khi có ít nhất hai close trên 25.95, lực tăng/volume hỗ trợ và kiểm tra lại vùng breakout giữ được.",
+      "invalidation_condition": "Breakout trên 25.95 nhanh chóng quay xuống và không lấy lại vùng; hoặc mất bền đáy SC 19.15. Mất 21.0 chỉ làm suy yếu đường đi ST nông, chưa tự bác bỏ toàn bộ tích lũy lớn.",
+      "evidence_event_ids": [
+        "E009",
+        "E010",
+        "E011"
+      ],
+      "watch_levels": [
+        21,
+        22.5,
+        25.7,
+        25.95
+      ],
+      "status": "hypothesis"
+    },
+    {
+      "scenario_id": "S5",
+      "structure_id": "NLG_CONTEXT_202607",
+      "description": "Tiếp tục xây nền và kiểm tra sâu trong vùng lớn.",
+      "confirmation_condition": "Không vượt bền 25.95; giá tiếp tục dao động trong 19.15–25.95. Nếu mất 21.0, theo dõi phản ứng tại 19.15–20.0: giữ hoặc phục hồi vùng này, volume bán giảm tương đối và xuất hiện nhịp hồi sẽ hỗ trợ giả thuyết kiểm tra sâu.",
+      "invalidation_condition": "Thoát bền phía trên 25.95 hoặc có hai close dưới 19.15 và không lấy lại trong ba phiên sau; khi đó không còn là kịch bản dao động giữ vùng lớn.",
+      "evidence_event_ids": [
+        "E009",
+        "E010",
+        "E011"
+      ],
+      "watch_levels": [
+        19.15,
+        20,
+        21,
+        25.95
+      ],
+      "status": "hypothesis"
+    },
+    {
+      "scenario_id": "S6",
+      "structure_id": "NLG_CONTEXT_202607",
+      "description": "Xuyên đáy vùng lớn rồi phục hồi — Spring mới chỉ là khả năng.",
+      "confirmation_condition": "Sau khi vùng lớn được người duyệt chấp nhận, giá xuyên 19.15 rồi close trở lại trên 19.15 trong tối đa ba phiên; tiếp theo kiểm tra giữ đáy xuyên thủng với cung giảm và có phản ứng cầu. Phải có dữ liệu thực tế mới tạo nhãn Spring/Test vùng lớn.",
+      "invalidation_condition": "Giá ở dưới 19.15 kéo dài, hoặc kiểm tra sau hồi phá tiếp đáy xuyên thủng và không phục hồi. Không gán Spring chỉ vì một phiên xuyên đáy.",
+      "evidence_event_ids": [
+        "E009",
+        "E011"
+      ],
+      "watch_levels": [
+        19.15,
+        20
+      ],
+      "status": "hypothesis"
+    },
+    {
+      "scenario_id": "S7",
+      "structure_id": "NLG_CONTEXT_202607",
+      "description": "Vùng lớn thất bại, markdown tiếp diễn.",
+      "confirmation_condition": "Mất 21.0 là cảnh báo sớm. Hai close liên tiếp dưới 19.15 và không lấy lại trong ba phiên sau xác nhận thất bại theo quy ước vận hành của mẫu; nhịp hồi bị từ chối dưới 19.15–20.0, đỉnh/đáy thấp hơn và cung tăng sẽ củng cố.",
+      "invalidation_condition": "Lấy lại 19.15–20.0 nhanh chóng, kiểm tra giữ được và có cầu hỗ trợ; chuyển sang đánh giá S6 thay vì tiếp tục khẳng định breakdown.",
+      "evidence_event_ids": [
+        "E009",
+        "E010",
+        "E011"
+      ],
+      "watch_levels": [
+        19.15,
+        20,
+        21
+      ],
+      "status": "hypothesis"
     }
   ],
   "review": {
@@ -503,7 +578,8 @@
       "Pha D chỉ là giả thuyết vùng nhỏ; structure=unclear do TR ngắn và breakout đang bị kiểm tra.",
       "Ngưỡng số phiên minh họa, chưa backtest.",
       "NLG_CONTEXT_202607 chuyển provisional; AR rộng uncertain do có khả năng AR sơ cấp kết thúc đầu tháng 8.",
-      "Cùng cụm tháng 10 có thể là ST của cấu trúc lớn và Spring của vùng nhỏ; nhãn phải giữ đúng structure_id."
+      "Cùng cụm tháng 10 có thể là ST của cấu trúc lớn và Spring của vùng nhỏ; nhãn phải giữ đúng structure_id.",
+      "S4–S7 thuộc NLG_CONTEXT_202607; kịch bản tương lai, chưa phải sự kiện đã xảy ra. Nếu sửa AR E010 thì xem lại vùng 25.7–25.95 và điều kiện liên quan."
     ]
   },
   "future_outcome_excluded_from_input": {

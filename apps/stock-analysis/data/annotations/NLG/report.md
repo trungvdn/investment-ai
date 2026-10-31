@@ -183,11 +183,43 @@ Với **NLG_CONTEXT_202607**, SC E009 → AR E010 → ST E011 là chuỗi giả 
 
 ## 7. Kịch bản
 
+### Vùng nhỏ — NLG_TR_202609_SHORT
+
 - **S1: Giữ được breakout vùng nhỏ, củng cố C→D.** Xác nhận: Lấy lại 22.5 và giữ qua ít nhất hai close, pullback sau đó giữ vùng với cung giảm. Bác bỏ: Giảm tiếp, không lấy lại vùng; mất 21.0 làm suy yếu Spring.
 
 - **S2: Breakout thất bại, quay lại dao động.** Xác nhận: Giá ở dưới 22.2 nhưng vẫn giữ 21.0; chưa có đà theo một hướng. Bác bỏ: Thoát vùng bền vững.
 
 - **S3: Markdown tiếp diễn.** Xác nhận: Hai close liên tiếp dưới 21.0 và không hồi trong ba phiên sau. Bác bỏ: Hồi nhanh lấy lại vùng và kiểm tra giữ đáy.
+
+### Vùng lớn — NLG_CONTEXT_202607
+
+Mốc chính: hỗ trợ 19.15–20.0; đáy kiểm tra nông 21.0; kháng cự 25.7–25.95. **Mất 21.0 chưa đồng nghĩa mất vùng lớn; vượt 22.5 chưa phải SOS vùng lớn.** Cạnh trên còn phụ thuộc kết quả duyệt AR E010; nếu AR được sửa phải đánh giá lại các kịch bản này.
+
+- **S4: Củng cố tích lũy vùng lớn và breakout phía trên.**
+  - structure_id: NLG_CONTEXT_202607; status: hypothesis.
+  - Điều kiện xác nhận: Giữ được đáy kiểm tra nông 21.0, phục hồi qua vùng nhỏ 22.5 rồi tiến đến 25.7–25.95. Chỉ xem xét SOS vùng lớn khi có ít nhất hai close trên 25.95, lực tăng/volume hỗ trợ và kiểm tra lại vùng breakout giữ được.
+  - Điều kiện bác bỏ: Breakout trên 25.95 nhanh chóng quay xuống và không lấy lại vùng; hoặc mất bền đáy SC 19.15. Mất 21.0 chỉ làm suy yếu đường đi ST nông, chưa tự bác bỏ toàn bộ tích lũy lớn.
+  - Bằng chứng nền: E009, E010, E011; mốc theo dõi: 21, 22.5, 25.7, 25.95.
+
+- **S5: Tiếp tục xây nền và kiểm tra sâu trong vùng lớn.**
+  - structure_id: NLG_CONTEXT_202607; status: hypothesis.
+  - Điều kiện xác nhận: Không vượt bền 25.95; giá tiếp tục dao động trong 19.15–25.95. Nếu mất 21.0, theo dõi phản ứng tại 19.15–20.0: giữ hoặc phục hồi vùng này, volume bán giảm tương đối và xuất hiện nhịp hồi sẽ hỗ trợ giả thuyết kiểm tra sâu.
+  - Điều kiện bác bỏ: Thoát bền phía trên 25.95 hoặc có hai close dưới 19.15 và không lấy lại trong ba phiên sau; khi đó không còn là kịch bản dao động giữ vùng lớn.
+  - Bằng chứng nền: E009, E010, E011; mốc theo dõi: 19.15, 20, 21, 25.95.
+
+- **S6: Xuyên đáy vùng lớn rồi phục hồi — Spring mới chỉ là khả năng.**
+  - structure_id: NLG_CONTEXT_202607; status: hypothesis.
+  - Điều kiện xác nhận: Sau khi vùng lớn được người duyệt chấp nhận, giá xuyên 19.15 rồi close trở lại trên 19.15 trong tối đa ba phiên; tiếp theo kiểm tra giữ đáy xuyên thủng với cung giảm và có phản ứng cầu. Phải có dữ liệu thực tế mới tạo nhãn Spring/Test vùng lớn.
+  - Điều kiện bác bỏ: Giá ở dưới 19.15 kéo dài, hoặc kiểm tra sau hồi phá tiếp đáy xuyên thủng và không phục hồi. Không gán Spring chỉ vì một phiên xuyên đáy.
+  - Bằng chứng nền: E009, E011; mốc theo dõi: 19.15, 20.
+
+- **S7: Vùng lớn thất bại, markdown tiếp diễn.**
+  - structure_id: NLG_CONTEXT_202607; status: hypothesis.
+  - Điều kiện xác nhận: Mất 21.0 là cảnh báo sớm. Hai close liên tiếp dưới 19.15 và không lấy lại trong ba phiên sau xác nhận thất bại theo quy ước vận hành của mẫu; nhịp hồi bị từ chối dưới 19.15–20.0, đỉnh/đáy thấp hơn và cung tăng sẽ củng cố.
+  - Điều kiện bác bỏ: Lấy lại 19.15–20.0 nhanh chóng, kiểm tra giữ được và có cầu hỗ trợ; chuyển sang đánh giá S6 thay vì tiếp tục khẳng định breakdown.
+  - Bằng chứng nền: E009, E010, E011; mốc theo dõi: 19.15, 20, 21.
+
+Các kịch bản vùng lớn mô tả các đường đi thay thế có thể chuyển tiếp, không phải xác suất hay diễn biến đã xảy ra. S6 và S7 được phân biệt bằng phản ứng sau xuyên đáy và mốc thời gian quan sát; tại thời điểm chưa đủ phiên, giữ trạng thái chờ xác nhận.
 
 Các ngưỡng hai/ba phiên là quy ước minh họa để điều kiện kiểm tra được, chưa backtest và không phải quy tắc Wyckoff bắt buộc.
 
