@@ -245,6 +245,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	if rangeStart < 1 {
 		rangeStart = 1
 	}
+	springRanges := make(map[time.Time]rangeCandidate)
 	lastSTIndex := -1000
 	for i := rangeStart; i < n; i++ {
 		historyStart := i - a.cfg.RangeWindow
@@ -295,6 +296,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 			}
 			priorRange := a.detectTradingRange(cs[:i], priorTrend)
 			if priorRange.valid && ctxChange < -0.05 && c.Low < priorRange.support && c.Close > priorRange.support && st.closeLocation >= 0.55 && st.relativeVolume < 1.35 {
+				springRanges[c.Date] = priorRange
 				add("SPRING", i, 0.72, "Price undercut a range established before this candle and recovered inside on non-exceptional volume.")
 			}
 		}
@@ -574,37 +576,22 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		result.Structure = StructureMarkdown
 		result.Phase = PhaseE
 	}
-	// Only evaluate Test after a Spring within the same recent range; it must
-	// happen shortly afterward, hold above the Spring low, and show lower supply.
-	if useRangeLevels {
-		for i := range result.Events {
-			if result.Events[i].Type != "SPRING" {
-				continue
-			}
-			springIdx := 0
-			for j := range cs {
-				if cs[j].Date.Equal(result.Events[i].Date) {
-					springIdx = j
-					break
-				}
-			}
-			end := springIdx + 15
-			if end >= n {
-				end = n - 1
-			}
-			for j := springIdx + 2; j <= end; j++ {
-				volStart := j - vw
-				if volStart < 0 {
-					volStart = 0
-				}
-				ts := stats(cs[j], avgVolume(cs[volStart:j]))
-				if cs[j].Low >= cs[springIdx].Low && ts.relativeVolume < 0.8 && ts.closeLocation >= 0.55 && cs[j].Low <= support+(resistance-support)*0.2 {
-					add("TEST", j, 0.68, "Retest followed the Spring within 15 sessions, held above the Spring low, and showed reduced supply.")
-					break
-				}
-			}
-			break
+	// Tests belong to the range captured at their Spring, not today's range.
+	// Prefer the latest Spring and stop if its low is subsequently violated.
+	for i := len(result.Events) - 1; i >= 0; i-- {
+		e := result.Events[i]
+		if e.Type != "SPRING" {
+			continue
 		}
+		rangeAtSpring, ok := springRanges[e.Date]
+		if !ok {
+			continue
+		}
+		springIdx := findBar(e.Date)
+		if testIdx := findSpringTest(cs, springIdx, rangeAtSpring, vw); testIdx >= 0 {
+			add("TEST", testIdx, 0.68, fmt.Sprintf("Retest of Spring %s held its low and original range support on reduced volume.", e.Date.Format("2006-01-02")))
+		}
+		break
 	}
 	// LPS only follows an SOS in the same active range and within 15 sessions.
 	if useRangeLevels && hasEvent(result.Events, "SOS") {
