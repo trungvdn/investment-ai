@@ -369,7 +369,7 @@
       ],
       "confirmation_condition": "Spring của vùng cũ phải có xuyên và hồi lại vùng với bằng chứng phù hợp.",
       "invalidation_condition": "Đề xuất bác bỏ Spring thành công 09/10 của vùng cũ; low mới không tự tạo Spring.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "correction_reason": "Bác bỏ nhãn",
       "reviewer": null,
       "reviewed_at": null
     },
