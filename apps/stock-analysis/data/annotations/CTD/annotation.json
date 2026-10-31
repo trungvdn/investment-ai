@@ -272,7 +272,7 @@
       ],
       "confirmation_condition": "Spring rộng cần xuyên hỗ trợ rộng rồi hồi lại.",
       "invalidation_condition": "Bác bỏ Spring vùng lớn 17/09 do không xuyên 54.7.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "correction_reason": null,
       "reviewer": null,
       "reviewed_at": null
     },
@@ -304,7 +304,7 @@
       ],
       "confirmation_condition": "Vượt đúng kháng cự của structure_id đang xét và có follow-through.",
       "invalidation_condition": "Chưa vượt 65 nên không phải breakout rộng.",
-      "correction_reason": "AI đề xuất bác bỏ; chưa được người dùng xác nhận.",
+      "correction_reason": "Bác bỏ nhãn",
       "reviewer": null,
       "reviewed_at": null
     },
