@@ -1,6 +1,6 @@
 # CTD — Ví dụ phân tích Wyckoff tại 30/10/2026
 
-> Bản AI soạn, chờ người dùng duyệt. review.status=in_review; eligible_for_ai=false. Dựa trên OHLCV, chưa đối chiếu nhãn trên ảnh.
+> Bản AI soạn đã được người dùng review và xác nhận ngày 31/10/2026. review.status=approved; eligible_for_ai=true. Dựa trên OHLCV, chưa đối chiếu nhãn trên ảnh.
 
 ## 1. Thông tin và dữ liệu
 
@@ -32,7 +32,7 @@ Biên 65 có từ high 05/08; không thay bằng đỉnh mới 68.4 để xóa b
 
 ## 5. Nhật ký nhãn sự kiện
 
-Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất bác bỏ của AI. Nhãn cùng phiên có thể khác kết luận nếu structure_id khác.
+Người dùng đã duyệt: SC/LPS còn uncertain; giữ AR/ST/SOS ở mức ứng viên; xác nhận bác bỏ E006 Spring và E007 SOS của vùng lớn. Duyệt mẫu không tự chuyển candidate thành confirmed. Nhãn cùng phiên có thể khác kết luận nếu structure_id khác.
 
 ### E001 — SC: 2026-07-22 → 2026-07-23
 
@@ -43,8 +43,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Volume không climax rõ, có thể chỉ là stopping action.
 - Điều kiện xác nhận: Cần nhịp hồi và kiểm tra giữ đáy; người duyệt có thể bỏ SC nếu thiếu climax.
 - Điều kiện bác bỏ: Không ép SC chỉ vì đáy; mất bền 54.7 làm suy yếu giả thuyết giữ đáy.
-- event_status: uncertain; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: uncertain; label_verdict: uncertain.
+- Nhãn cuối: chưa chốt (uncertain); người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E002 — AR: 2026-07-24 → 2026-08-05
 
@@ -55,8 +55,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Nhịp bắt đầu có kiểm tra đáy xen kẽ; phạm vi AR cần duyệt.
 - Điều kiện xác nhận: Hồi sau stopping action tạo cạnh trên và phản ứng điều chỉnh.
 - Điều kiện bác bỏ: Nếu thay đổi SC hoặc phân đoạn nhịp hồi thì sửa phạm vi AR.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: AR; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E003 — ST: 2026-09-11 → 2026-09-17
 
@@ -67,8 +67,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: ST muộn và chưa sát đáy rộng; có thể là kiểm tra bên trong.
 - Điều kiện xác nhận: Giữ đáy, cung giảm và phản ứng hồi, đánh giá trong bối cảnh vùng lớn.
 - Điều kiện bác bỏ: Mất 54.7 bền phản đối ST thành công; thiếu quan hệ với SC thì bỏ nhãn.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: ST; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E004 — SOS: 2026-10-20
 
@@ -79,8 +79,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Breakout có xảy ra nhưng giữ vùng chưa thành công; không đồng nhất thất bại sau đó với nhãn quan sát sai.
 - Điều kiện xác nhận: Cần giữ/lấy lại 65 và kiểm tra có cầu hỗ trợ để củng cố pha D.
 - Điều kiện bác bỏ: Giá chấp nhận lại trong vùng và mất 63.2 không phục hồi sẽ phản đối SOS thành công.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: SOS; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E005 — LPS: 2026-10-29 → 2026-10-30
 
@@ -91,8 +91,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Một phiên volume giảm sau phiên bán mạnh chưa chứng minh cạn cung; chưa giữ lại breakout.
 - Điều kiện xác nhận: Chờ hồi lấy lại 65 và kiểm tra giữ vùng với cung giảm.
 - Điều kiện bác bỏ: Giảm tiếp dưới 63.2 không lấy lại vùng thì không xác nhận LPS.
-- event_status: uncertain; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: uncertain; label_verdict: uncertain.
+- Nhãn cuối: chưa chốt (uncertain); người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ### E006 — Spring: 2026-09-17
 
@@ -103,8 +103,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Nếu xét vùng nhỏ khác cần biên đã tồn tại và structure_id riêng.
 - Điều kiện xác nhận: Spring rộng cần xuyên hỗ trợ rộng rồi hồi lại.
 - Điều kiện bác bỏ: Bác bỏ Spring vùng lớn 17/09 do không xuyên 54.7.
-- event_status: invalidated; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: invalidated; label_verdict: incorrect.
+- Nhãn cuối: ST; người duyệt: trungvdn; ngày duyệt: 2026-10-31.\n- Ghi chú duyệt: Người dùng xác nhận bác bỏ Spring vùng lớn ngày 17/09; diễn giải ST ứng viên theo E003.
 
 ### E007 — SOS: 2026-10-07
 
@@ -115,8 +115,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Có breakout vùng nhỏ E008; chỉ bác bỏ SOS của vùng rộng cùng ngày.
 - Điều kiện xác nhận: Vượt đúng kháng cự của structure_id đang xét và có follow-through.
 - Điều kiện bác bỏ: Chưa vượt 65 nên không phải breakout rộng.
-- event_status: invalidated; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: invalidated; label_verdict: incorrect.
+- Nhãn cuối: no_event; người duyệt: trungvdn; ngày duyệt: 2026-10-31.\n- Ghi chú duyệt: Người dùng xác nhận bác bỏ SOS 07/10 của vùng lớn; E008 vẫn là SOS ứng viên vùng nhỏ.
 
 ### E008 — SOS: 2026-10-07
 
@@ -127,8 +127,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Chỉ áp dụng vùng nhỏ; không dùng để tuyên bố pha D rộng ngay 07/10.
 - Điều kiện xác nhận: Breakout giữ 60.7 và có follow-through; kiểm tra xác nhận thêm chất lượng vùng nhỏ.
 - Điều kiện bác bỏ: Quay bền dưới 59.9–60.7 sẽ làm suy yếu breakout nhỏ.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: SOS; người duyệt: trungvdn; ngày duyệt: 2026-10-31.
 
 ## 6. Cung–cầu và pha
 
@@ -156,11 +156,13 @@ Các ngưỡng hai/ba phiên là minh họa chưa backtest, không phải quy t�
 
 ## 8. Duyệt mẫu
 
-- Trạng thái: in_review; eligible_for_ai=false.
-- Người duyệt/ngày duyệt: chưa điền; chưa có nhãn đúng/sai được người dùng xác nhận.
-- Cần duyệt: SC cụm 22–23/07 còn uncertain; phạm vi AR; ST tháng 9; SOS nhỏ 07/10; SOS rộng 20/10 và pha D đang kiểm tra.
-- LPS cuối tháng chưa đủ bằng chứng. Đề xuất bác bỏ Spring 17/09 và SOS 07/10 của vùng rộng.
-- Đối chiếu ảnh và điều chỉnh giá; cập nhật final_label, label_verdict, correction_reason, reviewer trong JSON cùng báo cáo.
+- Trạng thái: approved; eligible_for_ai=true.
+- Người duyệt: trungvdn; ngày duyệt: 2026-10-31.
+- Phạm vi: CTD_CONTEXT_202607, CTD_TR_202609, 8 sự kiện và 4 kịch bản.
+- E001 SC và E005 LPS giữ uncertain; chưa chốt nhãn cuối.
+- E002 AR, E003 ST, E004 SOS vùng lớn và E008 SOS vùng nhỏ giữ nhãn ứng viên.
+- E006 Spring vùng lớn 17/09 bị bác bỏ; diễn giải ST ứng viên theo E003. E007 SOS vùng lớn 07/10 bị bác bỏ, no_event chỉ áp dụng nhãn/phạm vi này, không phủ nhận E008 của vùng nhỏ.
+- Giữ giả thuyết tích lũy đang thử chuyển pha D; không tự xác nhận LPS/markup. Giới hạn ảnh/điều chỉnh giá, ngưỡng chưa backtest và bất định tương lai giữ nguyên.
 
 ## 9. Kết quả tương lai — loại khỏi đầu vào AI
 
