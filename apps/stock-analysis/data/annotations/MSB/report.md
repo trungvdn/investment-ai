@@ -1,6 +1,6 @@
 # MSB — Ví dụ phân tích Wyckoff tại 30/10/2026
 
-> Bản AI soạn, chờ người dùng duyệt. review.status=in_review; eligible_for_ai=false. Nhận định từ OHLCV; chưa đối chiếu nhãn trên ảnh.
+> Bản AI soạn đã được người dùng review và xác nhận ngày 31/10/2026. review.status=approved; eligible_for_ai=true. Nhận định từ OHLCV; chưa đối chiếu nhãn trên ảnh.
 
 ## 1. Thông tin và dữ liệu
 
@@ -14,7 +14,7 @@
 
 ## 2. Kết luận nhanh
 
-**Đang ở giai đoạn markup (pha E) sau reaccumulation từ 01/07/2026 đến 23/09/2026; tin cậy trung bình định tính.** Cụm 26–27/08 là Spring ứng viên, 23/09 là SOS và 05/10 là LPS ứng viên. Giá sau đó tạo đỉnh cao hơn tới high 16.15 ngày 29/10. Phiên giảm 30/10 chưa đủ để kết luận phân phối, đồng thời chưa đủ xác nhận một LPS mới.
+**Đang ở giai đoạn markup (pha E) sau reaccumulation từ 01/07/2026 đến 23/09/2026; tin cậy trung bình định tính.** Cụm 26–27/08 là Spring ứng viên, 23/09 là SOS và 05/10 là LPS ứng viên. Giá sau đó tạo đỉnh cao hơn tới high 16.15 ngày 29/10. Phiên giảm 30/10 chưa đủ để kết luận phân phối, người dùng bác bỏ nhãn LPS mới 30/10 vì đang tạo cấu trúc tăng sau reaccumulation.
 
 ## 3. Bối cảnh
 
@@ -37,7 +37,7 @@ TR vẫn provisional theo trạng thái duyệt; end_date trong JSON là ngày b
 
 ## 5. Nhật ký nhãn sự kiện
 
-Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất bác bỏ của AI. Sử dụng kiến thức đến cutoff, không giả vờ biết phản ứng sau sự kiện ngay tại ngày xảy ra.
+Người dùng đã duyệt: giữ Spring/SOS/LPS 05/10 ở mức ứng viên; Test 15/09 còn uncertain; bác bỏ SC 22/07, SOW 26/08 và LPS 30/10. Duyệt mẫu không tự chuyển candidate thành confirmed. Sử dụng kiến thức đến cutoff, không giả vờ biết phản ứng sau sự kiện ngay tại ngày xảy ra.
 
 ### E001 — Spring: 2026-08-26 → 2026-08-27
 
@@ -48,8 +48,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Volume cao ở phiên phục hồi; đây không phải ví dụ Spring volume thấp. Điều chỉnh giá chưa được xác minh.
 - Điều kiện xác nhận: Xuyên hỗ trợ đã hình thành, hồi lại vùng và giữ đáy; dữ liệu cần cùng cơ sở điều chỉnh.
 - Điều kiện bác bỏ: Nếu biến động do điều chỉnh dữ liệu chưa xử lý hoặc giá chấp nhận dưới 12.14 bền vững, xem lại nhãn Spring.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: Spring; người duyệt: trungvdn@gmail.com; ngày duyệt: 2026-10-31.
 
 ### E002 — Test: 2026-09-15
 
@@ -60,8 +60,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Cách Spring gần ba tuần; kiểm tra không sát đáy và close chưa lấy lại hẳn biên cũ.
 - Điều kiện xác nhận: Cần đánh giá quan hệ với Spring và cung giảm; có thể chỉ là kiểm tra bên trong.
 - Điều kiện bác bỏ: Nếu không chấp nhận khoảng cách/thời gian hoặc hành vi giữ hỗ trợ, bỏ nhãn Test thay vì ép đủ chuỗi.
-- event_status: uncertain; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: uncertain; label_verdict: uncertain.
+- Nhãn cuối: chưa chốt (Test uncertain); người duyệt: trungvdn@gmail.com; ngày duyệt: 2026-10-31.
 
 ### E003 — SOS: 2026-09-23
 
@@ -72,8 +72,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Một phiên volume cao riêng lẻ không đủ; đánh giá kết hợp phản ứng sau breakout.
 - Điều kiện xác nhận: Thoát vùng rõ, follow-through và kiểm tra giữ kháng cự cũ.
 - Điều kiện bác bỏ: Quay bền dưới 13.601 và không lấy lại 13.726 làm suy yếu SOS thành công.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: SOS; người duyệt: trungvdn@gmail.com; ngày duyệt: 2026-10-31.
 
 ### E004 — LPS: 2026-10-05
 
@@ -84,8 +84,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Volume chỉ hơi thấp hơn trung bình 20 phiên, không gọi cạn cung hoàn toàn.
 - Điều kiện xác nhận: Pullback sau SOS giữ vùng và có phản ứng cầu; không cần gán LPS trước SOS.
 - Điều kiện bác bỏ: Nếu chuỗi sau đó mất vùng breakout bền vững, đánh giá lại LPS thành công.
-- event_status: candidate; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: candidate; label_verdict: correct.
+- Nhãn cuối: LPS; người duyệt: trungvdn@gmail.com; ngày duyệt: 2026-10-31.
 
 ### E005 — SC: 2026-07-22
 
@@ -96,8 +96,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Có thể là shakeout/kiểm tra cung trong vùng, chưa gán nhãn thay thế.
 - Điều kiện xác nhận: SC cần bối cảnh dừng xu hướng giảm của đúng cấu trúc, không chỉ phiên giảm volume cao.
 - Điều kiện bác bỏ: Đề xuất bác bỏ SC theo giả thuyết tái tích lũy đang xét; không khẳng định mọi phân tích khung khác đều sai.
-- event_status: invalidated; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: invalidated; label_verdict: incorrect.
+- Nhãn cuối: no_event; người duyệt: trungvdn@gmail.com; ngày duyệt: 2026-10-31.\n- Ghi chú duyệt: Bác bỏ nhãn
 
 ### E006 — SOW: 2026-08-26
 
@@ -108,8 +108,8 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Một lần xuyên hỗ trợ chưa đủ chứng minh breakdown được chấp nhận; cần xem phản ứng hồi.
 - Điều kiện xác nhận: SOW cần suy yếu có bối cảnh phân phối và follow-through phù hợp.
 - Điều kiện bác bỏ: Phục hồi nhanh vào vùng cùng diễn biến sau đó phản đối nhãn SOW thành công ở cutoff; ưu tiên Spring ứng viên E001.
-- event_status: invalidated; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: invalidated; label_verdict: incorrect.
+- Nhãn cuối: Spring; người duyệt: trungvdn@gmail.com; ngày duyệt: 2026-10-31.\n- Ghi chú duyệt: Bác bỏ nhãn
 
 ### E007 — LPS: 2026-10-30
 
@@ -120,8 +120,10 @@ Mọi label_verdict=unreviewed, final_label=null. invalidated là đề xuất b
 - Bằng chứng phản đối/giới hạn: Không dùng giá ở cao hơn vùng cũ để tự xác nhận mọi pullback là LPS.
 - Điều kiện xác nhận: Cần vùng hỗ trợ thích hợp và phản ứng hồi xác nhận; nếu là cấu trúc mới phải tạo structure_id riêng.
 - Điều kiện bác bỏ: Tiếp tục giảm không có cầu hỗ trợ thì không xác nhận LPS mới.
-- event_status: uncertain; label_verdict: unreviewed.
-- Nhãn cuối/người duyệt/ngày duyệt: chưa điền.
+- event_status: invalidated; label_verdict: incorrect.
+- Nhãn cuối: no_event; người duyệt: trungvdn@gmail.com; ngày duyệt: 2026-10-31.\n- Ghi chú duyệt: Người dùng bác bỏ LPS 30/10: đang tạo cấu trúc tăng sau reaccumulation.
+
+- Quyết định cuối sau review: bác bỏ nhãn LPS này; các điều kiện phía trên giữ lại để giải thích giả thuyết gốc.
 
 ## 6. Cung–cầu và pha
 
@@ -147,12 +149,13 @@ Ngưỡng hai/ba phiên là quy ước minh họa, chưa backtest; các kịch b
 
 ## 8. Duyệt mẫu
 
-- Trạng thái: in_review; eligible_for_ai=false.
-- Người duyệt/ngày duyệt: chưa điền. Chưa có nhãn đúng/sai được người dùng xác nhận.
-- Người dùng đã điều chỉnh assessment thành markup sau reaccumulation 01/07–23/09/2026; toàn mẫu vẫn in_review.
-- Cần duyệt: biên TR, dữ liệu điều chỉnh quanh tháng 8, Spring, Test, SOS, LPS và pha E.
-- Đề xuất bác bỏ: SC 22/07 do thiếu bối cảnh kết thúc markdown; SOW 26/08 do phục hồi nhanh. LPS mới 30/10 còn uncertain.
-- Sửa final_label, label_verdict, correction_reason, reviewer trong annotation.json cùng báo cáo; chỉ approved sau khi người dùng xác nhận.
+- Trạng thái: approved; eligible_for_ai=true.
+- Người duyệt: trungvdn@gmail.com; ngày duyệt: 2026-10-31.
+- Assessment đã xác nhận: markup sau reaccumulation 01/07–23/09/2026, pha E.
+- E001 Spring, E003 SOS, E004 LPS 05/10: giữ nhãn ứng viên. E002 Test còn uncertain.
+- E005 SC và E006 SOW: xác nhận bác bỏ; E006 diễn giải lại theo Spring ứng viên E001.
+- E007 LPS 30/10: xác nhận bác bỏ theo sửa của người dùng, đang tạo cấu trúc tăng sau reaccumulation; final_label=no_event đối với nhãn LPS này.
+- Giữ nguyên giới hạn dữ liệu/ảnh và ngưỡng chưa backtest. Kịch bản tương lai chưa được xác nhận bởi diễn biến thị trường.
 
 ## 9. Kết quả tương lai — loại khỏi đầu vào AI
 

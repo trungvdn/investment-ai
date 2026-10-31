@@ -7,7 +7,7 @@
 | GEX | [GEX/report.md](GEX/report.md) | [GEX/annotation.json](GEX/annotation.json) | draft | — | — |
 | HDG | [HDG/report.md](HDG/report.md) | [HDG/annotation.json](HDG/annotation.json) | draft | — | — |
 | LPB | [LPB/report.md](LPB/report.md) | [LPB/annotation.json](LPB/annotation.json) | draft | — | — |
-| MSB | [MSB/report.md](MSB/report.md) | [MSB/annotation.json](MSB/annotation.json) | in_review (ví dụ AI) | — | — |
+| MSB | [MSB/report.md](MSB/report.md) | [MSB/annotation.json](MSB/annotation.json) | approved | trungvdn@gmail.com | 2026-10-31 |
 | NLG | [NLG/report.md](NLG/report.md) | [NLG/annotation.json](NLG/annotation.json) | approved | trungvdn@gmail.com | 2026-10-31 |
 | NVL | [NVL/report.md](NVL/report.md) | [NVL/annotation.json](NVL/annotation.json) | approved | trungvdn@gmail.com | 2026-10-31 |
 | SZC | [SZC/report.md](SZC/report.md) | [SZC/annotation.json](SZC/annotation.json) | approved | trungvdn@gmail.com | 2026-10-31 |
