@@ -77,7 +77,7 @@ jobs:
         run: |
           WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-after.json go test ./internal/wyckoff -run TestReviewedAnnotationBenchmark -count=1 -v
           baseline_dir=$(mktemp -d)
-          git archive "$BASELINE_REF" apps/stock-analysis | tar -x -C "$baseline_dir"
+          git -C ../.. archive "$BASELINE_REF" apps/stock-analysis | tar -x -C "$baseline_dir"
           baseline_module="$baseline_dir/apps/stock-analysis"
           cp -a data/annotations/. "$baseline_module/data/annotations/"
           (cd "$baseline_module" && WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-before.json go test ./internal/wyckoff -run TestReviewedAnnotationBenchmark -count=1 -v)
