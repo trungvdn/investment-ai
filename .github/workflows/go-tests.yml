@@ -66,20 +66,21 @@ jobs:
         run: go test ./...
 
       - name: Verify lifecycle examples
-        run: go test ./internal/wyckoff -run TestLifecycle -count=1 -v
+        run: go test ./internal/wyckoff -run 'TestLifecycle|TestSpringRecovery' -count=1 -v
 
       - name: Run static analysis
         run: go vet ./...
 
-      - name: Benchmark reviewed labels before and after structure lifecycle
+      - name: Benchmark reviewed labels before and after delayed Spring recovery
         env:
-          BASELINE_REF: 525120c272d0624eda3086e8fe8290ea20569cc8
+          BASELINE_REF: 88755c1719aeaecdb8793c5556e523280a1410fb
         run: |
           WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-after.json go test ./internal/wyckoff -run TestReviewedAnnotationBenchmark -count=1 -v
-          cp internal/wyckoff/analyzer.go /tmp/wyckoff-analyzer.go
-          git show "$BASELINE_REF:apps/stock-analysis/internal/wyckoff/analyzer.go" > internal/wyckoff/analyzer.go
-          WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-before.json go test ./internal/wyckoff -run TestReviewedAnnotationBenchmark -count=1 -v
-          cp /tmp/wyckoff-analyzer.go internal/wyckoff/analyzer.go
+          baseline_dir=$(mktemp -d)
+          git archive "$BASELINE_REF" apps/stock-analysis | tar -x -C "$baseline_dir"
+          baseline_module="$baseline_dir/apps/stock-analysis"
+          cp -a data/annotations/. "$baseline_module/data/annotations/"
+          (cd "$baseline_module" && WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-before.json go test ./internal/wyckoff -run TestReviewedAnnotationBenchmark -count=1 -v)
           python3 scripts/compare_benchmark.py /tmp/wyckoff-before.json /tmp/wyckoff-after.json /tmp/wyckoff-benchmark.md
           cat /tmp/wyckoff-benchmark.md >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/wyckoff-benchmark.md

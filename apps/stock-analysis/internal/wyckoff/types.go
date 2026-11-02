@@ -34,6 +34,8 @@ const (
 )
 
 type Event struct {
+ ObservedAt *time.Time `json:"observed_at,omitempty"`
+ Status string `json:"status,omitempty"`
 	StructureID string    `json:"structure_id,omitempty"`
 	Type        string    `json:"type"`
 	Date        time.Time `json:"date"`

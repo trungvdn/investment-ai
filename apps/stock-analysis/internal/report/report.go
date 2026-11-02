@@ -40,6 +40,8 @@ type RangeSection struct {
 }
 
 type EventSection struct {
+ ObservedAt *time.Time `json:"observed_at,omitempty"`
+ Status string `json:"status,omitempty"`
 	StructureID string    `json:"structure_id,omitempty"`
 	Type        string    `json:"type"`
 	Date        time.Time `json:"date"`
@@ -83,6 +85,7 @@ func Build(a wyckoff.Analysis) Report {
 		report.Events = append(report.Events, EventSection{
 			Type:        event.Type,
 			StructureID: event.StructureID,
+ ObservedAt: event.ObservedAt, Status: event.Status,
 			Date:        event.Date,
 			Confidence:  clamp(event.Confidence, 0, 1),
 			Evidence:    event.Evidence,
