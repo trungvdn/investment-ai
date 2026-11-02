@@ -13,23 +13,23 @@ const SchemaVersion = "1.0"
 // Report is the stable, presentation-oriented contract for a stock analysis.
 // It deliberately separates the human-readable summary from the underlying analysis.
 type Report struct {
- Structures []wyckoff.StructureState `json:"structures,omitempty"`
- ActiveStructureID string `json:"active_structure_id,omitempty"`
-	SchemaVersion string             `json:"schemaVersion"`
-	Symbol        string             `json:"symbol"`
-	AsOf          time.Time          `json:"asOf"`
-	Headline      string             `json:"headline"`
-	Summary       string             `json:"summary"`
-	Structure     wyckoff.Structure  `json:"structure"`
-	Phase         wyckoff.Phase      `json:"phase"`
-	Confidence    float64            `json:"confidence"`
-	TradingRange  *RangeSection      `json:"tradingRange,omitempty"`
-	Events        []EventSection     `json:"events"`
-	Evidence      []string           `json:"evidence"`
-	Risks         []string           `json:"risks"`
-	Watchlist     []string           `json:"watchlist"`
-	DataQuality   DataQualitySection `json:"dataQuality"`
-	Disclaimer    string             `json:"disclaimer"`
+	Structures        []wyckoff.StructureState `json:"structures,omitempty"`
+	ActiveStructureID string                   `json:"active_structure_id,omitempty"`
+	SchemaVersion     string                   `json:"schemaVersion"`
+	Symbol            string                   `json:"symbol"`
+	AsOf              time.Time                `json:"asOf"`
+	Headline          string                   `json:"headline"`
+	Summary           string                   `json:"summary"`
+	Structure         wyckoff.Structure        `json:"structure"`
+	Phase             wyckoff.Phase            `json:"phase"`
+	Confidence        float64                  `json:"confidence"`
+	TradingRange      *RangeSection            `json:"tradingRange,omitempty"`
+	Events            []EventSection           `json:"events"`
+	Evidence          []string                 `json:"evidence"`
+	Risks             []string                 `json:"risks"`
+	Watchlist         []string                 `json:"watchlist"`
+	DataQuality       DataQualitySection       `json:"dataQuality"`
+	Disclaimer        string                   `json:"disclaimer"`
 }
 
 type RangeSection struct {
@@ -40,11 +40,11 @@ type RangeSection struct {
 }
 
 type EventSection struct {
- StructureID string `json:"structure_id,omitempty"`
-	Type       string    `json:"type"`
-	Date       time.Time `json:"date"`
-	Confidence float64   `json:"confidence"`
-	Evidence   string    `json:"evidence"`
+	StructureID string    `json:"structure_id,omitempty"`
+	Type        string    `json:"type"`
+	Date        time.Time `json:"date"`
+	Confidence  float64   `json:"confidence"`
+	Evidence    string    `json:"evidence"`
 }
 
 type DataQualitySection struct {
@@ -58,7 +58,7 @@ type DataQualitySection struct {
 // It does not add new market facts or turn heuristic signals into trade advice.
 func Build(a wyckoff.Analysis) Report {
 	report := Report{
- Structures: a.Structures, ActiveStructureID: a.ActiveStructureID,
+		Structures: a.Structures, ActiveStructureID: a.ActiveStructureID,
 		SchemaVersion: SchemaVersion,
 		Symbol:        strings.ToUpper(strings.TrimSpace(a.Symbol)),
 		AsOf:          a.AsOf,
@@ -81,11 +81,11 @@ func Build(a wyckoff.Analysis) Report {
 	report.Headline, report.Summary = describeStructure(a.Structure, a.Phase)
 	for _, event := range a.Events {
 		report.Events = append(report.Events, EventSection{
-			Type:       event.Type,
- StructureID: event.StructureID,
-			Date:       event.Date,
-			Confidence: clamp(event.Confidence, 0, 1),
-			Evidence:   event.Evidence,
+			Type:        event.Type,
+			StructureID: event.StructureID,
+			Date:        event.Date,
+			Confidence:  clamp(event.Confidence, 0, 1),
+			Evidence:    event.Evidence,
 		})
 	}
 
