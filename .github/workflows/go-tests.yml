@@ -65,6 +65,9 @@ jobs:
       - name: Run tests
         run: go test ./...
 
+      - name: Verify lifecycle examples
+        run: go test ./internal/wyckoff -run TestLifecycle -count=1 -v
+
       - name: Run static analysis
         run: go vet ./...
 
