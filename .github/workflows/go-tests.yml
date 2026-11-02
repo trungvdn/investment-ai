@@ -68,9 +68,9 @@ jobs:
       - name: Run static analysis
         run: go vet ./...
 
-      - name: Benchmark reviewed labels before and after Spring fix
+      - name: Benchmark reviewed labels before and after structure lifecycle
         env:
-          BASELINE_REF: 9bec474abd22eefd1b20efa4d548dff0dea9ecdc
+          BASELINE_REF: 525120c272d0624eda3086e8fe8290ea20569cc8
         run: |
           WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-after.json go test ./internal/wyckoff -run TestReviewedAnnotationBenchmark -count=1 -v
           cp internal/wyckoff/analyzer.go /tmp/wyckoff-analyzer.go

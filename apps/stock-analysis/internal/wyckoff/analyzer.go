@@ -660,6 +660,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 	if result.Phase == PhaseUnknown {
 		result.Evidence = append(result.Evidence, "Phase remains UNKNOWN: no sufficiently validated range and event sequence; wait for confirmation rather than anticipate.")
 	}
+	applyStructureLifecycle(&result,cs)
 	return result, nil
 }
 func maxInt(a, b int) int {

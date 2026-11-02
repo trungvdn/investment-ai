@@ -34,6 +34,7 @@ const (
 )
 
 type Event struct {
+ StructureID string `json:"structure_id,omitempty"`
 	Type       string    `json:"type"`
 	Date       time.Time `json:"date"`
 	Confidence float64   `json:"confidence"`
@@ -41,6 +42,8 @@ type Event struct {
 }
 
 type Analysis struct {
+ Structures []StructureState `json:"structures,omitempty"`
+ ActiveStructureID string `json:"active_structure_id,omitempty"`
 	Symbol       string        `json:"symbol"`
 	AsOf         time.Time     `json:"asOf"`
 	Structure    Structure     `json:"structure"`
