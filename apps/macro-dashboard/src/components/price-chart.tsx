@@ -146,7 +146,7 @@ export function PriceChart({
           position: "aboveBar",
           color: "#537a91",
           shape: "circle",
-          text: group.events.map(e => e.type).join(" · "),
+          text: group.events.map(e => e.status === "failed_outcome" ? `${e.type} ×` : e.type).join(" · "),
         })),
       );
     }
