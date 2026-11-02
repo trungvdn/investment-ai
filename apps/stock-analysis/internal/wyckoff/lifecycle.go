@@ -12,8 +12,8 @@ import (
 // IdentifiedAt is the availability date, distinct from historical StartDate.
 // IDs are deterministic for identical input history; revised/truncated feeds may change them.
 type StructureState struct {
- Phase Phase `json:"phase"`
- Stage string `json:"stage,omitempty"`
+	Phase              Phase                 `json:"phase"`
+	Stage              string                `json:"stage,omitempty"`
 	SpringAttempts     []SpringAttempt       `json:"spring_attempts,omitempty"`
 	ID                 string                `json:"structure_id"`
 	ParentID           string                `json:"parent_structure_id,omitempty"`
