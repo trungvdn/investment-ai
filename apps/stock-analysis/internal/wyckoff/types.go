@@ -44,9 +44,9 @@ type Event struct {
 }
 
 type Analysis struct {
- Window AssessmentWindow `json:"analysisWindow"`
- PriceStructure PriceStructure `json:"priceStructure"`
- Context FormingContext `json:"context"`
+	Window                  AssessmentWindow `json:"analysisWindow"`
+	PriceStructure          PriceStructure   `json:"priceStructure"`
+	Context                 FormingContext   `json:"context"`
 	PresentationEvents      []Event          `json:"presentation_events"`
 	PresentationStructureID string           `json:"presentation_structure_id,omitempty"`
 	Structures              []StructureState `json:"structures,omitempty"`
