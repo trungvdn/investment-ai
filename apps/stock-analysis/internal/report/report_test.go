@@ -97,7 +97,9 @@ func containsText(values []string, fragment string) bool {
 }
 
 func TestBuildPreservesStructureLifecycleAttribution(t *testing.T) {
- input:=wyckoff.Analysis{Symbol:"TEST",ActiveStructureID:"range-1",Structures:[]wyckoff.StructureState{{ID:"range-1",Support:100,Resistance:110,Status:"FAILED_BREAKOUT"}},Events:[]wyckoff.Event{{Type:"SOS",StructureID:"range-1"}}}
- got:=Build(input)
- if got.ActiveStructureID!="range-1"||len(got.Structures)!=1||got.Structures[0].Status!="FAILED_BREAKOUT"||got.Events[0].StructureID!="range-1" {t.Fatal("report dropped lifecycle or event attribution")}
+	input := wyckoff.Analysis{Symbol: "TEST", ActiveStructureID: "range-1", Structures: []wyckoff.StructureState{{ID: "range-1", Support: 100, Resistance: 110, Status: "FAILED_BREAKOUT"}}, Events: []wyckoff.Event{{Type: "SOS", StructureID: "range-1"}}}
+	got := Build(input)
+	if got.ActiveStructureID != "range-1" || len(got.Structures) != 1 || got.Structures[0].Status != "FAILED_BREAKOUT" || got.Events[0].StructureID != "range-1" {
+		t.Fatal("report dropped lifecycle or event attribution")
+	}
 }
