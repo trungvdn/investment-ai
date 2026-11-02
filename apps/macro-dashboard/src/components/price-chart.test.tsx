@@ -129,3 +129,14 @@ it("recreates the chart with dark colors and toggles volume", async () => {
   await user.click(toggle);
   expect(toggle).toHaveAttribute("aria-pressed", "false");
 });
+
+it("deduplicates scoped markers and never draws a non-penetrating Spring on the displayed range", () => {
+  const input = {...report, active_structure_id: "primary", events: [
+    {...event, type:"SOS", structure_id:"primary"},
+    {...event, type:"SOS", structure_id:"primary", confidence:0.6},
+    {...event, type:"SOS", structure_id:"other"},
+    {...event, type:"SPRING", structure_id:"primary"},
+  ], tradingRange:{support:90,resistance:103,status:"PROVISIONAL"}} as StockReport;
+  render(<PriceChart report={input} dark={false} selectedEvent={null} onSelectEvent={vi.fn()} />);
+  expect(fake.markers).toHaveBeenLastCalledWith(expect.anything(), [expect.objectContaining({text:"SOS"})]);
+});

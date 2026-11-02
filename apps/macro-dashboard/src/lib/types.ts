@@ -7,12 +7,18 @@ export type Candle = {
   volume: number;
 };
 export type WyckoffEvent = {
+  structure_id?: string;
+  observed_at?: string;
+  status?: string;
   type: string;
   date: string;
   confidence: number;
   evidence: string;
 };
 export type StockReport = {
+  active_structure_id?: string;
+  eventScope?: "PRIMARY_RANGE";
+  eventCandidates?: WyckoffEvent[];
   schemaVersion: string;
   symbol: string;
   asOf: string;

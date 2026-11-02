@@ -165,7 +165,11 @@ func trackStructures(symbol string, cs []Candle) []StructureState {
 					s.transition("MARKUP", c.Date, "Sustained follow-through above the frozen range; prior trend distinguishes reaccumulation.")
 				}
 				if (s.Status == "BREAKOUT_UP" || s.Status == "MARKUP") && i > s.breakoutIndex && i-s.breakoutIndex <= 15 && c.Close < cs[i-1].Close && c.Low >= s.Resistance-width*.15 && c.Low <= s.Resistance+width*.35 && c.Close >= s.Resistance && st.relativeVolume < 1 {
-					s.event("LPS", c.Date, "Actual pullback held this structure's original breakout level on reduced volume; candidate LPS.")
+					for k,e:=range s.Events {
+      if e.Type!="LPS" {continue}
+      for _,previous:=range cs[:i] {if previous.Date.Equal(e.Date)&&c.Low<previous.Low {s.Events[k].Date=c.Date;s.Events[k].ObservedAt=nil}}
+     }
+     s.event("LPS", c.Date, "Actual pullback held this structure's original breakout level on reduced volume; candidate LPS.")
 				}
 			}
 		}

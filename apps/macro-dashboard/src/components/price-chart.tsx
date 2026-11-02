@@ -16,6 +16,31 @@ import { formatDate, formatNumber } from "../lib/utils";
 export function chartData(candles: Candle[]) {
   return candles.map((c) => ({ ...c, time: c.date.slice(0, 10) as Time }));
 }
+// Guard against repeated API candidates and markers belonging to another range.
+export function visibleChartEvents(report: StockReport): WyckoffEvent[] {
+  const dates = new Set(report.candles.map(c => c.date.slice(0, 10)));
+  const seen = new Set<string>();
+  return report.events.filter(e => {
+    const date = e.date.slice(0, 10);
+    const key = `${date}|${e.type.toUpperCase()}`;
+    if (!dates.has(date) || seen.has(key) || e.status === "invalidated") return false;
+    if (report.active_structure_id && e.structure_id && e.structure_id !== report.active_structure_id) return false;
+    if (e.type.toUpperCase() === "SPRING" && report.tradingRange) {
+      const c = report.candles.find(c => c.date.slice(0, 10) === date);
+      if (!c || c.low >= report.tradingRange.support) return false;
+    }
+    seen.add(key);
+    return true;
+  }).sort((a,b) => a.date.localeCompare(b.date));
+}
+export function chartEventGroups(report: StockReport) {
+  const groups = new Map<string, WyckoffEvent[]>();
+  for (const e of visibleChartEvents(report)) {
+    const date = e.date.slice(0,10);
+    groups.set(date, [...(groups.get(date) || []), e]);
+  }
+  return [...groups.entries()].map(([date, events]) => ({date, events}));
+}
 export function PriceChart({
   report,
   dark,
@@ -106,18 +131,15 @@ export function PriceChart({
         });
     }
     if (events) {
-      const dates = new Set(report.candles.map((c) => c.date.slice(0, 10)));
       createSeriesMarkers(
         bars,
-        report.events
-          .filter((ev) => dates.has(ev.date.slice(0, 10)))
-          .map((ev) => ({
-            time: ev.date.slice(0, 10) as Time,
-            position: "aboveBar",
-            color: "#537a91",
-            shape: "circle",
-            text: ev.type,
-          })),
+        chartEventGroups(report).map(group => ({
+          time: group.date as Time,
+          position: "aboveBar",
+          color: "#537a91",
+          shape: "circle",
+          text: group.events.map(e => e.type).join(" · "),
+        })),
       );
     }
     chart.subscribeCrosshairMove((param) => {
@@ -125,7 +147,7 @@ export function PriceChart({
       setHover(c || null);
     });
     chart.subscribeClick((param) => {
-      const event = report.events.find(
+      const event = visibleChartEvents(report).find(
         (ev) => ev.date.slice(0, 10) === param.time,
       );
       if (event) onSelectEvent(event);

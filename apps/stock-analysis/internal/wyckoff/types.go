@@ -44,6 +44,8 @@ type Event struct {
 }
 
 type Analysis struct {
+ PresentationEvents []Event `json:"presentation_events"`
+ PresentationStructureID string `json:"presentation_structure_id,omitempty"`
 	Structures        []StructureState `json:"structures,omitempty"`
 	ActiveStructureID string           `json:"active_structure_id,omitempty"`
 	Symbol            string           `json:"symbol"`
