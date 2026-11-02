@@ -182,7 +182,7 @@ func (a *Analyzer) detectTradingRange(cs []Candle, trendChange float64) rangeCan
 
 // Analyze identifies a candidate range, then evaluates events within that
 // recent context and checks their temporal order. Confidence is heuristic only.
-func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
+func (a *Analyzer) analyzeLegacy(symbol string, candles []Candle) (Analysis, error) {
 	if len(candles) < 60 {
 		return Analysis{}, ErrInsufficientData
 	}

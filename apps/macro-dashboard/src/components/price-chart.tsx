@@ -33,9 +33,16 @@ export function visibleChartEvents(report: StockReport): WyckoffEvent[] {
     return true;
   }).sort((a,b) => a.date.localeCompare(b.date));
 }
-export function chartEventGroups(report: StockReport) {
+export function chartEventGroups(report: StockReport, includeSwings=false) {
   const groups = new Map<string, WyckoffEvent[]>();
-  for (const e of visibleChartEvents(report)) {
+  const items:WyckoffEvent[]=[...visibleChartEvents(report)];
+  if(includeSwings) for(const s of report.priceStructure?.swings || []) {
+    if(!["HH","HL","LH","LL"].includes(s.label) || Date.parse(s.confirmedAt)>Date.parse(report.asOf)) continue;
+    if(!report.candles.some(c=>c.date.slice(0,10)===s.date.slice(0,10))) continue;
+    items.push({type:s.label,date:s.date,observed_at:s.confirmedAt,status:"confirmed_swing",confidence:0.6,evidence:`Swing ${s.label} tại ${s.price}; xác nhận ${s.confirmedAt.slice(0,10)}.`});
+  }
+  items.sort((a,b)=>a.date.localeCompare(b.date));
+  for (const e of items) {
     const date = e.date.slice(0,10);
     groups.set(date, [...(groups.get(date) || []), e]);
   }
@@ -55,6 +62,7 @@ export function PriceChart({
   const container = useRef<HTMLDivElement>(null),
     chartRef = useRef<IChartApi | null>(null);
   const [events, setEvents] = useState(true),
+    [swings, setSwings] = useState(true),
     [range, setRange] = useState(true),
     [volume, setVolume] = useState(true);
   const [hover, setHover] = useState<Candle | null>(null),
@@ -130,10 +138,10 @@ export function PriceChart({
           title,
         });
     }
-    if (events) {
+    if (events || swings) {
       createSeriesMarkers(
         bars,
-        chartEventGroups(report).map(group => ({
+        chartEventGroups({...report, events:events ? report.events:[]}, swings).map(group => ({
           time: group.date as Time,
           position: "aboveBar",
           color: "#537a91",
@@ -147,9 +155,7 @@ export function PriceChart({
       setHover(c || null);
     });
     chart.subscribeClick((param) => {
-      const event = visibleChartEvents(report).find(
-        (ev) => ev.date.slice(0, 10) === param.time,
-      );
+      const event = chartEventGroups({...report,events:events ? report.events:[]},swings).find(group=>group.date===param.time)?.events[0];
       if (event) onSelectEvent(event);
     });
     const updateShade = () => {
@@ -176,7 +182,7 @@ export function PriceChart({
       chart.remove();
       chartRef.current = null;
     };
-  }, [report, dark, events, range, volume, onSelectEvent]);
+  }, [report, dark, events, swings, range, volume, onSelectEvent]);
   useEffect(() => {
     if (!selectedEvent || !chartRef.current) return;
     const i = report.candles.findIndex(
@@ -217,6 +223,7 @@ export function PriceChart({
         <Layers size={14} />
         {[
           [events, setEvents, "Sự kiện Wyckoff"],
+          [swings, setSwings, "HH/HL · LH/LL"],
           [range, setRange, "Vùng giá"],
           [volume, setVolume, "Khối lượng"],
         ].map(([active, setter, label]) => (

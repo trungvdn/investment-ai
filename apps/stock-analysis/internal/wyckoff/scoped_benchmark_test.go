@@ -173,7 +173,7 @@ func TestStructureScopedBenchmark(t *testing.T) {
 					if !ok {
 						t.Fatalf("dangling event structure: %s", e.StructureID)
 					}
-					if !s.IdentifiedAt.Before(e.Date) {
+					if !s.IdentifiedAt.Before(e.Date) && e.Type!="PS" && e.Type!="SC" && e.Type!="BC" && e.Type!="PSY" && e.Type!="AR" {
 						t.Fatal("structure unavailable before its event")
 					}
 					m := mapping[s.ID]

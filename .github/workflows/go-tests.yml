@@ -66,14 +66,14 @@ jobs:
         run: go test ./...
 
       - name: Verify lifecycle examples
-        run: go test ./internal/wyckoff -run 'TestLifecycle|TestSpringRecovery|TestPresentation' -count=1 -v
+        run: go test ./internal/wyckoff -run 'TestLifecycle|TestSpringRecovery|TestPresentation|TestContextFirst' -count=1 -v
 
       - name: Run static analysis
         run: go vet ./...
 
       - name: Benchmark reviewed labels with identical structure-scoped evaluators
         env:
-          BASELINE_REF: 21f31ac276c3de7b8074009538a01045fd8d8d14
+          BASELINE_REF: 263e389c1c9d83a4d2f6354aeaf2bee44d154bb7
         run: |
           WYCKOFF_SCOPED_OUTPUT=/tmp/wyckoff-scoped-after.json WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-after.json go test ./internal/wyckoff -run 'TestReviewedAnnotationBenchmark|TestStructureScopedBenchmark' -count=1 -v
           baseline_dir=$(mktemp -d)

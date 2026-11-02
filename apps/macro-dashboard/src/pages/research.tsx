@@ -237,7 +237,7 @@ export default function Research() {
             ))}
           </div>
           <span className="search-meta-note">
-            <Clock3 size={12} /> Dữ liệu cuối phiên · Tối thiểu 60 nến
+            <Clock3 size={12} /> Dữ liệu cuối phiên · Tối thiểu 40 nến
           </span>
         </div>
       </section>
@@ -392,9 +392,9 @@ export default function Research() {
             </span>
             <div>
               <p className="section-kicker">LUẬN ĐIỂM HIỆN TẠI</p>
-              <h2>{structureLabels[r.structure]}</h2>
+              <h2>{r.context ? r.headline : structureLabels[r.structure]}</h2>
               <p>
-                {r.structure === "UNCLEAR"
+                {r.context ? r.summary : r.structure === "UNCLEAR"
                   ? "Chưa đủ bằng chứng để kết luận cấu trúc và pha. Tiếp tục quan sát giá, khối lượng và trình tự sự kiện."
                   : `Giả thuyết ${bullish ? "nghiêng về sức mạnh của cầu" : "nghiêng về áp lực cung"}. Cần diễn biến tiếp theo xác nhận trước khi đưa ra kết luận mạnh hơn.`}
               </p>
@@ -420,11 +420,12 @@ export default function Research() {
                 {structureLabels[r.structure]}
               </div>
               <div className="phase-label">
-                <span>Pha giả định</span>
+                <span>Giai đoạn đang hình thành</span>
                 <strong>
                   {r.phase === "UNKNOWN" ? "Chưa xác định" : `Phase ${r.phase}`}
                 </strong>
               </div>
+              {r.priceStructure && <p className="metric-help">Cấu trúc giá: <strong>{r.priceStructure.pattern.replaceAll("_", "/")}</strong> · {r.analysisWindow?.usedBars} phiên bối cảnh (gốc {r.analysisWindow?.baseBars})</p>}
               <div className="phase-steps">
                 {["A", "B", "C", "D", "E"].map((p) => (
                   <span key={p} className={r.phase === p ? "active" : ""}>

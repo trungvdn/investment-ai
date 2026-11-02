@@ -16,6 +16,9 @@ export type WyckoffEvent = {
   evidence: string;
 };
 export type StockReport = {
+  analysisWindow?: {baseBars:number; usedBars:number; start:string; end:string; reasons:string[]};
+  priceStructure?: {trend:string; pattern:string; swings:{type:string;label:string;date:string;confirmedAt:string;price:number}[]};
+  context?: {stage:string;status:string;priorTrend:string;rationale:string[];counterEvidence:string[];alternatives:string[]};
   active_structure_id?: string;
   eventScope?: "PRIMARY_RANGE";
   eventCandidates?: WyckoffEvent[];
