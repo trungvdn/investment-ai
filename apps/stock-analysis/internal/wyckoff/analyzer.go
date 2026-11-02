@@ -368,26 +368,20 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		if first >= 0 {
 			// A strict SC candidate predicate can miss the final climax bar when
 			// its contextual trend metric changes on the day. Starting from the
-			// first detected candidate, inspect the next five trading sessions for
-			// a later bearish sell-off and prefer the latest qualifying sell-off.
+			// first detected candidate, inspect the surrounding five sessions and
+			// retain the strongest sell-off unless a high-volume absorption climax is clearer.
 			lastSearch := first + 5
 			if lastSearch >= n {
 				lastSearch = n - 1
 			}
 			best := first
-			bestDecline := math.Max(0, (cs[first-1].Close-cs[first].Close)/cs[first-1].Close)
-			firstStats := stats(cs[first], avgVolume(cs[maxInt(0, first-vw):first]))
-			// A high-volume absorption climax can close well off its low after
-			// several limit-down sessions. Do not replace it with an earlier down day.
-			preserveAbsorption := firstStats.relativeVolume >= 3 && firstStats.closeLocation >= .55
-			if preserveAbsorption {
-				for j := maxInt(rangeStart, first-5); j <= lastSearch; j++ {
-					if cs[j].Low < cs[first].Low {
-						preserveAbsorption = false
-					}
-				}
-			}
-			for i := maxInt(rangeStart, first-5); i <= lastSearch; i++ {
+ bestDecline := math.Max(0,(cs[first-1].Close-cs[first].Close)/cs[first-1].Close)
+   firstStats:=stats(cs[first],avgVolume(cs[maxInt(0,first-vw):first]))
+   // A high-volume absorption climax can close well off its low after
+   // several limit-down sessions. Do not replace it with an earlier down day.
+   preserveAbsorption:=firstStats.relativeVolume>=3&&firstStats.closeLocation>=.55
+   if preserveAbsorption {for j:=maxInt(rangeStart,first-5);j<=lastSearch;j++ {if cs[j].Low<cs[first].Low {preserveAbsorption=false}}}
+			for i := maxInt(rangeStart,first-5); i <= lastSearch; i++ {
 				candle := cs[i]
 				avgStart := i - vw
 				if avgStart < 0 {
@@ -402,16 +396,18 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 				// Require a real bearish session with meaningful selling effort.
 				// This intentionally lets a later climax bar qualify even if it
 				// did not pass the earlier multi-day ctxChange predicate.
-				if dayChange < -0.015 && bearishBody >= 0.20 && st.relativeVolume >= 0.8 && -dayChange > bestDecline && !preserveAbsorption {
-					bestDecline = -dayChange
+				if dayChange < -0.015 && bearishBody >= 0.20 && st.relativeVolume >= 0.8 && -dayChange>bestDecline && !preserveAbsorption {
+ bestDecline=-dayChange
 					best = i
 				}
 			}
+   climaxEvidence:="Selected the strongest meaningful bearish daily decline within five sessions around the first climax candidate."
+   if preserveAbsorption {climaxEvidence="Retained a high-volume absorption climax at the cluster low; its recovered close does not erase stopping action."}
 			add(
 				"SC",
 				best,
 				0.68,
-				"Selected the strongest meaningful bearish daily decline within five sessions around the first climax candidate, rather than the last minor down day.",
+				climaxEvidence,
 			)
 			// Emit at most one PS and only if it precedes the selected SC.
 			bestPS := -1
@@ -674,7 +670,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		result.Evidence = append(result.Evidence, "Phase remains UNKNOWN: no sufficiently validated range and event sequence; wait for confirmation rather than anticipate.")
 	}
 	applyStructureLifecycle(&result, cs)
-	result.PresentationEvents, result.PresentationStructureID = presentationEvents(result, cs)
+ result.PresentationEvents,result.PresentationStructureID=presentationEvents(result,cs)
 	return result, nil
 }
 func maxInt(a, b int) int {

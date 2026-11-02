@@ -88,7 +88,7 @@ Real-prefix tests cover MSB 26–27/08/2026 and NLG 14–15/10/2026, including a
 
 CI now archives the complete baseline module, rather than swapping only analyzer.go, because lifecycle logic spans multiple files. The same candidate annotation files are copied into the baseline module before both versions are measured. Baseline for this step is lifecycle commit `88755c1`.
 
-The Spring recovery implementation currently tracks one initial attempt per detected range. Repeated independent Spring attempts in the same range need further lifecycle work.
+Independent Spring attempts can re-arm after a completed/expired attempt when price has re-established above support; the chart uses the latest valid Spring preceding the selected SOS.
 
 ## Structure-scoped benchmark (scope-v1)
 
@@ -101,3 +101,13 @@ No fallback assigns legacy events without `structure_id` to a nearby range. UNAT
 Prediction inventory counts deduplicate ticker / automatic structure / type / event date over OHLCV prefix replay in the review window. Event/availability dates cannot exceed the prefix, and an attributed range must have been identified before its event. Mapping uses reviewed geometry only in evaluation after Analyze; no annotations enter the detector. Later review geometry makes this a retrospective attribution audit, not a real-time investment backtest.
 
 CI overlays the identical evaluator onto the archived complete baseline module and copies the same annotations before both runs. JSON artifacts include per-structure coverage, per-label outcomes, first-seen cutoffs, mapping dispositions and prediction inventory; Markdown reports include per-structure and per-label tables. Missing attribution can lower the strict scoped score without a change in detector behavior. A low rejected-target count is not global precision, especially when many predictions are unassigned or targets undefined.
+
+## Primary-range chart timeline
+
+The raw `/wyckoff` result retains diagnostic `events` and `structures`, and adds `presentation_events` plus `presentation_structure_id`. `/report.events` and its event evidence now use only the conservative primary-range timeline; all raw hypotheses remain separately available as `eventCandidates`. `eventScope=PRIMARY_RANGE` makes this distinction explicit. Existing schema-v1 fields remain available. An empty curated timeline stays empty rather than falling back to all candidates.
+
+Scoped events from other ranges cannot enter the displayed timeline. Legacy events without IDs are admitted only after price-level and sequence checks; they are not assigned a fabricated lifecycle ID. A Spring must actually undercut the displayed support and recover. TEST requires the selected Spring and a nearby low-volume retest; uncertain internal tests are omitted. A range has one consolidated SOS and one confirmed-rebound LPS at its retained resistance. The deepest qualifying pullback replaces an earlier shallow LPS candidate. SC selection checks the strongest nearby bearish decline while preserving high-volume absorption climaxes such as NVL 30/09. Invalidated Spring attempts and unrelated historical TESTs do not become current markers.
+
+The frontend also deduplicates date/type, excludes events attributed to another primary range, rejects non-penetrating Spring markers, and groups distinct labels on the same date into one marker. Marker clicks use the same filtered list. Primary event tables and evidence use the same report timeline. Diagnostics are not plotted as a second overlapping timeline.
+
+Regression targets from reviewed OHLCV through 30/10/2026: MSB Spring 26/08, SOS 23/09, LPS 05/10 (one each; no promoted TEST); BCM PS 23/07, SC 27/07, AR 13/08, ST 07/10 and 14/10 (no smaller-range Spring). These fixture checks do not guarantee future live labels or resolve all remaining model uncertainty.

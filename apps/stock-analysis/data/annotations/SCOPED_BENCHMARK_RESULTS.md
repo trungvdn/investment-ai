@@ -9,13 +9,13 @@ Reviewed candidates are hypotheses; sparse labels cannot establish global precis
 | Metric | Baseline | Candidate |
 |---|---:|---:|
 | Positive | 36 | 36 |
-| Hits | 6 | 6 |
+| Hits | 6 | 8 |
 | Rejected | 22 | 22 |
 | RejectedEmitted | 0 | 0 |
 | Uncertain | 17 | 17 |
-| MappedPredictions | 14 | 14 |
-| UnattributedPredictions | 103 | 103 |
-| UnmappedPredictions | 55 | 55 |
+| MappedPredictions | 14 | 19 |
+| UnattributedPredictions | 103 | 97 |
+| UnmappedPredictions | 55 | 72 |
 | AmbiguousPredictions | 0 | 0 |
 | LowConfidencePredictions | 7 | 7 |
 
@@ -34,7 +34,7 @@ Prediction counts are unique ticker / predicted structure / event type / date ov
 | HDG | HDG_TR_202610 | False | 0/1 | 0/0 | 3 |
 | LPB | LPB_MARKDOWN_202609 | TARGET_UNDEFINED | 0/0 | 0/3 | 0 |
 | LPB | LPB_TR_202606 | True | 0/5 | 0/0 | 0 |
-| MSB | MSB_TR_202607 | True | 1/3 | 0/3 | 1 |
+| MSB | MSB_TR_202607 | True | 3/3 | 0/3 | 1 |
 | NLG | NLG_CONTEXT_202607 | True | 0/2 | 0/1 | 1 |
 | NLG | NLG_TR_202609_SHORT | True | 2/3 | 0/1 | 3 |
 | NVL | NVL_TR_202609 | True | 0/3 | 0/3 | 1 |
@@ -43,7 +43,7 @@ Prediction counts are unique ticker / predicted structure / event type / date ov
 | Stock | Event | Reviewed structure | Kind | Label | Scoped hit | Disposition | First seen |
 |---|---|---|---|---|---|---|---|
 | BCM | E001 | BCM_CONTEXT_202607 | uncertain |  | False | EXCLUDED_UNCERTAIN |  |
-| BCM | E002 | BCM_CONTEXT_202607 | positive | SC | False | NO_PREDICTION |  |
+| BCM | E002 | BCM_CONTEXT_202607 | positive | SC | False | UNATTRIBUTED |  |
 | BCM | E003 | BCM_CONTEXT_202607 | positive | AR | False | UNATTRIBUTED |  |
 | BCM | E004 | BCM_CONTEXT_202607 | positive | ST | False | UNATTRIBUTED |  |
 | BCM | E005 | BCM_CONTEXT_202607 | positive | ST | False | UNATTRIBUTED |  |
@@ -84,10 +84,10 @@ Prediction counts are unique ticker / predicted structure / event type / date ov
 | LPB | E006 | LPB_MARKDOWN_202609 | rejected | SC | False | TARGET_UNDEFINED |  |
 | LPB | E007 | LPB_MARKDOWN_202609 | rejected | SOS | False | TARGET_UNDEFINED |  |
 | LPB | E008 | LPB_MARKDOWN_202609 | rejected | SC | False | TARGET_UNDEFINED |  |
-| MSB | E001 | MSB_TR_202607 | positive | Spring | False | UNMAPPED |  |
+| MSB | E001 | MSB_TR_202607 | positive | Spring | True | MATCHED_TARGET | 2026-08-27 |
 | MSB | E002 | MSB_TR_202607 | uncertain |  | False | EXCLUDED_UNCERTAIN |  |
 | MSB | E003 | MSB_TR_202607 | positive | SOS | True | MATCHED_TARGET | 2026-09-23 |
-| MSB | E004 | MSB_TR_202607 | positive | LPS | False | UNMAPPED |  |
+| MSB | E004 | MSB_TR_202607 | positive | LPS | True | MATCHED_TARGET | 2026-10-05 |
 | MSB | E005 | MSB_TR_202607 | rejected | SC | False | NO_PREDICTION |  |
 | MSB | E006 | MSB_TR_202607 | rejected | SOW | False | NO_PREDICTION |  |
 | MSB | E007 | MSB_TR_202607 | rejected | LPS | False | NO_PREDICTION |  |
@@ -118,21 +118,17 @@ Prediction counts are unique ticker / predicted structure / event type / date ov
 | SZC | E007 | SZC_TR_202607 | rejected | Spring | False | NO_PREDICTION |  |
 | SZC | E008 | SZC_TR_202607 | rejected | SC | False | NO_PREDICTION |  |
 
-## Interpretation and provenance
+## Primary-range chart fix
 
-Validation run: https://github.com/trungvdn/investment-ai/actions/runs/41456103406 . Baseline analyzer: `4e27da49590b137fed4131bc34609a154706ecf1`; both versions use the identical scope-v1 evaluator and annotation files. Production analyzer behavior and reviewed labels are unchanged in this step. Equal before/after scoped scores are expected; this is an evaluation correction, not a claimed detection improvement.
+Baseline: `21f31ac276c3de7b8074009538a01045fd8d8d14`. Candidate validation: https://github.com/trungvdn/investment-ai/actions/runs/41459184684 . Raw date-only recall changes 21/36 -> 22/36; strict scope-v1 recall changes 6/36 -> 8/36. Raw rejected-date overlaps remain 3/20; confidently mapped rejected targets remain zero, with the existing missing-attribution/undefined-target limitations. These sparse metrics do not establish overall precision.
 
-Strict scoped recall is 6/36 (16.7%), versus the unchanged legacy date-only 21/36. These are different metrics. Ten of fourteen geometrically defined reviewed ranges have at least one candidate mapping during replay. Mapping coverage alone does not establish event correctness. There are 14 mapped, 103 unattributed, 55 unmapped, 7 low-confidence and 0 ambiguous unique predictions in the audit window. Unreviewed predictions cannot be treated as global false positives.
+The two additional scoped hits are MSB Spring and LPS now attached to the same reviewed primary range as SOS. SC selection adds BCM 27/07 while preserving NVL's 30/09 high-volume absorption climax. Chart/report curation is separate from raw candidate evaluation; omitted candidates are not silently removed from benchmark inventories.
 
-No rejected label is emitted on a confidently matched target under scope-v1. This is not zero-error proof: only 19 of 22 rejection targets have range geometry; the three LPB_MARKDOWN_202609 labels are TARGET_UNDEFINED, and legacy rejected SOW predictions can remain UNATTRIBUTED. Seventeen uncertain labels remain excluded. The two nested-range contradictions previously excluded by the legacy scorer are now evaluated against their own structure.
+Expected primary chart timeline from reviewed OHLCV through 30/10/2026:
 
-Important cases:
+| Symbol | Visible events |
+|---|---|
+| MSB | Spring 26/08, SOS 23/09, LPS 05/10; no promoted TEST, one SOS/LPS |
+| BCM | PS 23/07, SC 27/07, AR 13/08, ST 07/10 and 14/10; no smaller-range Spring |
 
-- NLG small-range Spring and SOS match NLG_TR_202609_SHORT. Its same-date SOS does not count against rejected SOS on NLG_CONTEXT_202607 (OTHER_STRUCTURE).
-- MSB Spring and LPS match dates but their detected ranges remain UNMAPPED; only the SOS matches MSB_TR_202607. The previous date-only hits therefore did not prove correct attribution.
-- CTD 17/09 Spring on 57.3–64.3 is LOW_CONFIDENCE relative to reviewed geometry, not automatically labelled correct or false on the wide range.
-- HDG 09/10 Spring on 14.3–16.5 is UNMAPPED rather than a Spring of the rejected 15.2-support range. The rejected legacy SOW remains visible as unattributed evidence.
-
-The fixed matching tolerances are experimental: <=5% of full reviewed range width beyond each reviewed zone, >=50% formation overlap, >=0.05 normalized cost separation. Proximity at 5–15% is held as LOW_CONFIDENCE. Automatic IDs are never equated by name, and event-label agreement does not influence geometry matching. Later reviewed geometry is used only for evaluation, never fed to Analyze; this remains a retrospective attribution audit.
-
-Next priorities: assign PS/SC/AR/ST and remaining legacy events to defensible structures; repair MSB Spring/LPS range identity; define or explicitly exclude LPB trend targets before calculating a fully evaluable rejected-label rate. Keep unresolved mappings visible rather than inflating scores through nearest-range fallback.
+Raw multi-range candidates remain available for diagnostics but do not populate the primary chart. Legacy stopping events such as BCM PS/SC/AR/ST still lack automatic structure IDs; their presentation is gated by primary price boundaries and sequence checks, not falsely credited as scoped benchmark hits. Reviewed annotations remain unchanged. Fixture tests do not guarantee all future live labels.
