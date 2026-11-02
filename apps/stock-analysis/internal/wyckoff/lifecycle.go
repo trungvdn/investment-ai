@@ -111,7 +111,7 @@ func trackStructures(symbol string,cs []Candle) []StructureState {
    duplicate:=false
    for _,s:=range states {if sameLifecycleRange(s,lo,hi,start) {duplicate=true;break}}
    if duplicate {continue}
-   kind:="unclear";if trend>.08 {kind="reaccumulation"} else if trend<-.08 {kind="accumulation"}
+   kind:="unclear";if trend>.08 {kind="reaccumulation"} else if trend < -0.08 {kind="accumulation"}
    s:=StructureState{ID:fmt.Sprintf("%s_%d_%s_%s",strings.ToUpper(symbol),w,start.Format("20060102"),c.Date.Format("20060102")),Kind:kind,StartDate:start,RangeEnd:c.Date,IdentifiedAt:c.Date,LastObserved:c.Date,Support:lo,Resistance:hi,Window:w,preTrend:trend,Events:[]Event{},Transitions:[]StructureTransition{}}
    s.transition("RANGE",c.Date,"Repeated reactions and overlapping closes established a candidate range on this input prefix.")
    states=append(states,s)
