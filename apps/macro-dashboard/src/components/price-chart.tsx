@@ -265,6 +265,7 @@ export function PriceChart({
         <span>
           <MousePointer2 size={12} /> Kéo để di chuyển · Cuộn để phóng to
         </span>
+        {report.eventScope === "PRIMARY_RANGE" && <span>Sự kiện theo vùng giá đang xem</span>}
         <span>Giá: nghìn đồng · KL: cổ phiếu</span>
       </div>
       {selectedEvent && (
