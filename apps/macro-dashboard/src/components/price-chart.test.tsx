@@ -145,3 +145,12 @@ it("groups distinct same-day labels into one marker instead of stacking markers"
   render(<PriceChart report={{...report, events:[event, {...event,type:"TEST"},event]}} dark={false} selectedEvent={null} onSelectEvent={vi.fn()} />);
   expect(fake.markers).toHaveBeenLastCalledWith(expect.anything(), [expect.objectContaining({text:"SPRING · TEST"})]);
 });
+
+it("shows only available confirmed swing labels alongside campaign markers", () => {
+  const input={...report,asOf:"2026-10-20T00:00:00Z",priceStructure:{trend:"UP",pattern:"HH_HL",swings:[
+    {type:"LOW",label:"HL",date:event.date,confirmedAt:"2026-10-20T00:00:00Z",price:98},
+    {type:"HIGH",label:"HH",date:event.date,confirmedAt:"2026-10-22T00:00:00Z",price:105},
+  ]}} as StockReport;
+  render(<PriceChart report={input} dark={false} selectedEvent={null} onSelectEvent={vi.fn()} />);
+  expect(fake.markers).toHaveBeenLastCalledWith(expect.anything(),[expect.objectContaining({text:"SPRING · HL"})]);
+});
