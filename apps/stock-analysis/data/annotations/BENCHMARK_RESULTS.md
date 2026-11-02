@@ -8,9 +8,9 @@ This measures retrospective discoverability, not earliest real-time confirmation
 | Metric | Before | After |
 |---|---:|---:|
 | Positive | 36 | 36 |
-| Hits | 15 | 19 |
+| Hits | 19 | 21 |
 | Rejected | 20 | 20 |
-| RejectedEmitted | 1 | 1 |
+| RejectedEmitted | 1 | 3 |
 | Uncertain | 17 | 17 |
 | Unsupported | 0 | 0 |
 | StructureAmbiguous | 2 | 2 |
@@ -34,9 +34,9 @@ Correct candidates are hypothesis labels, not confirmed events. Corrected replac
 | CTD | E003 / CTD_CONTEXT_202607 | positive | ST | False | False |  | False |
 | CTD | E004 / CTD_CONTEXT_202607 | positive | SOS | True | True | 2026-10-20 | True |
 | CTD | E005 / CTD_CONTEXT_202607 | uncertain |  | False | False |  | False |
-| CTD | E006 / CTD_CONTEXT_202607 | rejected | Spring | False | False |  | False |
-| CTD | E007 / CTD_CONTEXT_202607 | structure_ambiguous | SOS | False | True | 2026-10-07 | True |
-| CTD | E008 / CTD_TR_202609 | positive | SOS | False | True | 2026-10-07 | True |
+| CTD | E006 / CTD_CONTEXT_202607 | rejected | Spring | False | True | 2026-09-17 | True |
+| CTD | E007 / CTD_CONTEXT_202607 | structure_ambiguous | SOS | True | True | 2026-10-07 | True |
+| CTD | E008 / CTD_TR_202609 | positive | SOS | True | True | 2026-10-07 | True |
 | GEX | E001 / GEX_CONTEXT_202607 | uncertain |  | False | False |  | False |
 | GEX | E002 / GEX_CONTEXT_202607 | uncertain |  | False | False |  | False |
 | GEX | E003 / GEX_CONTEXT_202607 | positive | AR | True | True | 2026-09-15 | True |
@@ -48,12 +48,12 @@ Correct candidates are hypothesis labels, not confirmed events. Corrected replac
 | HDG | E001 / HDG_TR_202607 | uncertain |  | False | False |  | False |
 | HDG | E002 / HDG_TR_202607 | positive | AR | False | False |  | False |
 | HDG | E003 / HDG_TR_202607 | positive | ST | False | False |  | False |
-| HDG | E004 / HDG_TR_202607 | positive | SOS | False | True | 2026-09-04 | True |
+| HDG | E004 / HDG_TR_202607 | positive | SOS | True | True | 2026-09-04 | True |
 | HDG | E005 / HDG_TR_202607 | rejected | SOW | True | True | 2026-10-05 | False |
 | HDG | E006 / HDG_TR_202610 | uncertain |  | False | False |  | False |
 | HDG | E007 / HDG_TR_202610 | positive | AR | False | False |  | False |
 | HDG | E008 / HDG_TR_202610 | uncertain |  | False | False |  | False |
-| HDG | E009 / HDG_TR_202607 | rejected | Spring | False | False |  | False |
+| HDG | E009 / HDG_TR_202607 | rejected | Spring | False | True | 2026-10-09 | True |
 | HDG | E010 / HDG_TR_202610 | uncertain |  | False | False |  | False |
 | LPB | E001 / LPB_TR_202606 | positive | BC | False | False |  | False |
 | LPB | E002 / LPB_TR_202606 | positive | AR | False | False |  | False |
@@ -63,21 +63,21 @@ Correct candidates are hypothesis labels, not confirmed events. Corrected replac
 | LPB | E006 / LPB_MARKDOWN_202609 | rejected | SC | False | False |  | False |
 | LPB | E007 / LPB_MARKDOWN_202609 | rejected | SOS | False | False |  | False |
 | LPB | E008 / LPB_MARKDOWN_202609 | rejected | SC | False | False |  | False |
-| MSB | E001 / MSB_TR_202607 | positive | Spring | False | False |  | False |
+| MSB | E001 / MSB_TR_202607 | positive | Spring | False | True | 2026-08-27 | True |
 | MSB | E002 / MSB_TR_202607 | uncertain |  | False | False |  | False |
 | MSB | E003 / MSB_TR_202607 | positive | SOS | True | True | 2026-09-23 | True |
-| MSB | E004 / MSB_TR_202607 | positive | LPS | False | True | 2026-10-05 | True |
+| MSB | E004 / MSB_TR_202607 | positive | LPS | True | True | 2026-10-05 | True |
 | MSB | E005 / MSB_TR_202607 | rejected | SC | False | False |  | False |
 | MSB | E006 / MSB_TR_202607 | rejected | SOW | False | False |  | False |
 | MSB | E007 / MSB_TR_202607 | rejected | LPS | False | False |  | False |
 | NLG | E001 / NLG_TR_202609_SHORT | uncertain |  | False | False |  | False |
 | NLG | E002 / NLG_TR_202609_SHORT | positive | AR | False | False |  | False |
-| NLG | E003 / NLG_TR_202609_SHORT | positive | Spring | False | False |  | False |
+| NLG | E003 / NLG_TR_202609_SHORT | positive | Spring | False | True | 2026-10-15 | True |
 | NLG | E004 / NLG_TR_202609_SHORT | uncertain |  | False | False |  | False |
-| NLG | E005 / NLG_TR_202609_SHORT | positive | SOS | False | True | 2026-10-21 | True |
+| NLG | E005 / NLG_TR_202609_SHORT | positive | SOS | True | True | 2026-10-21 | True |
 | NLG | E006 / NLG_TR_202609_SHORT | uncertain |  | False | False |  | False |
 | NLG | E007 / NLG_TR_202609_SHORT | rejected | Test | False | False |  | False |
-| NLG | E008 / NLG_CONTEXT_202607 | structure_ambiguous | SOS | False | True | 2026-10-21 | True |
+| NLG | E008 / NLG_CONTEXT_202607 | structure_ambiguous | SOS | True | True | 2026-10-21 | True |
 | NLG | E009 / NLG_CONTEXT_202607 | positive | SC | True | True | 2026-07-28 | False |
 | NLG | E010 / NLG_CONTEXT_202607 | uncertain |  | False | False |  | False |
 | NLG | E011 / NLG_CONTEXT_202607 | positive | ST | True | True | 2026-10-15 | True |
@@ -97,14 +97,14 @@ Correct candidates are hypothesis labels, not confirmed events. Corrected replac
 | SZC | E007 / SZC_TR_202607 | rejected | Spring | False | False |  | False |
 | SZC | E008 / SZC_TR_202607 | rejected | SC | False | False |  | False |
 
-## Structure lifecycle validation
+## Multi-session Spring recovery comparison
 
-Comparison baseline: `525120c272d0624eda3086e8fe8290ea20569cc8` (completed Spring/Test proposal). Candidate run: https://github.com/trungvdn/investment-ai/actions/runs/41452286996 .
+Baseline: lifecycle commit `88755c1719aeaecdb8793c5556e523280a1410fb`. Validation: https://github.com/trungvdn/investment-ai/actions/runs/41454398973 . Both complete modules were tested against the same annotation files. Earlier iterations were main/Spring-only 15/36, then lifecycle 19/36; this step reaches 21/36 (58.3%) versus 19/36 (52.8%).
 
-Positive interval recall increases from 15/36 (41.7%) to 19/36 (52.8%); rejected proposed labels emitted remain 1/20. This sparse interval metric does not validate structure attribution, global precision or investment returns. The earlier main-versus-Spring-only comparison remained 15/36 in both versions.
+MSB Spring 26–27/08/2026 and NLG Spring 14–15/10/2026 are now recognized at the recovery cutoffs, with no visibility before recovery. Lifecycle events separate event date from observed_at. Subsequent Tests remain candidate hypotheses; uncertain human labels are unchanged.
 
-MSB is MARKUP/E with a retained reaccumulation hypothesis and original breakout levels. Automatic range anchors may differ from manually reviewed dates; these are detected candidate structures, not replacements for the human annotation IDs. NLG retains the short 21.3–22.5 range and a separate unconfirmed 19.15–25.95 swing context, with price/time containment relationships. Wider alternative historical envelopes remain visible rather than being rewritten into a single human-selected context.
+The unscoped rejected-label count rises from 1/20 to 3/20. Do not omit this result or interpret increased recall as proven overall accuracy. Scope diagnostics show the two new Spring/date overlaps are CTD_20_20260814_20260915 (support 57.3 versus rejected broad support 54.7) and HDG_20_20260911_20261008 (support 14.3 versus rejected old support 15.2). They are other detected-range hypotheses, not independently approved correct events. Original broad-range Spring rejection tests pass; structure-aware matching and human review of the new narrower hypotheses remain required. HDG's old rejected SOW still appears.
 
-Tests validate frozen boundaries across appended candles, retained SOS after failed breakout, LPS near original resistance, prefix reconstruction without future transitions, NLG context separation, MSB classification, and propagation through standardized reports. Historical lifecycle structures retain older events; the compatibility event list stays within 70 bars. Existing legacy events may remain unattributed. Structure-aware precision/recall remains future work.
+Pending penetration attempts recover within at most three subsequent observed sessions, expire without reclaim, or are rejected if deeper than a full original range width. A lower low after recovery invalidates the sequence and blocks further Tests. Diagnostic history retains reason/status and availability dates. Historical candidate events are not erased on invalidation. The current implementation tracks one initial Spring attempt per detected range; later independent attempts require additional lifecycle work.
 
-State is reconstructed from requested OHLCV and exposed by the API; no database persistence or lifecycle UI was added. IDs are deterministic only for identical input history; revised or truncated feeds can alter them. The underlying heuristic remains experimental. HDG's legacy rejected SOW and missed Spring cases require separate work.
+CI passed all Go tests, vet, formatting, real-prefix Spring tests, expiry/lower-low regressions, scope checks, lifecycle tests and before/after benchmark. Original reviewed annotations and confirmation dates are unchanged. State remains reconstructed from OHLCV through the API, with no new database persistence or timeline UI. IDs and automatic anchors depend on the supplied history; MSB price adjustment is still unverified.
