@@ -1,0 +1,22 @@
+{
+  "event_id": null,
+  "structure_id": null,
+  "proposed_label": null,
+  "start_date": null,
+  "end_date": null,
+  "confirmed_as_of": null,
+  "source": null,
+  "final_label": null,
+  "invalidation_condition": null,
+  "confirmation_condition": null,
+  "correction_reason": null,
+  "reviewer": null,
+  "reviewed_at": null,
+  "event_status": "candidate",
+  "label_verdict": "unreviewed",
+  "context_evidence": [],
+  "price_evidence": [],
+  "volume_evidence": [],
+  "confirmation_evidence": [],
+  "counter_evidence": []
+}

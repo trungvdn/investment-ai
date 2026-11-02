@@ -15,7 +15,7 @@ import (
 // TestSampleBaseline records reproducible observations, not accuracy: folder
 // labels describe the user's assessment, not per-event ground truth.
 func TestSampleBaseline(t *testing.T) {
-	files, err := filepath.Glob("../../data/sample/*/*.csv")
+	files, err := filepath.Glob("../../data/annotations/*/*.csv")
 	if err != nil || len(files) == 0 {
 		t.Fatalf("sample discovery: files=%d err=%v", len(files), err)
 	}

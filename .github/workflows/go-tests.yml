@@ -34,6 +34,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -66,3 +67,21 @@ jobs:
 
       - name: Run static analysis
         run: go vet ./...
+
+      - name: Benchmark reviewed labels before and after Spring fix
+        env:
+          BASELINE_REF: 9bec474abd22eefd1b20efa4d548dff0dea9ecdc
+        run: |
+          WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-after.json go test ./internal/wyckoff -run TestReviewedAnnotationBenchmark -count=1 -v
+          cp internal/wyckoff/analyzer.go /tmp/wyckoff-analyzer.go
+          git show "$BASELINE_REF:apps/stock-analysis/internal/wyckoff/analyzer.go" > internal/wyckoff/analyzer.go
+          WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-before.json go test ./internal/wyckoff -run TestReviewedAnnotationBenchmark -count=1 -v
+          cp /tmp/wyckoff-analyzer.go internal/wyckoff/analyzer.go
+          python3 scripts/compare_benchmark.py /tmp/wyckoff-before.json /tmp/wyckoff-after.json /tmp/wyckoff-benchmark.md
+          cat /tmp/wyckoff-benchmark.md >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/wyckoff-benchmark.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wyckoff-reviewed-benchmark
+          path: /tmp/wyckoff-*.json
