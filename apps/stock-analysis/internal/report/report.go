@@ -13,9 +13,9 @@ const SchemaVersion = "1.0"
 // Report is the stable, presentation-oriented contract for a stock analysis.
 // It deliberately separates the human-readable summary from the underlying analysis.
 type Report struct {
- Window wyckoff.AssessmentWindow `json:"analysisWindow"`
- PriceStructure wyckoff.PriceStructure `json:"priceStructure"`
- Context wyckoff.FormingContext `json:"context"`
+	Window            wyckoff.AssessmentWindow `json:"analysisWindow"`
+	PriceStructure    wyckoff.PriceStructure   `json:"priceStructure"`
+	Context           wyckoff.FormingContext   `json:"context"`
 	EventScope        string                   `json:"eventScope,omitempty"`
 	EventCandidates   []wyckoff.Event          `json:"eventCandidates,omitempty"`
 	Structures        []wyckoff.StructureState `json:"structures,omitempty"`
@@ -65,7 +65,7 @@ type DataQualitySection struct {
 // It does not add new market facts or turn heuristic signals into trade advice.
 func Build(a wyckoff.Analysis) Report {
 	report := Report{
- Window:a.Window, PriceStructure:a.PriceStructure, Context:a.Context,
+		Window: a.Window, PriceStructure: a.PriceStructure, Context: a.Context,
 		Structures: a.Structures, ActiveStructureID: a.ActiveStructureID,
 		SchemaVersion: SchemaVersion,
 		Symbol:        strings.ToUpper(strings.TrimSpace(a.Symbol)),
@@ -98,13 +98,18 @@ func Build(a wyckoff.Analysis) Report {
 		}
 	}
 	report.Headline, report.Summary = describeStructure(a.Structure, a.Phase)
- if a.Window.BaseBars>=40 {
-  names:=map[wyckoff.Structure]string{wyckoff.StructureAccumulation:"Tích lũy",wyckoff.StructureDistribution:"Phân phối",wyckoff.StructureMarkup:"Markup",wyckoff.StructureMarkdown:"Markdown",wyckoff.StructureUnclear:"Cấu trúc đang hình thành"}
-  report.Headline=fmt.Sprintf("%s — pha %s đang được đánh giá",names[a.Structure],a.Phase)
-  if a.Phase==wyckoff.PhaseUnknown {report.Headline=names[a.Structure]+" — chưa đủ bằng chứng chốt pha"}
-  report.Summary=fmt.Sprintf("Bắt đầu từ %d phiên gần nhất, dùng %d phiên để giữ bối cảnh. Cấu trúc swing: %s. Nhận định là giả thuyết đang hình thành.",a.Window.BaseBars,a.Window.UsedBars,a.PriceStructure.Pattern)
-  if len(a.Context.CounterEvidence)>0 {report.Risks=append(report.Risks,a.Context.CounterEvidence...);report.Summary+=" "+strings.Join(a.Context.CounterEvidence," ")}
- }
+	if a.Window.BaseBars >= 40 {
+		names := map[wyckoff.Structure]string{wyckoff.StructureAccumulation: "Tích lũy", wyckoff.StructureDistribution: "Phân phối", wyckoff.StructureMarkup: "Markup", wyckoff.StructureMarkdown: "Markdown", wyckoff.StructureUnclear: "Cấu trúc đang hình thành"}
+		report.Headline = fmt.Sprintf("%s — pha %s đang được đánh giá", names[a.Structure], a.Phase)
+		if a.Phase == wyckoff.PhaseUnknown {
+			report.Headline = names[a.Structure] + " — chưa đủ bằng chứng chốt pha"
+		}
+		report.Summary = fmt.Sprintf("Bắt đầu từ %d phiên gần nhất, dùng %d phiên để giữ bối cảnh. Cấu trúc swing: %s. Nhận định là giả thuyết đang hình thành.", a.Window.BaseBars, a.Window.UsedBars, a.PriceStructure.Pattern)
+		if len(a.Context.CounterEvidence) > 0 {
+			report.Risks = append(report.Risks, a.Context.CounterEvidence...)
+			report.Summary += " " + strings.Join(a.Context.CounterEvidence, " ")
+		}
+	}
 
 	for _, event := range selected {
 		report.Events = append(report.Events, EventSection{
@@ -119,7 +124,7 @@ func Build(a wyckoff.Analysis) Report {
 
 	if a.TradingRange != nil {
 		status := "PROVISIONAL"
-		if a.Structure != wyckoff.StructureUnclear && a.Phase != wyckoff.PhaseUnknown && !strings.HasPrefix(a.Context.Stage,"POTENTIAL_STOPPING") {
+		if a.Structure != wyckoff.StructureUnclear && a.Phase != wyckoff.PhaseUnknown && !strings.HasPrefix(a.Context.Stage, "POTENTIAL_STOPPING") {
 			status = "IDENTIFIED"
 		}
 		report.TradingRange = &RangeSection{
