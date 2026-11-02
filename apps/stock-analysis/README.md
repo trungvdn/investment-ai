@@ -57,3 +57,11 @@ The service serves the built React app from `../macro-dashboard/dist` (override 
 The `/report` response adds `candles` (the exact OHLCV observations analyzed) and `timeframe` (`1D` by default, or `1W`). Both analysis endpoints accept `timeframe=1D|1W`. Date filtering is inclusive, observations are ordered/deduplicated, and weekly OHLCV is aggregated by ISO week **before** analysis. Weekly bar dates identify the last observed session; the latest week may be incomplete. At least 60 observations are still required, so use two years for weekly analysis. Existing report fields and the raw analyzer response shape remain available.
 
 Macro API integration: `/api/macro/` is reverse-proxied to `MACRO_API_URL` (default `http://127.0.0.1:3000`). Start the PostgreSQL-backed macro service separately; an unavailable macro service returns a JSON 502 and never falls back to the React entry point. No FRED credentials belong in this stock server or frontend.
+
+## Reviewed annotation benchmark
+
+`go test ./internal/wyckoff -run 'TestReviewed|TestSampleBaseline' -count=1 -v` reads the nine approved annotation JSONs and their colocated CSVs. Positive reviewed hypotheses, rejected proposed labels and uncertain labels are separate. Replay passes only OHLCV prefixes into the analyzer; annotations are scoring targets, never analyzer inputs. Matching uses the reviewed date interval. A match at any eligible replay cutoff and a match at the final cutoff are reported separately.
+
+Set `WYCKOFF_BENCHMARK_OUTPUT=/tmp/result.json` to save the detailed result. CI compares the pinned pre-fix main analyzer (`9bec474`) with the candidate using identical annotations and prints a comparison in the job summary. Sparse labels do not establish global precision or investment accuracy; there is no accuracy pass gate. Structure-ambiguous rejected labels and unsupported labels such as `markdown_continuation` are reported separately. Assessment disagreements are logged rather than changing human labels.
+
+See [dated evidence checkpoints](data/annotations/CONFIRMATION_CHECKPOINTS.md). Candidate labels remain candidates; `label_confirmed_as_of` is a conservative retrospective label cutoff, not the earliest market confirmation date.
