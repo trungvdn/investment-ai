@@ -12,7 +12,7 @@ import (
 // IdentifiedAt is the availability date, distinct from historical StartDate.
 // IDs are deterministic for identical input history; revised/truncated feeds may change them.
 type StructureState struct {
- SpringAttempts []SpringAttempt `json:"spring_attempts,omitempty"`
+	SpringAttempts     []SpringAttempt       `json:"spring_attempts,omitempty"`
 	ID                 string                `json:"structure_id"`
 	ParentID           string                `json:"parent_structure_id,omitempty"`
 	Kind               string                `json:"kind"`
@@ -134,7 +134,7 @@ func trackStructures(symbol string, cs []Candle) []StructureState {
 				s.downCount = 0
 			}
 			st := stats(c, avgVolume(cs[maxInt(0, i-20):i]))
- s.advanceSpring(cs,i)
+			s.advanceSpring(cs, i)
 			if s.BreakoutDate == nil {
 				if c.Close > s.Resistance && st.closeLocation >= .65 && st.relativeVolume >= 1.2 {
 					d := c.Date
