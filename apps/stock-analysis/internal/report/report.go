@@ -13,8 +13,8 @@ const SchemaVersion = "1.0"
 // Report is the stable, presentation-oriented contract for a stock analysis.
 // It deliberately separates the human-readable summary from the underlying analysis.
 type Report struct {
- EventScope string `json:"eventScope,omitempty"`
- EventCandidates []wyckoff.Event `json:"eventCandidates,omitempty"`
+	EventScope        string                   `json:"eventScope,omitempty"`
+	EventCandidates   []wyckoff.Event          `json:"eventCandidates,omitempty"`
 	Structures        []wyckoff.StructureState `json:"structures,omitempty"`
 	ActiveStructureID string                   `json:"active_structure_id,omitempty"`
 	SchemaVersion     string                   `json:"schemaVersion"`
@@ -82,16 +82,18 @@ func Build(a wyckoff.Analysis) Report {
 		Disclaimer: "This report is an automated, heuristic Wyckoff analysis for research purposes only. It is not investment advice or a recommendation to buy or sell.",
 	}
 
-	selected:=a.Events
- if a.PresentationEvents!=nil {
-  selected=a.PresentationEvents
-  report.EventScope="PRIMARY_RANGE"
-  report.EventCandidates=append([]wyckoff.Event{},a.Events...)
-  report.ActiveStructureID=a.PresentationStructureID
-  report.Evidence=[]string{}
-  for _,e:=range selected {report.Evidence=append(report.Evidence,fmt.Sprintf("%s (%s): %s",e.Type,e.Date.Format("2006-01-02"),e.Evidence))}
- }
- report.Headline, report.Summary = describeStructure(a.Structure, a.Phase)
+	selected := a.Events
+	if a.PresentationEvents != nil {
+		selected = a.PresentationEvents
+		report.EventScope = "PRIMARY_RANGE"
+		report.EventCandidates = append([]wyckoff.Event{}, a.Events...)
+		report.ActiveStructureID = a.PresentationStructureID
+		report.Evidence = []string{}
+		for _, e := range selected {
+			report.Evidence = append(report.Evidence, fmt.Sprintf("%s (%s): %s", e.Type, e.Date.Format("2006-01-02"), e.Evidence))
+		}
+	}
+	report.Headline, report.Summary = describeStructure(a.Structure, a.Phase)
 	for _, event := range selected {
 		report.Events = append(report.Events, EventSection{
 			Type:        event.Type,

@@ -375,8 +375,8 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 				lastSearch = n - 1
 			}
 			best := first
- bestDecline := math.Max(0,(cs[first-1].Close-cs[first].Close)/cs[first-1].Close)
-			for i := maxInt(rangeStart,first-5); i <= lastSearch; i++ {
+			bestDecline := math.Max(0, (cs[first-1].Close-cs[first].Close)/cs[first-1].Close)
+			for i := maxInt(rangeStart, first-5); i <= lastSearch; i++ {
 				candle := cs[i]
 				avgStart := i - vw
 				if avgStart < 0 {
@@ -391,8 +391,8 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 				// Require a real bearish session with meaningful selling effort.
 				// This intentionally lets a later climax bar qualify even if it
 				// did not pass the earlier multi-day ctxChange predicate.
-				if dayChange < -0.015 && bearishBody >= 0.20 && st.relativeVolume >= 0.8 && -dayChange>bestDecline {
- bestDecline=-dayChange
+				if dayChange < -0.015 && bearishBody >= 0.20 && st.relativeVolume >= 0.8 && -dayChange > bestDecline {
+					bestDecline = -dayChange
 					best = i
 				}
 			}
@@ -663,7 +663,7 @@ func (a *Analyzer) Analyze(symbol string, candles []Candle) (Analysis, error) {
 		result.Evidence = append(result.Evidence, "Phase remains UNKNOWN: no sufficiently validated range and event sequence; wait for confirmation rather than anticipate.")
 	}
 	applyStructureLifecycle(&result, cs)
- result.PresentationEvents,result.PresentationStructureID=presentationEvents(result,cs)
+	result.PresentationEvents, result.PresentationStructureID = presentationEvents(result, cs)
 	return result, nil
 }
 func maxInt(a, b int) int {

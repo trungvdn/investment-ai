@@ -44,20 +44,20 @@ type Event struct {
 }
 
 type Analysis struct {
- PresentationEvents []Event `json:"presentation_events"`
- PresentationStructureID string `json:"presentation_structure_id,omitempty"`
-	Structures        []StructureState `json:"structures,omitempty"`
-	ActiveStructureID string           `json:"active_structure_id,omitempty"`
-	Symbol            string           `json:"symbol"`
-	AsOf              time.Time        `json:"asOf"`
-	Structure         Structure        `json:"structure"`
-	Phase             Phase            `json:"phase"`
-	Confidence        float64          `json:"confidence"`
-	TradingRange      *TradingRange    `json:"tradingRange,omitempty"`
-	Events            []Event          `json:"events"`
-	Evidence          []string         `json:"evidence"`
-	DataPoints        int              `json:"dataPoints"`
-	DataMode          string           `json:"dataMode"`
+	PresentationEvents      []Event          `json:"presentation_events"`
+	PresentationStructureID string           `json:"presentation_structure_id,omitempty"`
+	Structures              []StructureState `json:"structures,omitempty"`
+	ActiveStructureID       string           `json:"active_structure_id,omitempty"`
+	Symbol                  string           `json:"symbol"`
+	AsOf                    time.Time        `json:"asOf"`
+	Structure               Structure        `json:"structure"`
+	Phase                   Phase            `json:"phase"`
+	Confidence              float64          `json:"confidence"`
+	TradingRange            *TradingRange    `json:"tradingRange,omitempty"`
+	Events                  []Event          `json:"events"`
+	Evidence                []string         `json:"evidence"`
+	DataPoints              int              `json:"dataPoints"`
+	DataMode                string           `json:"dataMode"`
 }
 
 type TradingRange struct {

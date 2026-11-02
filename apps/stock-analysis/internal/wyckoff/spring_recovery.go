@@ -17,14 +17,14 @@ type SpringAttempt struct {
 func (s *StructureState) advanceSpring(cs []Candle, i int) {
 	c := cs[i]
 	width := s.Resistance - s.Support
-	newAttempt:=len(s.SpringAttempts)==0
- if !newAttempt && i>=2 {
-  previous:=s.SpringAttempts[len(s.SpringAttempts)-1]
-  terminal:=previous.Status=="EXPIRED"||previous.Status=="REJECTED"||previous.Status=="INVALIDATED"
-  independent:=previous.Status=="RECOVERED"&&i>previous.recoveryIndex+15
-  newAttempt=(terminal||independent)&&c.Low<s.Support&&cs[i-1].Close>=s.Support&&cs[i-2].Close>=s.Support
- }
- if newAttempt {
+	newAttempt := len(s.SpringAttempts) == 0
+	if !newAttempt && i >= 2 {
+		previous := s.SpringAttempts[len(s.SpringAttempts)-1]
+		terminal := previous.Status == "EXPIRED" || previous.Status == "REJECTED" || previous.Status == "INVALIDATED"
+		independent := previous.Status == "RECOVERED" && i > previous.recoveryIndex+15
+		newAttempt = (terminal || independent) && c.Low < s.Support && cs[i-1].Close >= s.Support && cs[i-2].Close >= s.Support
+	}
+	if newAttempt {
 		if s.Status != "RANGE" || s.BreakoutDate != nil || c.Low >= s.Support {
 			return
 		}
@@ -56,7 +56,7 @@ func (s *StructureState) advanceSpring(cs []Candle, i int) {
 		}
 		st := stats(c, avgVolume(cs[maxInt(0, i-20):i]))
 		if c.Close >= s.Support && c.Low <= s.Support+width*.2 && st.relativeVolume < .8 && st.closeLocation >= .55 {
-			s.Events=append(s.Events,Event{Type:"TEST",Date:c.Date,Confidence:.6,StructureID:s.ID,Evidence:"Candidate Test after recovered Spring held its low and original support, with reduced supply."})
+			s.Events = append(s.Events, Event{Type: "TEST", Date: c.Date, Confidence: .6, StructureID: s.ID, Evidence: "Candidate Test after recovered Spring held its low and original support, with reduced supply."})
 			for j := range s.Events {
 				if s.Events[j].Type == "TEST" && s.Events[j].Date.Equal(c.Date) {
 					d := c.Date
@@ -102,7 +102,7 @@ func (s *StructureState) advanceSpring(cs []Candle, i int) {
 	a.recoveryIndex = i
 	a.Status = "RECOVERED"
 	a.Reason = "Price recovered above pre-existing support with an improved close; candidate Spring, not proof of accumulation."
-	s.Events=append(s.Events,Event{Type:"SPRING",Date:a.Date,Confidence:.6,StructureID:s.ID,Evidence:a.Reason})
+	s.Events = append(s.Events, Event{Type: "SPRING", Date: a.Date, Confidence: .6, StructureID: s.ID, Evidence: a.Reason})
 	for j := range s.Events {
 		if s.Events[j].Type == "SPRING" && s.Events[j].Date.Equal(a.Date) {
 			s.Events[j].ObservedAt = &d
