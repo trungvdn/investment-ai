@@ -140,3 +140,8 @@ it("deduplicates scoped markers and never draws a non-penetrating Spring on the 
   render(<PriceChart report={input} dark={false} selectedEvent={null} onSelectEvent={vi.fn()} />);
   expect(fake.markers).toHaveBeenLastCalledWith(expect.anything(), [expect.objectContaining({text:"SOS"})]);
 });
+
+it("groups distinct same-day labels into one marker instead of stacking markers", () => {
+  render(<PriceChart report={{...report, events:[event, {...event,type:"TEST"},event]}} dark={false} selectedEvent={null} onSelectEvent={vi.fn()} />);
+  expect(fake.markers).toHaveBeenLastCalledWith(expect.anything(), [expect.objectContaining({text:"SPRING · TEST"})]);
+});

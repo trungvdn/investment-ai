@@ -103,3 +103,15 @@ func TestBuildPreservesStructureLifecycleAttribution(t *testing.T) {
 		t.Fatal("report dropped lifecycle or event attribution")
 	}
 }
+
+func TestBuildUsesPrimaryRangeTimelineAndRetainsCandidateInventory(t *testing.T) {
+ candidate:=wyckoff.Event{Type:"SPRING",StructureID:"other-range",Evidence:"Must not appear in primary timeline"}
+ selected:=wyckoff.Event{Type:"SOS",StructureID:"primary"}
+ for _,events:=range [][]wyckoff.Event{{selected},{}} {
+  input:=wyckoff.Analysis{Symbol:"TEST",Events:[]wyckoff.Event{candidate,selected,selected},PresentationEvents:events,PresentationStructureID:"primary",Evidence:[]string{candidate.Evidence}}
+  got:=Build(input)
+  if got.EventScope!="PRIMARY_RANGE"||got.ActiveStructureID!="primary"||len(got.Events)!=len(events)||len(got.EventCandidates)!=3 {t.Fatal("report leaked aggregate candidates or lost diagnostics")}
+  for _,e:=range got.Events {if e.Type=="SPRING" {t.Fatal("other range Spring leaked into chart report")}}
+  for _,e:=range got.Evidence {if strings.Contains(e,"Must not appear") {t.Fatal("hidden event remained in primary evidence")}}
+ }
+}
