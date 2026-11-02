@@ -6,10 +6,10 @@ before, after = (json.loads(Path(p).read_text()) for p in sys.argv[1:3])
 assert before['Policy'] == after['Policy'], 'Comparison requires identical matching policy'
 lines = ['# Structure-scoped Wyckoff benchmark', '', after['Policy'], '',
          'Evaluation only: annotations never enter Analyze. Automatic IDs are mapped by frozen boundaries and formation time, not by event-label agreement.',
-         'Unattributed, unmapped and ambiguous predictions are not counted as correct or rejected-target emissions. All reviewed positive labels remain in the denominator.',
+         'Unattributed, unmapped, low-confidence and ambiguous predictions are not counted as correct or rejected-target emissions. All reviewed positive labels remain in the denominator.',
          'Reviewed candidates are hypotheses; sparse labels cannot establish global precision or investment accuracy.', '',
          '| Metric | Baseline | Candidate |', '|---|---:|---:|']
-for k in ['Positive', 'Hits', 'Rejected', 'RejectedEmitted', 'Uncertain', 'MappedPredictions', 'UnattributedPredictions', 'UnmappedPredictions', 'AmbiguousPredictions']:
+for k in ['Positive', 'Hits', 'Rejected', 'RejectedEmitted', 'Uncertain', 'MappedPredictions', 'UnattributedPredictions', 'UnmappedPredictions', 'AmbiguousPredictions', 'LowConfidencePredictions']:
     lines.append(f'| {k} | {before[k]} | {after[k]} |')
 lines += ['', 'Unlike the legacy score, all reviewed rejections are eligible by their own structure, including same-date contradictory labels on nested ranges. No missing-ID fallback is used.',
           'Prediction counts are unique ticker / predicted structure / event type / date over prefix replay within the review window. They are not false-positive counts.', '',
