@@ -36,9 +36,7 @@ type reviewedSample struct {
 		Structure string `json:"structure"`
 		Phase     string `json:"phase"`
 	} `json:"assessment"`
-	Ranges []struct {
-		ID string `json:"structure_id"`
-	} `json:"trading_ranges"`
+	Ranges []reviewedRange `json:"trading_ranges"`
 	Events []reviewedEvent `json:"events"`
 }
 
