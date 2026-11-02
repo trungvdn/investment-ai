@@ -129,3 +129,28 @@ it("recreates the chart with dark colors and toggles volume", async () => {
   await user.click(toggle);
   expect(toggle).toHaveAttribute("aria-pressed", "false");
 });
+
+it("deduplicates scoped markers and never draws a non-penetrating Spring on the displayed range", () => {
+  const input = {...report, active_structure_id: "primary", events: [
+    {...event, type:"SOS", structure_id:"primary"},
+    {...event, type:"SOS", structure_id:"primary", confidence:0.6},
+    {...event, type:"SOS", structure_id:"other"},
+    {...event, type:"SPRING", structure_id:"primary"},
+  ], tradingRange:{support:90,resistance:103,status:"PROVISIONAL"}} as StockReport;
+  render(<PriceChart report={input} dark={false} selectedEvent={null} onSelectEvent={vi.fn()} />);
+  expect(fake.markers).toHaveBeenLastCalledWith(expect.anything(), [expect.objectContaining({text:"SOS"})]);
+});
+
+it("groups distinct same-day labels into one marker instead of stacking markers", () => {
+  render(<PriceChart report={{...report, events:[event, {...event,type:"TEST"},event]}} dark={false} selectedEvent={null} onSelectEvent={vi.fn()} />);
+  expect(fake.markers).toHaveBeenLastCalledWith(expect.anything(), [expect.objectContaining({text:"SPRING · TEST"})]);
+});
+
+it("shows only available confirmed swing labels alongside campaign markers", () => {
+  const input={...report,asOf:"2026-10-20T00:00:00Z",priceStructure:{trend:"UP",pattern:"HH_HL",swings:[
+    {type:"LOW",label:"HL",date:event.date,confirmedAt:"2026-10-20T00:00:00Z",price:98},
+    {type:"HIGH",label:"HH",date:event.date,confirmedAt:"2026-10-22T00:00:00Z",price:105},
+  ]}} as StockReport;
+  render(<PriceChart report={input} dark={false} selectedEvent={null} onSelectEvent={vi.fn()} />);
+  expect(fake.markers).toHaveBeenLastCalledWith(expect.anything(),[expect.objectContaining({text:"SPRING · HL"})]);
+});

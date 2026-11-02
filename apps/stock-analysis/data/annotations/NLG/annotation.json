@@ -147,7 +147,9 @@
       "invalidation_condition": "Nếu vùng hoặc SC gốc bị bác bỏ, đánh giá lại nhãn AR.",
       "correction_reason": null,
       "reviewer": "trungvdn@gmail.com",
-      "reviewed_at": "2026-10-31"
+      "reviewed_at": "2026-10-31",
+      "label_confirmed_as_of": "2026-10-30",
+      "label_confirmation_basis": "Conservative retrospective label cutoff: all cited evidence is available by analysis_as_of. Not earliest market confirmation; event_status and confirmed_as_of remain unchanged."
     },
     {
       "event_id": "E003",
@@ -179,7 +181,9 @@
       "invalidation_condition": "Nếu chấp nhận giá dưới 21.0 kéo dài, bác bỏ giả thuyết Spring thành công.",
       "correction_reason": null,
       "reviewer": "trungvdn@gmail.com",
-      "reviewed_at": "2026-10-31"
+      "reviewed_at": "2026-10-31",
+      "label_confirmed_as_of": "2026-10-30",
+      "label_confirmation_basis": "Conservative retrospective label cutoff: all cited evidence is available by analysis_as_of. Not earliest market confirmation; event_status and confirmed_as_of remain unchanged."
     },
     {
       "event_id": "E004",
@@ -243,7 +247,9 @@
       "invalidation_condition": "Hai close dưới 22.2 và không lấy lại 22.5 trong ba phiên sau làm suy yếu breakout; đến cutoff chưa đủ diễn biến sau 30/10.",
       "correction_reason": null,
       "reviewer": "trungvdn@gmail.com",
-      "reviewed_at": "2026-10-31"
+      "reviewed_at": "2026-10-31",
+      "label_confirmed_as_of": "2026-10-30",
+      "label_confirmation_basis": "Conservative retrospective label cutoff: all cited evidence is available by analysis_as_of. Not earliest market confirmation; event_status and confirmed_as_of remain unchanged."
     },
     {
       "event_id": "E006",
@@ -307,7 +313,9 @@
       "invalidation_condition": "12/10 trước 14–15/10 nên không phải Test của Spring này.",
       "correction_reason": "Người dùng xác nhận bác bỏ Test sau Spring ngày 12/10 vì sai thứ tự; no_event chỉ đối với nhãn Test này.",
       "reviewer": "trungvdn@gmail.com",
-      "reviewed_at": "2026-10-31"
+      "reviewed_at": "2026-10-31",
+      "label_confirmed_as_of": "2026-10-30",
+      "label_confirmation_basis": "Conservative retrospective label cutoff: all cited evidence is available by analysis_as_of. Not earliest market confirmation; event_status and confirmed_as_of remain unchanged."
     },
     {
       "event_id": "E008",
@@ -339,7 +347,9 @@
       "invalidation_condition": "Không gán breakout trên 25.95 cho phiên đóng 22.85.",
       "correction_reason": "Người dùng xác nhận bác bỏ SOS vùng lớn ngày 21/10; no_event chỉ trong NLG_CONTEXT_202607, E005 vẫn là SOS ứng viên vùng nhỏ.",
       "reviewer": "trungvdn@gmail.com",
-      "reviewed_at": "2026-10-31"
+      "reviewed_at": "2026-10-31",
+      "label_confirmed_as_of": "2026-10-30",
+      "label_confirmation_basis": "Conservative retrospective label cutoff: all cited evidence is available by analysis_as_of. Not earliest market confirmation; event_status and confirmed_as_of remain unchanged."
     },
     {
       "event_id": "E009",
@@ -373,7 +383,9 @@
       "invalidation_condition": "Nếu cấu trúc không giữ đáy và markdown tiếp tục bền dưới 19.15, đánh giá lại SC của vùng rộng.",
       "correction_reason": null,
       "reviewer": "trungvdn@gmail.com",
-      "reviewed_at": "2026-10-31"
+      "reviewed_at": "2026-10-31",
+      "label_confirmed_as_of": "2026-10-30",
+      "label_confirmation_basis": "Conservative retrospective label cutoff: all cited evidence is available by analysis_as_of. Not earliest market confirmation; event_status and confirmed_as_of remain unchanged."
     },
     {
       "event_id": "E010",
@@ -441,7 +453,9 @@
       "invalidation_condition": "Nếu không có quan hệ kiểm tra với SC hoặc mất đáy 19.15 bền vững, bác bỏ ST thành công; mất 21.0 trước hết là suy yếu nhịp kiểm tra nông.",
       "correction_reason": null,
       "reviewer": "trungvdn@gmail.com",
-      "reviewed_at": "2026-10-31"
+      "reviewed_at": "2026-10-31",
+      "label_confirmed_as_of": "2026-10-30",
+      "label_confirmation_basis": "Conservative retrospective label cutoff: all cited evidence is available by analysis_as_of. Not earliest market confirmation; event_status and confirmed_as_of remain unchanged."
     }
   ],
   "supply_demand_observations": [

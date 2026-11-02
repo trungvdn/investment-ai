@@ -34,23 +34,33 @@ const (
 )
 
 type Event struct {
-	Type       string    `json:"type"`
-	Date       time.Time `json:"date"`
-	Confidence float64   `json:"confidence"`
-	Evidence   string    `json:"evidence"`
+	ObservedAt  *time.Time `json:"observed_at,omitempty"`
+	Status      string     `json:"status,omitempty"`
+	StructureID string     `json:"structure_id,omitempty"`
+	Type        string     `json:"type"`
+	Date        time.Time  `json:"date"`
+	Confidence  float64    `json:"confidence"`
+	Evidence    string     `json:"evidence"`
 }
 
 type Analysis struct {
-	Symbol       string        `json:"symbol"`
-	AsOf         time.Time     `json:"asOf"`
-	Structure    Structure     `json:"structure"`
-	Phase        Phase         `json:"phase"`
-	Confidence   float64       `json:"confidence"`
-	TradingRange *TradingRange `json:"tradingRange,omitempty"`
-	Events       []Event       `json:"events"`
-	Evidence     []string      `json:"evidence"`
-	DataPoints   int           `json:"dataPoints"`
-	DataMode     string        `json:"dataMode"`
+	Window                  AssessmentWindow `json:"analysisWindow"`
+	PriceStructure          PriceStructure   `json:"priceStructure"`
+	Context                 FormingContext   `json:"context"`
+	PresentationEvents      []Event          `json:"presentation_events"`
+	PresentationStructureID string           `json:"presentation_structure_id,omitempty"`
+	Structures              []StructureState `json:"structures,omitempty"`
+	ActiveStructureID       string           `json:"active_structure_id,omitempty"`
+	Symbol                  string           `json:"symbol"`
+	AsOf                    time.Time        `json:"asOf"`
+	Structure               Structure        `json:"structure"`
+	Phase                   Phase            `json:"phase"`
+	Confidence              float64          `json:"confidence"`
+	TradingRange            *TradingRange    `json:"tradingRange,omitempty"`
+	Events                  []Event          `json:"events"`
+	Evidence                []string         `json:"evidence"`
+	DataPoints              int              `json:"dataPoints"`
+	DataMode                string           `json:"dataMode"`
 }
 
 type TradingRange struct {

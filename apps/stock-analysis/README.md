@@ -1,8 +1,10 @@
-# Stock Analysis — Wyckoff MVP
+# Stock Analysis — context-first Wyckoff research
 
-Go service for explainable Wyckoff phase/event analysis from daily OHLCV.
+The default analyzer starts from the latest **40 observations**, assesses prior direction and confirmed swings, constructs a campaign, then reads its stopping/test/breakout sequence. It no longer merges independent candle labels from every range into one current structure. The former default event scanner has been removed.
 
-## Run and test
+Method and limits: [analyzer-method.md](../../docs/wyckoff/analyzer-method.md).
+
+## Run
 
 ```bash
 cd apps/stock-analysis
@@ -10,50 +12,35 @@ go test ./...
 go run ./cmd/server
 ```
 
-`GET /api/stocks/VCI/wyckoff` returns the raw, structured Wyckoff analyzer result. `GET /api/stocks/VCI/report` returns the standardized, presentation-oriented report. Both fetch the last two years of daily candles from the KB Securities public history endpoint. Optional query parameters: `from=YYYY-MM-DD` and `to=YYYY-MM-DD`. `GET /healthz` is the health check. Set `PORT` to change the port (default 8081).
+The default port is 8081 (`PORT` overrides it). Real data is fetched from the KB Securities public daily history endpoint. `MARKET_DATA_PROVIDER=demo` explicitly selects deterministic synthetic data; provider errors never silently fall back to demo. The feed is unofficial, price units are scaled by 1,000, and corporate-action adjustment policy remains unverified.
 
-## Standardized analysis report (schema v1.0)
+## API
 
-The report endpoint returns a stable JSON contract with `schemaVersion`, `symbol`, `asOf`, `headline`, `summary`, `structure`, `phase`, `confidence`, `tradingRange`, `events`, `evidence`, `risks`, `watchlist`, `dataQuality`, and `disclaimer`.
+- `/api/stocks/VCI/wyckoff`: authoritative primary-campaign analysis, plus alternative structures.
+- `/api/stocks/VCI/report`: schema-v1 presentation report and exact analyzed OHLCV.
+- `/healthz`: health check.
 
-- `headline` and `summary` provide a deterministic human-readable interpretation of the current analyzer classification.
-- `tradingRange.status` distinguishes `IDENTIFIED` from `PROVISIONAL`; a provisional range is not a confirmed structure.
-- `events` retains the event dates, confidence scores, and evidence text from the analyzer.
-- `evidence` preserves the analyzer's evidence statements; `risks` highlights uncertainty, low confidence, missing range, or demo data.
-- `watchlist` contains follow-up conditions to observe, not buy/sell instructions.
-- `dataQuality` identifies the data mode and history count; demo data is explicitly marked.
-- `disclaimer` states that the output is for research and is not investment advice.
+Both analysis routes accept inclusive `from`, `to` and `timeframe=1D|1W`. Weekly candles are aggregated before analysis; the minimum is 40 resulting observations. The last weekly bar may be incomplete.
 
-The raw `/wyckoff` endpoint remains available so existing consumers are not forced to migrate immediately.
+Existing structure/phase/confidence/range/events/evidence fields remain. New fields expose `analysisWindow`, `priceStructure`, and `context`, including the forming stage, confirmed HH/HL or LH/LL, window reasons, counter-evidence and alternatives. Event `observed_at` is separate from event date. One primary structure supplies chart markers and event evidence; other campaign hypotheses remain under `structures`. Failed outcomes retain history and are marked ×.
 
-For local deterministic testing only, set `MARKET_DATA_PROVIDER=demo`. Real market data is the default; provider errors return HTTP 502 instead of silently falling back to mock data.
+The assessment can expand to retain a stopping cluster and its preceding context. An event range can narrow to 12/20 bars only inside an established parent; the assessment itself always retains at least 40 observations. Absence of a required pattern does not authorize fabricated SC/BC or a forced Spring/Test.
 
-## Wyckoff rules implemented (initial heuristic)
+## UI
 
-- Context: preceding directional move and recent trading range.
-- Trading Range: evaluate a bounded recent window excluding the latest five candles, with width, close overlap, repeated reactions near both edges, and preceding trend context. A breakout can then be evaluated against the range it is leaving.
-- Accumulation event sequence: PS → SC → AR → ST is tracked chronologically as supporting evidence; it is not treated as mandatory for every valid schematic.
-- Spring/Test: Spring requires penetration and recovery of a detected range boundary; Test must follow within 15 sessions, hold above the Spring low, and show reduced supply.
-- SOS/LPS: SOS requires a close above the candidate range with strong close location and expanding relative volume; LPS is only considered as a pullback after SOS within the active range window.
-- Event reporting is scoped to the most recent 70 candles (roughly a trading quarter) so events from prior cycles do not dominate the current analysis.
-- LPS/LPSY use local historical breakout levels and volume baselines, and are restricted to the recent event window.
-- Phase assignment is gated by the interpreted structure; an `UNCLEAR` structure remains `UNKNOWN` rather than being assigned Phase D from an isolated LPS/LPSY event.
-- Events: candidate Selling Climax (SC), Buying Climax (BC), Automatic Rally/Reaction (AR), Spring, UTAD, SOS, SOW and low-volume Spring Test.
-- Accumulation: normally follows markdown; Phase A looks for stopping action/climax and AR/ST, B is range/cause building, C is Spring + Test, D is SOS/LPS and E is markup.
-- Distribution: normally follows markup; Phase A looks for buying climax and reaction, B is range/cause building, C is UT/UTAD, D is SOW/LPSY and E is markdown.
-- Price/volume checks include relative volume, candle spread, close location, support/resistance penetration, and directional context.
-- If evidence conflicts or is insufficient, phase can remain UNKNOWN. Wait for confirmation rather than anticipate.
+Build the frontend with `npm ci --prefix apps/macro-dashboard` and `npm run build` from the repository root. The service serves `../macro-dashboard/dist`; `DASHBOARD_DIR` overrides it. `/macro` serves the macro dashboard. Vite development uses a stock API proxy.
 
-## Data source and limitations
+The research page shows the forming stage, assessment-window size, swing pattern, price/volume and one campaign timeline. HH/HL–LH/LL has a separate chart toggle and only displays pivots confirmed by the cutoff. Macro routes reverse-proxy to `MACRO_API_URL` (default `http://127.0.0.1:3000`); start the PostgreSQL macro service separately.
 
-The built-in KB Securities history endpoint is an unofficial third-party interface and may change or become unavailable. Prices from this endpoint are scaled down by 1,000 as documented in the community integration example. For production, use a licensed feed or official TCBS OpenAPI (requires credentials). Confirm data adjustment policy and corporate-action handling before historical analysis.
+## Tests and evaluation
 
-This is an MVP heuristic, not a calibrated model or investment recommendation. Phase detection is subjective and needs manual labels and historical backtesting. Confidence is a rule-strength score, not a probability.
+```bash
+go test ./internal/wyckoff -run TestContextFirst -count=1 -v
+go test ./internal/wyckoff -run 'TestReviewedAnnotationBenchmark|TestStructureScopedBenchmark' -count=1 -v
+```
 
-## Research UI and chart series
+Tests exercise mirrored accumulation/distribution campaigns, event availability, phase progression, confirmed swing structure, input validation, reviewed SZC context, and all nine annotation datasets. CI checks formatting, Go tests/vet, frontend tests/build and historical-prefix replay.
 
-The service serves the built React app from `../macro-dashboard/dist` (override with `DASHBOARD_DIR`). First run `npm ci --prefix apps/macro-dashboard` and `npm run build` from the repository root, then start the Go service from this directory. Open `http://localhost:8081`; the React macro dashboard is at `/macro`, with a compatibility redirect from `/macro.html`. Development uses Vite with a stock API proxy; see the frontend README.
+Set `WYCKOFF_BENCHMARK_OUTPUT` / `WYCKOFF_SCOPED_OUTPUT` for JSON inventories. CI archives the complete baseline module and uses the same evaluation code and annotations. Scope matching uses fixed geometric/time tolerances, never literal equality between generated and manual IDs. Missing geometry or attribution remains explicit.
 
-The `/report` response adds `candles` (the exact OHLCV observations analyzed) and `timeframe` (`1D` by default, or `1W`). Both analysis endpoints accept `timeframe=1D|1W`. Date filtering is inclusive, observations are ordered/deduplicated, and weekly OHLCV is aggregated by ISO week **before** analysis. Weekly bar dates identify the last observed session; the latest week may be incomplete. At least 60 observations are still required, so use two years for weekly analysis. Existing report fields and the raw analyzer response shape remain available.
-
-Macro API integration: `/api/macro/` is reverse-proxied to `MACRO_API_URL` (default `http://127.0.0.1:3000`). Start the PostgreSQL-backed macro service separately; an unavailable macro service returns a JSON 502 and never falls back to the React entry point. No FRED credentials belong in this stock server or frontend.
+The analyzer's current primary-event contract differs from the former all-candidate inventory. Historical benchmark reports describe their own baseline/scope; do not equate CI success or a new recall number with validated investment accuracy. Reviewed labels remain unchanged. Further out-of-sample validation and source-adjustment verification are required before reliability claims.

@@ -34,6 +34,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -61,8 +62,39 @@ jobs:
             exit 1
           fi
 
+      - name: Context-first diagnostics
+        run: go test ./internal/wyckoff -run TestContextFirst -count=1 -v
+
       - name: Run tests
         run: go test ./...
 
+      - name: Verify lifecycle examples
+        run: go test ./internal/wyckoff -run 'TestLifecycle|TestSpringRecovery|TestPresentation|TestContextFirst' -count=1 -v
+
       - name: Run static analysis
         run: go vet ./...
+
+      - name: Benchmark reviewed labels with identical structure-scoped evaluators
+        env:
+          BASELINE_REF: 263e389c1c9d83a4d2f6354aeaf2bee44d154bb7
+        run: |
+          WYCKOFF_SCOPED_OUTPUT=/tmp/wyckoff-scoped-after.json WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-after.json go test ./internal/wyckoff -run 'TestReviewedAnnotationBenchmark|TestStructureScopedBenchmark' -count=1 -v
+          baseline_dir=$(mktemp -d)
+          git -C ../.. archive "$BASELINE_REF" apps/stock-analysis | tar -x -C "$baseline_dir"
+          baseline_module="$baseline_dir/apps/stock-analysis"
+          cp -a data/annotations/. "$baseline_module/data/annotations/"
+          cp internal/wyckoff/annotation_benchmark_test.go internal/wyckoff/scoped_benchmark_test.go "$baseline_module/internal/wyckoff/"
+          (cd "$baseline_module" && WYCKOFF_SCOPED_OUTPUT=/tmp/wyckoff-scoped-before.json WYCKOFF_BENCHMARK_OUTPUT=/tmp/wyckoff-before.json go test ./internal/wyckoff -run 'TestReviewedAnnotationBenchmark|TestStructureScopedBenchmark' -count=1 -v)
+          python3 scripts/compare_benchmark.py /tmp/wyckoff-before.json /tmp/wyckoff-after.json /tmp/wyckoff-benchmark.md
+          cat /tmp/wyckoff-benchmark.md >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/wyckoff-benchmark.md
+          python3 scripts/scoped_benchmark_report.py /tmp/wyckoff-scoped-before.json /tmp/wyckoff-scoped-after.json /tmp/wyckoff-scoped-benchmark.md
+          cat /tmp/wyckoff-scoped-benchmark.md >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/wyckoff-scoped-benchmark.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wyckoff-reviewed-benchmark
+          path: |
+            /tmp/wyckoff-*.json
+            /tmp/wyckoff-*.md

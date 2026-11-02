@@ -16,6 +16,38 @@ import { formatDate, formatNumber } from "../lib/utils";
 export function chartData(candles: Candle[]) {
   return candles.map((c) => ({ ...c, time: c.date.slice(0, 10) as Time }));
 }
+// Guard against repeated API candidates and markers belonging to another range.
+export function visibleChartEvents(report: StockReport): WyckoffEvent[] {
+  const dates = new Set(report.candles.map(c => c.date.slice(0, 10)));
+  const seen = new Set<string>();
+  return report.events.filter(e => {
+    const date = e.date.slice(0, 10);
+    const key = `${date}|${e.type.toUpperCase()}`;
+    if (!dates.has(date) || seen.has(key) || e.status === "invalidated") return false;
+    if (report.active_structure_id && e.structure_id && e.structure_id !== report.active_structure_id) return false;
+    if (e.type.toUpperCase() === "SPRING" && report.tradingRange) {
+      const c = report.candles.find(c => c.date.slice(0, 10) === date);
+      if (!c || c.low >= report.tradingRange.support) return false;
+    }
+    seen.add(key);
+    return true;
+  }).sort((a,b) => a.date.localeCompare(b.date));
+}
+export function chartEventGroups(report: StockReport, includeSwings=false) {
+  const groups = new Map<string, WyckoffEvent[]>();
+  const items:WyckoffEvent[]=[...visibleChartEvents(report)];
+  if(includeSwings) for(const s of report.priceStructure?.swings || []) {
+    if(!["HH","HL","LH","LL"].includes(s.label) || Date.parse(s.confirmedAt)>Date.parse(report.asOf)) continue;
+    if(!report.candles.some(c=>c.date.slice(0,10)===s.date.slice(0,10))) continue;
+    items.push({type:s.label,date:s.date,observed_at:s.confirmedAt,status:"confirmed_swing",confidence:0.6,evidence:`Swing ${s.label} tại ${s.price}; xác nhận ${s.confirmedAt.slice(0,10)}.`});
+  }
+  items.sort((a,b)=>a.date.localeCompare(b.date));
+  for (const e of items) {
+    const date = e.date.slice(0,10);
+    groups.set(date, [...(groups.get(date) || []), e]);
+  }
+  return [...groups.entries()].map(([date, events]) => ({date, events}));
+}
 export function PriceChart({
   report,
   dark,
@@ -30,6 +62,7 @@ export function PriceChart({
   const container = useRef<HTMLDivElement>(null),
     chartRef = useRef<IChartApi | null>(null);
   const [events, setEvents] = useState(true),
+    [swings, setSwings] = useState(true),
     [range, setRange] = useState(true),
     [volume, setVolume] = useState(true);
   const [hover, setHover] = useState<Candle | null>(null),
@@ -105,19 +138,16 @@ export function PriceChart({
           title,
         });
     }
-    if (events) {
-      const dates = new Set(report.candles.map((c) => c.date.slice(0, 10)));
+    if (events || swings) {
       createSeriesMarkers(
         bars,
-        report.events
-          .filter((ev) => dates.has(ev.date.slice(0, 10)))
-          .map((ev) => ({
-            time: ev.date.slice(0, 10) as Time,
-            position: "aboveBar",
-            color: "#537a91",
-            shape: "circle",
-            text: ev.type,
-          })),
+        chartEventGroups({...report, events:events ? report.events:[]}, swings).map(group => ({
+          time: group.date as Time,
+          position: "aboveBar",
+          color: "#537a91",
+          shape: "circle",
+          text: group.events.map(e => e.status === "failed_outcome" ? `${e.type} ×` : e.type).join(" · "),
+        })),
       );
     }
     chart.subscribeCrosshairMove((param) => {
@@ -125,9 +155,7 @@ export function PriceChart({
       setHover(c || null);
     });
     chart.subscribeClick((param) => {
-      const event = report.events.find(
-        (ev) => ev.date.slice(0, 10) === param.time,
-      );
+      const event = chartEventGroups({...report,events:events ? report.events:[]},swings).find(group=>group.date===param.time)?.events[0];
       if (event) onSelectEvent(event);
     });
     const updateShade = () => {
@@ -154,7 +182,7 @@ export function PriceChart({
       chart.remove();
       chartRef.current = null;
     };
-  }, [report, dark, events, range, volume, onSelectEvent]);
+  }, [report, dark, events, swings, range, volume, onSelectEvent]);
   useEffect(() => {
     if (!selectedEvent || !chartRef.current) return;
     const i = report.candles.findIndex(
@@ -195,6 +223,7 @@ export function PriceChart({
         <Layers size={14} />
         {[
           [events, setEvents, "Sự kiện Wyckoff"],
+          [swings, setSwings, "HH/HL · LH/LL"],
           [range, setRange, "Vùng giá"],
           [volume, setVolume, "Khối lượng"],
         ].map(([active, setter, label]) => (
@@ -243,6 +272,7 @@ export function PriceChart({
         <span>
           <MousePointer2 size={12} /> Kéo để di chuyển · Cuộn để phóng to
         </span>
+        {report.eventScope === "PRIMARY_RANGE" && <span>Sự kiện theo vùng giá đang xem</span>}
         <span>Giá: nghìn đồng · KL: cổ phiếu</span>
       </div>
       {selectedEvent && (

@@ -95,3 +95,33 @@ func containsText(values []string, fragment string) bool {
 	}
 	return false
 }
+
+func TestBuildPreservesStructureLifecycleAttribution(t *testing.T) {
+	input := wyckoff.Analysis{Symbol: "TEST", ActiveStructureID: "range-1", Structures: []wyckoff.StructureState{{ID: "range-1", Support: 100, Resistance: 110, Status: "FAILED_BREAKOUT"}}, Events: []wyckoff.Event{{Type: "SOS", StructureID: "range-1"}}}
+	got := Build(input)
+	if got.ActiveStructureID != "range-1" || len(got.Structures) != 1 || got.Structures[0].Status != "FAILED_BREAKOUT" || got.Events[0].StructureID != "range-1" {
+		t.Fatal("report dropped lifecycle or event attribution")
+	}
+}
+
+func TestBuildUsesPrimaryRangeTimelineAndRetainsCandidateInventory(t *testing.T) {
+	candidate := wyckoff.Event{Type: "SPRING", StructureID: "other-range", Evidence: "Must not appear in primary timeline"}
+	selected := wyckoff.Event{Type: "SOS", StructureID: "primary"}
+	for _, events := range [][]wyckoff.Event{{selected}, {}} {
+		input := wyckoff.Analysis{Symbol: "TEST", Events: []wyckoff.Event{candidate, selected, selected}, PresentationEvents: events, PresentationStructureID: "primary", Evidence: []string{candidate.Evidence}}
+		got := Build(input)
+		if got.EventScope != "PRIMARY_RANGE" || got.ActiveStructureID != "primary" || len(got.Events) != len(events) || len(got.EventCandidates) != 3 {
+			t.Fatal("report leaked aggregate candidates or lost diagnostics")
+		}
+		for _, e := range got.Events {
+			if e.Type == "SPRING" {
+				t.Fatal("other range Spring leaked into chart report")
+			}
+		}
+		for _, e := range got.Evidence {
+			if strings.Contains(e, "Must not appear") {
+				t.Fatal("hidden event remained in primary evidence")
+			}
+		}
+	}
+}

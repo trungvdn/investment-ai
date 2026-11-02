@@ -194,3 +194,7 @@ Ngưỡng hai/ba phiên là minh họa, chưa backtest. Không gán xác suất 
 ## 9. Kết quả tương lai — loại khỏi đầu vào AI
 
 Không có dữ liệu sau 30/10/2026. evaluation_date=null và observations=[]; các kịch bản chưa phải diễn biến đã xảy ra.
+
+## Mốc xác nhận nhãn cho benchmark
+
+Các nhãn đúng/bị bác bỏ dùng `label_confirmed_as_of=2026-10-30`: mốc hồi cứu bảo thủ khi toàn bộ bằng chứng trong mẫu đã có. Đây không phải ngày xác nhận thị trường sớm nhất. Giữ nguyên `event_status` và `confirmed_as_of`; các ứng viên/chưa chắc chắn không tự chuyển thành confirmed. HDG E005 giữ ngày xác nhận thị trường 30/10 đã duyệt.
