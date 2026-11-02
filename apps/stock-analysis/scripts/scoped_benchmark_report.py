@@ -15,7 +15,7 @@ lines += ['', 'Unlike the legacy score, all reviewed rejections are eligible by 
           'Prediction counts are unique ticker / predicted structure / event type / date over prefix replay within the review window. They are not false-positive counts.', '',
           '| Stock | Reviewed structure | Mapping coverage | Positive hits / total | Rejected emitted / total | Uncertain |', '|---|---|---|---:|---:|---:|']
 for r in after['Structures']:
-    lines.append(f"| {r['Ticker']} | {r['Structure']} | {r['Mapped']} | {r['Hits']}/{r['Positive']} | {r['RejectedEmitted']}/{r['Rejected']} | {r['Uncertain']} |")
+    lines.append(f"| {r['Ticker']} | {r['Structure']} | {r['Mapped'] if r['DefinitionAvailable'] else 'TARGET_UNDEFINED'} | {r['Hits']}/{r['Positive']} | {r['RejectedEmitted']}/{r['Rejected']} | {r['Uncertain']} |")
 lines += ['', '| Stock | Event | Reviewed structure | Kind | Label | Scoped hit | Disposition | First seen |', '|---|---|---|---|---|---|---|---|']
 for r in after['Events']:
     lines.append(f"| {r['Ticker']} | {r['EventID']} | {r['Structure']} | {r['Kind']} | {r['Label']} | {r['Hit']} | {r['Disposition']} | {r['FirstSeen']} |")
