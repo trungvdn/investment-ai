@@ -82,7 +82,7 @@ func TestSpringRecoveryReviewedCutoffs(t *testing.T) {
 				}
 			}
 			if hit != (n == cutoff) {
-				t.Fatalf("%s cutoff=%s Spring=%t", tc.symbol, cs[n-1].Date.Format("2006-01-02"), hit)
+				t.Fatalf("%s cutoff=%s Spring=%t stage=%s range=%+v events=%+v", tc.symbol, cs[n-1].Date.Format("2006-01-02"), hit,got.Context.Stage,got.TradingRange,got.Events)
 			}
 		}
 	}

@@ -425,7 +425,7 @@ export default function Research() {
                   {r.phase === "UNKNOWN" ? "Chưa xác định" : `Phase ${r.phase}`}
                 </strong>
               </div>
-              {r.priceStructure && <p className="metric-help">Cấu trúc giá: <strong>{r.priceStructure.pattern.replaceAll("_", "/")}</strong> · {r.analysisWindow?.usedBars} phiên bối cảnh (gốc {r.analysisWindow?.baseBars})</p>}
+              {r.priceStructure && <p className="metric-help">Cấu trúc giá: <strong>{({HH_HL:"HH/HL — đỉnh, đáy cao dần",LH_LL:"LH/LL — đỉnh, đáy thấp dần",MIXED_SWINGS:"Đỉnh/đáy đan xen",UNRESOLVED:"Chưa đủ swing xác nhận",RISING_SWINGS_UNCONFIRMED:"Nhịp tăng chưa đủ swing xác nhận",FALLING_SWINGS_UNCONFIRMED:"Nhịp giảm chưa đủ swing xác nhận"} as Record<string,string>)[r.priceStructure.pattern] || r.priceStructure.pattern}</strong> · {r.analysisWindow?.usedBars} phiên bối cảnh (gốc {r.analysisWindow?.baseBars})</p>}
               <div className="phase-steps">
                 {["A", "B", "C", "D", "E"].map((p) => (
                   <span key={p} className={r.phase === p ? "active" : ""}>
